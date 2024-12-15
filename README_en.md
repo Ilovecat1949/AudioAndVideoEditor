@@ -1,4 +1,11 @@
 # AudioAndVideoEditor
+
+![Image](app/src/main/ic_launcher-playstore.png)  
+
+[![Download](https://img.shields.io/badge/download-App-blue.svg)](https://github.com/Ilovecat1949/AudioAndVideoEditor/raw/refs/heads/master/app/release/app-release.apk)
+
+
+
 ## Introduction
 This is an Android audio and video editor based on FFmpeg, with the goal of providing most of the FFmpeg features on Android.   
 At present, it supports video re encoding and the function of obtaining audio and video information.  
