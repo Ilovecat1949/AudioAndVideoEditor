@@ -46,7 +46,7 @@ fun AVInfoScreen(
             }
             if (info.width > 0) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(text = "${LocalContext.current.getString(R.string.video_resolution)}:${info.height}×${info.width}")
+                Text(text = "${LocalContext.current.getString(R.string.video_resolution)}:${info.width}×${info.height}")
             }
             if (info.frame_rate > 0) {
                 Spacer(modifier = Modifier.height(10.dp))
