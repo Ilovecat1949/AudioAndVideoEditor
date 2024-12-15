@@ -1,4 +1,10 @@
 # 音视频编辑器
+
+![Image](app/src/main/ic_launcher-playstore.png)  
+
+[![Download](https://img.shields.io/badge/download-App-blue.svg)](https://github.com/Ilovecat1949/AudioAndVideoEditor/raw/refs/heads/master/app/release/app-release.apk)
+
+
 ## 简介
 这是一款基于FFmpeg的Android音视频编辑器，目标是在Android上提供大多数FFmpeg的功能。目前支持视频重编码和获取音视频信息功能。  
 本项目目前只是为了跑通FFmpeg+Android的全流程，实现了最基本的解码和编码功能，后面会陆续将FFmpeg支持的音视频编辑功能加上去。  
