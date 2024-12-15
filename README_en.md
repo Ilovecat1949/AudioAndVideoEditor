@@ -13,6 +13,9 @@ This project is developed by Android Studio, using Kotlin and C++programming lan
 This project should support Android systems from Android 10 to Android 14,   
 and run on my own x86 Android 10 virtual machine and arm64-v8a Android 14 real machine.
 Android 15 should not run on Android 15 because I am not compatible with 16K Page Size.
+The application of this project requires obtaining file read and write permissions as well as notification permissions.   
+File read and write permissions are necessary for reading local audio and video files and generating new ones.  
+Notification permission is mainly used to inform users of the progress of task execution and is not necessary.
 ## Basic functions
 ### Obtain audio and video information
 By selecting audio and video files, you can obtain information such as resolution, frame rate, bitrate, duration, and number of channels for the audio and video
