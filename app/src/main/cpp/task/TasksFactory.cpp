@@ -4,6 +4,7 @@
 
 #include "TasksFactory.h"
 #include "ReEncodingTask.h"
+#include "RePackagingTask.h"
 
 int TasksFactory::createTask(TaskInfo *info) {
     int state=-1;
@@ -12,6 +13,9 @@ int TasksFactory::createTask(TaskInfo *info) {
     Task * new_task=NULL;
     if(task_type==0){
         new_task= new ReEncodingTask();
+    }
+    else if(task_type==1){
+        new_task= new RePackagingTask;
     }
     if(new_task!=NULL){
         new_task->setInfo(info);
@@ -51,5 +55,4 @@ void TasksFactory::release(int64_t task_num) {
         delete taskMap[task_num];
         taskMap.erase(task_num);
     }
-
 }

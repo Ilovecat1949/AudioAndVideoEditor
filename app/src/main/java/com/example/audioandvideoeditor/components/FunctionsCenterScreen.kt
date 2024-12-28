@@ -67,6 +67,15 @@ fun FunctionsCenterScreen(
         }) {
             Text(text=LocalContext.current.resources.getString(R.string.get_ffmpeg_information))
         }
+        Spacer(
+            modifier = Modifier.height(10.dp)
+        )
+        TextButton(onClick = {
+            setNextToNextDestination(RePackaging.route)
+            nextDestination(FileSelection.route)
+        }) {
+            Text(text= "重封装")
+        }
     }
 }
 

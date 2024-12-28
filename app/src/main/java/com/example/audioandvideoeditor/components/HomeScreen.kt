@@ -135,6 +135,14 @@ fun HomeScreen(
             ){
                 VideosPlayScreen(modifier = Modifier.fillMaxSize(), path=homeViewModel.file!!.path)
             }
+            composable(
+                route=RePackaging.route
+            ){
+                RePackagingScreen(activity
+                    ,homeViewModel.file!!
+                    ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
+                )
+            }
         }
     }
 }
