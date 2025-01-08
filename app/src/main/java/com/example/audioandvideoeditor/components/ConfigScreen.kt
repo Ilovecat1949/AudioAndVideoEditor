@@ -60,12 +60,12 @@ fun ConfigScreen2(
         }) {
             Text(text="${LocalContext.current.resources.getString(R.string.size_for_audio_encoding_task_text)}:${configViewModel.sizeForAudioEncodingTaskText.value}")
         }
-        Spacer(modifier = Modifier.height(10.dp))
-        Button(onClick = {
-            configViewModel.editSizeForMaxTasksNumFlag.value=true
-        }) {
-            Text(text="${LocalContext.current.resources.getString(R.string.size_for_max_tasks_num_text)}:${configViewModel.sizeForMaxTasksNumText.value}")
-        }
+//        Spacer(modifier = Modifier.height(10.dp))
+//        Button(onClick = {
+//            configViewModel.editSizeForMaxTasksNumFlag.value=true
+//        }) {
+//            Text(text="${LocalContext.current.resources.getString(R.string.size_for_max_tasks_num_text)}:${configViewModel.sizeForMaxTasksNumText.value}")
+//        }
         Spacer(modifier = Modifier.height(10.dp))
         Button(onClick = {
             configViewModel.editLanguageFlag.value=true
@@ -621,6 +621,7 @@ private fun showEditLanguageScreen(
                 ) {
                     Text(LocalContext.current.getString(R.string.cancel))
                 }
-            })
+            }
+        )
     }
 }

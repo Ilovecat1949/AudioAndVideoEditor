@@ -38,7 +38,6 @@ char *FFmpegInfo::getStrCodecInfo() {
     }
     return info;
 }
-
 char *FFmpegInfo::getStrFFmpegInfo(int info_type) {
     if(info_type==0){
         return getStrCodecInfo();

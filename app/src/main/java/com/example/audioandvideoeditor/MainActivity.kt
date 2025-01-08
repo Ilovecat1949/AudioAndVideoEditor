@@ -33,11 +33,14 @@ class MainActivity : ComponentActivity() {
     lateinit var tasksBinder: TasksBinder
         private set
     lateinit var tasksDao: TasksDao
+    var tasks_binder_flag=false
+        private set
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             tasksBinder = service as TasksBinder
 //            tasksBinder.initTasksDao(tasksDao)
             Log.d(TAG,"tasksBinder = service as TasksBinder")
+            tasks_binder_flag=true
         }
         override fun onServiceDisconnected(name: ComponentName) {
         }
@@ -58,6 +61,7 @@ class MainActivity : ComponentActivity() {
         tasksDao=AppDatabase.getDatabase(this).taskDao()
         val intent = Intent(this, TasksService::class.java)
         startService(intent)
+        tasks_binder_flag=false
         bindService(intent, connection, Context.BIND_AUTO_CREATE) // 绑定Service
     }
     override fun onResume() {

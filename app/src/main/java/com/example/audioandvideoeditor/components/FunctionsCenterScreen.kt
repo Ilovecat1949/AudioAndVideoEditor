@@ -76,6 +76,14 @@ fun FunctionsCenterScreen(
         }) {
             Text(text= "重封装")
         }
+        Spacer(
+            modifier = Modifier.height(10.dp)
+        )
+        TextButton(onClick = {
+            nextDestination(FFmpegCommands.route)
+        }) {
+            Text(text= "FFmpeg命令行")
+        }
     }
 }
 

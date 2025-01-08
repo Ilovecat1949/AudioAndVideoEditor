@@ -28,7 +28,7 @@ object ConfigsUtils {
         private set
     var sizeForAudioEncodingTask=AV_50MB
         private set
-    var MAX_TASKS_NUM=2
+    var MAX_TASKS_NUM=1
         private set
     val English="english"
     val Simplified_Chinese="simplified_chinese"
@@ -60,7 +60,7 @@ object ConfigsUtils {
         sizeForAudioEncodingTask=size
         MAX_TASKS_NUM=prefs.getInt("MAX_TASKS_NUM",-1)
         if(MAX_TASKS_NUM<0){
-            MAX_TASKS_NUM=2
+            MAX_TASKS_NUM=1
             editor.putInt("MAX_TASKS_NUM",MAX_TASKS_NUM)
         }
         language=prefs.getString("language","")!!

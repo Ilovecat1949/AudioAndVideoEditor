@@ -32,6 +32,14 @@ fun UserCenterScreen(
         }) {
             Text(text= LocalContext.current.resources.getString(R.string.user_audio_and_video_list))
         }
+        Spacer(
+            modifier = Modifier.height(10.dp)
+        )
+        TextButton(onClick = {
+            nextDestination(FilesList.route)
+        }) {
+            Text(text="文件列表")
+        }
 //        Spacer(
 //            modifier = Modifier.height(10.dp)
 //        )

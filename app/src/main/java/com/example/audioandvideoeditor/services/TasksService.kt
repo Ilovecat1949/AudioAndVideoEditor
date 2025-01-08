@@ -89,12 +89,14 @@ class TasksService : Service() {
                             val position =
                                 100 * progress
                             Log.d(TAG, "position:" + position + "progress:" + progress)
-                            notification!!.setProgress(100, position.toInt(), false)
-                            notification.setContentText("${position.toInt()}%")
-                            notificationManager.notify(
-                                runningTasksQueue[i].long_arr[0].toInt(),
-                                notification.build()
-                            )
+                            if(runningTasksQueue[i].int_arr[0]!=2) {
+                                notification!!.setProgress(100, position.toInt(), false)
+                                notification.setContentText("${position.toInt()}%")
+                                notificationManager.notify(
+                                    runningTasksQueue[i].long_arr[0].toInt(),
+                                    notification.build()
+                                )
+                            }
                         }
                         i++
                     }
@@ -170,15 +172,26 @@ class TasksService : Service() {
                         taskStateMap[info.long_arr[0]]=state
                         progressMap[info.long_arr[0]]=0f
                         if(PermissionsUtils.areNotificationsEnabled) {
+                            val name=FilesUtils.getNameFromPath(info.str_arr[0])
                             val notification =
-                                NotificationCompat.Builder(this@TasksService, "TasksBinder")
-                                    .setContentTitle(FilesUtils.getNameFromPath(info.str_arr[0]))
+                                if(info.int_arr[0]!=2){
+                                 NotificationCompat.Builder(this@TasksService, "TasksBinder")
+                                    .setContentTitle(name)
                                     .setContentText("0%")
                                     .setProgress(100, 0, false)
                                     .setPriority(NotificationManager.IMPORTANCE_LOW)
                                     .setSmallIcon(R.drawable.movie_edit_24px)
                                     .setAutoCancel(false)
                                     .setSilent(true)
+                                }
+                            else{
+                                 NotificationCompat.Builder(this@TasksService, "TasksBinder")
+                                        .setContentTitle(name.substring(0,name.length-4))
+                                        .setPriority(NotificationManager.IMPORTANCE_LOW)
+                                        .setSmallIcon(R.drawable.movie_edit_24px)
+                                        .setAutoCancel(false)
+                                        .setSilent(true)
+                                }
                             notificationManager.notify(
                                 info.long_arr[0].toInt(),
                                 notification.build()
@@ -189,7 +202,6 @@ class TasksService : Service() {
                     i++
                 }
                 if(watingTasksQueue.size==0 && runningTasksQueue.size==0){
-
                     break
                 }
             }

@@ -49,4 +49,8 @@
     <string name="audio_bit_rate">音频码率</string>
     <string name="path">文件路径</string>
     <string name="request_file_permissions">本程序需要您同意允许访问所有文件权限</string>
+    <string name="ffmpeg_command_line">ffmpeg命令行</string>
+    <string name="edit_command_line">编辑命令行</string>
+    <string name="log">日志</string>
+    <string name="loading">加载</string>
 </resources>

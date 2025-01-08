@@ -7,5 +7,5 @@ import com.example.audioandvideoeditor.services.TasksBinder
 class FFmpegInfoViewModel: ViewModel() {
     lateinit var tasksBinder: TasksBinder
     val show_flag= mutableStateOf(0)
-
+    var tasks_binder_flag= mutableStateOf(false)
 }

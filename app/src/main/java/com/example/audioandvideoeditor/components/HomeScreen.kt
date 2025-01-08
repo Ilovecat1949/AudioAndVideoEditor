@@ -143,6 +143,19 @@ fun HomeScreen(
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
+            composable(
+                route=FFmpegCommands.route
+            ){
+                FFmpegCommandsScreen(activity
+                    ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
+                )
+            }
+            composable(
+                route=FilesList.route
+            )
+                {
+                 FilesListScreen()
+                }
         }
     }
 }

@@ -6,7 +6,7 @@
 
 
 ## 简介
-这是一款基于FFmpeg的Android音视频编辑器，目标是在Android上提供大多数FFmpeg的功能。目前支持视频重编码和获取音视频信息功能。  
+这是一款基于FFmpeg的Android音视频编辑器，目标是在Android上提供大多数FFmpeg的功能。目前支持FFmpeg命令行、视频重编码、获取音视频信息功能。  
 本项目目前只是为了跑通FFmpeg+Android的全流程，实现了最基本的解码和编码功能，后面会陆续将FFmpeg支持的音视频编辑功能加上去。  
 本项目代码写的比较粗糙，如有不对请多多指教。有什么问题或者建议可以邮箱联系我。  
 本项目支持简体中文和英语两种语言，可以在设置里面切换语言。
@@ -21,6 +21,8 @@ Android 15由于我没有适配 16K Page Size，所以应该是无法在Android 
 选择音视频文件，可以获取音视频的分辨率、帧率、码率、时长、声道数等信息
 ### 音视频重编码
 选择音视频文件，可以设置编码的帧率、码率等信息，重新编码音视频文件。
+### 支持FFmpeg命令行
+执行用户输入的FFmpeg命令行
 ## 参考
 1.[Android 音视频开发打怪升级系列文章](https://juejin.cn/post/6844903949451919368)  
 2.[LearningVideo](https://github.com/ChenLittlePing/LearningVideo)  

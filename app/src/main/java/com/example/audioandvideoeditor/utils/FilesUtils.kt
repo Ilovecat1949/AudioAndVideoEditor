@@ -1,6 +1,9 @@
 package com.example.audioandvideoeditor.utils
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.util.Size
@@ -36,5 +39,15 @@ object FilesUtils {
             return path.substring(i+1)
         }
         return ""
+    }
+    fun copyStr(copyStr:String,ctx:Context):Boolean{
+        return try {
+            val cm=ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val mClipData = ClipData.newPlainText("Label", copyStr)
+            cm.setPrimaryClip(mClipData)
+            true
+        } catch (e:Exception){
+            false
+        }
     }
 }

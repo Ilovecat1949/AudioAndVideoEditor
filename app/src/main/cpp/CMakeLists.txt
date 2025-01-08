@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.22.1)
 
 # 支持C++11标准和GNU扩展特性
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -L${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}")
 
 # 1. 定义so库和头文件所在目录，方面后面使用
 set(ffmpeg_lib_dir ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
@@ -110,6 +112,7 @@ add_library( # Sets the name of the library.
         ${CMAKE_SOURCE_DIR}/task/AudioAndVideoInfo.cpp
         ${CMAKE_SOURCE_DIR}/task/FFmpegInfo.cpp
         ${CMAKE_SOURCE_DIR}/task/RePackagingTask.cpp
+        ${CMAKE_SOURCE_DIR}/task/FFmpegCommandsTask.cpp
         )
 
 # 指定编译目标库时，cmake要链接的库
@@ -127,6 +130,7 @@ target_link_libraries(
         avformat
         avdevice
         h264
+        ffmpeg
 
         -landroid
         OpenSLES

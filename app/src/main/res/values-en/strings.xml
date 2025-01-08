@@ -50,4 +50,8 @@
     <string name="audio_bit_rate">audio bitrate</string>
     <string name="path">path</string>
     <string name="request_file_permissions">This program requires your consent to grant access to all file permissions</string>
+    <string name="ffmpeg_command_line">FFmpegCommand</string>
+    <string name="edit_command_line">Edit Command Line</string>
+    <string name="log">log</string>
+    <string name="loading">loading</string>
 </resources>

@@ -198,11 +198,11 @@ private fun ShowFile(
                 contentDescription = null
             )
             Spacer(modifier = Modifier.width(40.dp))
-            if(file.name.length<25) {
+            if(file.name.length<20) {
                 Text(text = file.name)
             }
             else{
-                Text(text =file.name.substring(0,19)+"..."+file.name.substring(file.name.length-5))
+                Text(text =file.name.substring(0,14)+"..."+file.name.substring(file.name.length-5))
             }
             Spacer(modifier = Modifier.width(10.dp))
             Row(

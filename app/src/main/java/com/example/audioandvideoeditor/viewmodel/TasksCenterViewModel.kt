@@ -9,11 +9,16 @@ import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.services.TasksBinder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.io.BufferedReader
 import java.io.File
 import kotlin.concurrent.thread
 
 class TasksCenterViewModel: ViewModel() {
     private val TAG="TasksCenterViewModel"
+    var tasks_binder_flag= mutableStateOf(false)
     lateinit var tasksBinder: TasksBinder
     lateinit var tasksDao: TasksDao
     lateinit var videoPlay:(file: File, route:String)->Unit
@@ -162,4 +167,23 @@ class TasksCenterViewModel: ViewModel() {
         tasksBinder.cancelTask(id)
     }
     val show_flag= mutableStateOf(0)
+    val show_log_flag_map=HashMap<String,MutableState<Boolean>>()
+
+    lateinit var file: File
+    lateinit var bufferedReader: BufferedReader
+    val log_lines= mutableStateListOf<String>()
+    fun readLogFile(){
+        var i=0
+        var line:String?
+        while(i<100){
+            line=bufferedReader.readLine()
+            if(line!=null){
+                log_lines.add(line)
+            }
+            else{
+                break
+            }
+            i++
+        }
+    }
 }

@@ -178,6 +178,8 @@ int RePackagingTask::getState() {
 }
 
 void RePackagingTask::release() {
+    delete info;
+    info=NULL;
     LOGE(TAG, "Finish repacking, release resources")
     // 关闭输入
     if (m_in_format_cxt) {

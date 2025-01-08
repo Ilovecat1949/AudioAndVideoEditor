@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AudioAndVideoInfoViewModel: ViewModel()  {
+    var tasks_binder_flag= mutableStateOf(false)
     val info_text= mutableStateOf("")
     val info=MediaInfo()
     lateinit var tasksBinder: TasksBinder

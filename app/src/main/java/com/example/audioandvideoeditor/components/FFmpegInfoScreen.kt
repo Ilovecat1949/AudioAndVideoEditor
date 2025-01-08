@@ -15,6 +15,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,6 +26,8 @@ import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.viewmodel.FFmpegInfoViewModel
+import kotlinx.coroutines.delay
+
 
 @Composable
 fun FFmpegInfoScreen(
@@ -33,34 +36,57 @@ fun FFmpegInfoScreen(
 ){
     val life= rememberLifecycle()
     life.onLifeCreate {
-        ffmpegInfoViewModel.tasksBinder=activity.tasksBinder
+        if(activity.tasks_binder_flag){
+            ffmpegInfoViewModel.tasksBinder=activity.tasksBinder
+            ffmpegInfoViewModel.tasks_binder_flag.value=activity.tasks_binder_flag
+        }
+        else{
+            ffmpegInfoViewModel.tasks_binder_flag.value=false
+        }
+
     }
-    Scaffold(
-        topBar ={
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .background(
-                        color = Color.White
+    if(ffmpegInfoViewModel.tasks_binder_flag.value){
+        Scaffold(
+            topBar ={
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .background(
+                            color = Color.White
+                        )
+                ) {
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(text = LocalContext.current.resources.getString(R.string.encoder_and_decoder_information))
+                    Checkbox(
+                        checked =(ffmpegInfoViewModel.show_flag.value==0),
+                        onCheckedChange = {
+                            if(it){
+                                ffmpegInfoViewModel.show_flag.value=0
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
                     )
-            ) {
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(text = LocalContext.current.resources.getString(R.string.encoder_and_decoder_information))
-                Checkbox(
-                    checked =(ffmpegInfoViewModel.show_flag.value==0),
-                    onCheckedChange = {
-                        if(it){
-                            ffmpegInfoViewModel.show_flag.value=0
-                        }
-                    },
-                    modifier = Modifier.size(24.dp)
-                )
-            }}
-    ){
-     paddingValues ->   FFmpegInfoList(padding = paddingValues,ffmpegInfoViewModel)
+                }}
+        ){
+                paddingValues ->   FFmpegInfoList(padding = paddingValues,ffmpegInfoViewModel)
+        }
+    }
+
+    LaunchedEffect(true){
+        while(true){
+            if(activity.tasks_binder_flag){
+                ffmpegInfoViewModel.tasksBinder=activity.tasksBinder
+                ffmpegInfoViewModel.tasks_binder_flag.value=activity.tasks_binder_flag
+                break
+            }
+            else{
+                ffmpegInfoViewModel.tasks_binder_flag.value=false
+            }
+            delay(100)
+        }
     }
 }
 
