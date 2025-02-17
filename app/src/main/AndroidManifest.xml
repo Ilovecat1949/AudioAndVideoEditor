@@ -27,9 +27,16 @@
         </activity>
 
         <service
+            android:name=".services.FFmpegService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":ffmpeg"
+            ></service>
+
+        <service
             android:name=".services.TasksService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
     </application>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

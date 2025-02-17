@@ -9,5 +9,5 @@ data class ImageInfo(
     val name: String,
     val height: Int,
     val width:Int,
-    val size: Int
+    val size: Long
 )

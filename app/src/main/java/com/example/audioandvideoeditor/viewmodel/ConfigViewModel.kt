@@ -1,11 +1,16 @@
 package com.example.audioandvideoeditor.viewmodel
 
 import android.app.Activity
+import android.os.Environment
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.utils.ConfigsUtils
+import kotlinx.coroutines.launch
+import java.io.File
 
 class ConfigViewModel: ViewModel()  {
     val sizeForVideoEncodingTaskText= mutableStateOf("")
@@ -150,5 +155,43 @@ class ConfigViewModel: ViewModel()  {
             }
         }
         activity.setCurrLanguageMode()
+    }
+
+
+    private val _downloadPath = mutableStateOf("")
+    val downloadPath: State<String> = _downloadPath
+
+    private val _appLanguage = mutableStateOf("en") // Default: English
+    val appLanguage: State<String> = _appLanguage
+
+    init {
+        // Load settings (e.g., from SharedPreferences)
+        // For demonstration, we'll use a hardcoded path.
+        _downloadPath.value = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
+    }
+
+    fun updateDownloadPath(newPath: String) {
+        viewModelScope.launch {
+            try {
+                val file = File(newPath)
+                if (!file.exists()) {
+                    if (!file.mkdirs()) {
+                        // Handle directory creation failure.
+                        throw Exception("Failed to create directory.")
+                    }
+                }
+                _downloadPath.value = newPath
+                // Save to SharedPreferences
+            } catch (e: Exception) {
+                // Show error message
+                println("Error updating download path: ${e.message}")
+            }
+        }
+    }
+
+
+    fun setAppLanguage(language: String) {
+        _appLanguage.value = language
+        // Save language setting (e.g., SharedPreferences)
     }
 }

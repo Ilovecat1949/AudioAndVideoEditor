@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -77,7 +78,7 @@ fun FileSelectionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    .background(color = Color.Yellow)
+                    //.background(color = Color.Yellow)
                     .padding(top = 20.dp)
             ){
                 Row (
@@ -198,11 +199,17 @@ private fun ShowFile(
                 contentDescription = null
             )
             Spacer(modifier = Modifier.width(40.dp))
-            if(file.name.length<20) {
+//            if(file.name.length<20) {
+//                Text(text = file.name)
+//            }
+//            else{
+//                Text(text =file.name.substring(0,14)+"..."+file.name.substring(file.name.length-5))
+//            }
+            if(file.name.length<=19) {
                 Text(text = file.name)
             }
             else{
-                Text(text =file.name.substring(0,14)+"..."+file.name.substring(file.name.length-5))
+                Text(text =file.name.substring(0,11)+"..."+file.name.substring(file.name.length-5))
             }
             Spacer(modifier = Modifier.width(10.dp))
             Row(
@@ -246,7 +253,12 @@ private fun ShowFile(
         ){
             Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
             Spacer(modifier = Modifier.width(40.dp))
-            Text(text=file.name)
+            if(file.name.length<=19) {
+                Text(text = file.name)
+            }
+            else{
+                Text(text =file.name.substring(0,11)+"..."+file.name.substring(file.name.length-5))
+            }
         }
     }
 }
@@ -327,7 +339,6 @@ private fun ShowListScreen(padding: PaddingValues,filesViewModel: FilesViewModel
             innerPadding->
             ShowList(innerPadding, filesViewModel )
     }
-
 }
 
 @Composable
@@ -508,7 +519,7 @@ private fun ShowVideoFileInfo(
                     modifier = Modifier
                         .width(128.dp)
                         .height(128.dp)
-                        .background(color = Color.Black)
+                        .background(color = Color.Black,shape= RoundedCornerShape(10.dp))
                     ,
                     contentDescription = null)
             }
@@ -523,11 +534,11 @@ private fun ShowVideoFileInfo(
         }
         Spacer(modifier = Modifier.height(5.dp))
         val file_name=info.name
-        if(file_name.length<25) {
+        if(file_name.length<=19) {
             Text(text = file_name)
         }
         else{
-            Text(text =file_name.substring(0,19)+"..."+file_name.substring(file_name.length-5))
+            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
         }
     }
 }
@@ -563,7 +574,7 @@ private fun ShowAudioFileInfo(
                 modifier = Modifier
                     .width(128.dp)
                     .height(128.dp)
-                    .background(color = Color.White)
+                    .background(color = Color.White,shape= RoundedCornerShape(10.dp))
                 ,
                 contentDescription = null)
             if(filesViewModel.filesState[info.path]!!.value) {
@@ -578,11 +589,11 @@ private fun ShowAudioFileInfo(
 
         Spacer(modifier = Modifier.height(5.dp))
         val file_name=info.name
-        if(file_name.length<25) {
+        if(file_name.length<=19) {
             Text(text = file_name)
         }
         else{
-            Text(text =file_name.substring(0,19)+"..."+file_name.substring(file_name.length-5))
+            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
         }
     }
 }

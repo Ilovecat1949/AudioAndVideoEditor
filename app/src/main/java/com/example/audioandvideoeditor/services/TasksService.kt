@@ -3,12 +3,15 @@ package com.example.audioandvideoeditor.services
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.example.audioandvideoeditor.IFFmpegService
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.dao.AppDatabase
 import com.example.audioandvideoeditor.dao.TasksDao
@@ -17,6 +20,7 @@ import com.example.audioandvideoeditor.utils.PermissionsUtils
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
+import java.lang.Thread.sleep
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.LinkedList
@@ -30,6 +34,20 @@ class TasksService : Service() {
     private var MAX_TASKS_NUM=2
     private val mBinder = TasksBinder(this)
     private lateinit var tasksDao: TasksDao
+    private var iFFmpegService:IFFmpegService?=null
+    val mConnection = object : ServiceConnection {
+        // Called when the connection with the service is established.
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // Following the preceding example for an AIDL interface,
+            // this gets an instance of the IFFmpegInterface, which we can use to call on the service.
+            iFFmpegService = IFFmpegService.Stub.asInterface(service)
+        }
+        // Called when the connection with the service disconnects unexpectedly.
+        override fun onServiceDisconnected(className: ComponentName) {
+            Log.e(TAG, "iFFmpegService has unexpectedly disconnected")
+            iFFmpegService = null
+        }
+    }
     override fun onCreate() {
         super.onCreate()
         m_tasksFactory=initTasksFactory()
@@ -75,20 +93,28 @@ class TasksService : Service() {
                 while (i < runningTasksQueue.size) {
                     var state:Int=taskStateMap[runningTasksQueue[i].long_arr[0]]!!
                     if(state==0) {
-                        state= getTaskState(m_tasksFactory, runningTasksQueue[i].long_arr[0])
+                        state = if(runningTasksQueue[i].int_arr[0]<3){
+                            getTaskState(m_tasksFactory, runningTasksQueue[i].long_arr[0])
+                        } else{
+                            iFFmpegService!!.getTaskState(runningTasksQueue[i].long_arr[0])
+                        }
                         taskStateMap[runningTasksQueue[i].long_arr[0]]=state
                     }
-                    Log.d(TAG,"state:"+state)
+//                    Log.d(TAG,"state:"+state)
                     if(state==0)
                     {
-                        val progress =
+                        var progress: Float
+                        progress = if(runningTasksQueue[i].int_arr[0]<3) {
                             getProgress(m_tasksFactory, runningTasksQueue[i].long_arr[0])
+                        } else{
+                            iFFmpegService!!.getProgress(runningTasksQueue[i].long_arr[0])
+                        }
                         progressMap[runningTasksQueue[i].long_arr[0]]=progress
                         if(PermissionsUtils.areNotificationsEnabled && notificationMap.containsKey(runningTasksQueue[i].long_arr[0])) {
                             val notification = notificationMap[runningTasksQueue[i].long_arr[0]]
                             val position =
                                 100 * progress
-                            Log.d(TAG, "position:" + position + "progress:" + progress)
+//                            Log.d(TAG, "position:" + position + "progress:" + progress)
                             if(runningTasksQueue[i].int_arr[0]!=2) {
                                 notification!!.setProgress(100, position.toInt(), false)
                                 notification.setContentText("${position.toInt()}%")
@@ -137,7 +163,12 @@ class TasksService : Service() {
 //                            notificationMap.remove(runningTasksQueue[i].long_arr[0])
 //                        }
                         progressMap.remove(runningTasksQueue[i].long_arr[0])
-                        releaseTask(m_tasksFactory, runningTasksQueue[i].long_arr[0])
+                        if(runningTasksQueue[i].int_arr[0]<3){
+                            releaseTask(m_tasksFactory, runningTasksQueue[i].long_arr[0])
+                        }
+                        else{
+                            iFFmpegService!!.releaseTask(runningTasksQueue[i].long_arr[0])
+                        }
                         val date= Date(System.currentTimeMillis())
                         val formatter= SimpleDateFormat("yyyy-MM-dd HH:mm:ss", resources.configuration.locales[0])
                         tasksDao.insertTask(
@@ -162,13 +193,31 @@ class TasksService : Service() {
                         watingTasksQueue.removeAt(0)
                         runningTasksQueue.add(info)
                         //createAndStartTask(info)
-                        val state=createAndStartTask(
-                            m_tasksFactory,
-                            info.int_arr.toIntArray(),
-                            info.long_arr.toLongArray(),
-                            info.float_arr.toFloatArray(),
-                            info.str_arr.toTypedArray()
-                        )
+                        var state=0
+                        if(info.int_arr[0]<3) {
+                            state = createAndStartTask(
+                                m_tasksFactory,
+                                info.int_arr.toIntArray(),
+                                info.long_arr.toLongArray(),
+                                info.float_arr.toFloatArray(),
+                                info.str_arr.toTypedArray()
+                            )
+                        }
+                        else{
+                           if(iFFmpegService==null){
+                               val intent = Intent(this, FFmpegService::class.java)
+                               bindService(intent, mConnection, Context.BIND_AUTO_CREATE) // 绑定Service
+                               while(iFFmpegService==null){
+                                   sleep(100)
+                               }
+                           }
+                            state =iFFmpegService!!.createAndStartTask(
+                                info.int_arr.toIntArray(),
+                                info.long_arr.toLongArray(),
+                                info.str_arr.toTypedArray(),
+                                info.float_arr.toFloatArray()
+                            )
+                        }
                         taskStateMap[info.long_arr[0]]=state
                         progressMap[info.long_arr[0]]=0f
                         if(PermissionsUtils.areNotificationsEnabled) {
@@ -261,6 +310,28 @@ class TasksService : Service() {
             }
             i++
         }
+        i=0
+        while(i<runningTasksQueue.size){
+            if(runningTasksQueue[i].long_arr[0]==id && runningTasksQueue[i].int_arr[0]>=3){
+                runningTasksQueue.removeAt(i)
+                taskStateMap[id]=2
+                if(iFFmpegService==null){
+                    thread{
+                        while(iFFmpegService==null){
+                            sleep(100)
+                        }
+                        unbindService(mConnection)
+                        iFFmpegService=null
+                    }
+                }
+                else{
+                    unbindService(mConnection)
+                    iFFmpegService=null
+                }
+                break
+            }
+            i++
+        }
         if(!taskStateMap.containsKey(id)
             ||(taskStateMap[id]==0)
             ){
@@ -322,6 +393,10 @@ class TasksService : Service() {
         }
         catch (e:Exception){
             Log.d(TAG,e.stackTraceToString())
+        }
+        if(iFFmpegService!=null) {
+            unbindService(mConnection)
+            iFFmpegService = null
         }
     }
     private external fun initTasksFactory():Long

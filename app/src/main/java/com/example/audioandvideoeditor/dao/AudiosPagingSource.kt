@@ -89,8 +89,8 @@ class AudiosPagingSource : PagingSource<Int, AudioInfo>() {
                 // Get values of columns for a given audio.
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
-                val duration = cursor.getInt(durationColumn)
-                val size = cursor.getInt(sizeColumn)
+                val duration = cursor.getLong(durationColumn)
+                val size = cursor.getLong(sizeColumn)
                 val path = cursor.getString(pathColumn)
                 val contentUri: Uri = ContentUris.withAppendedId(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,

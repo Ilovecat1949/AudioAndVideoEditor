@@ -6,6 +6,7 @@
 #include "ReEncodingTask.h"
 #include "RePackagingTask.h"
 #include "FFmpegCommandsTask.h"
+#include "FFmpegServiceTask.h"
 
 int TasksFactory::createTask(TaskInfo *info) {
     int state=-1;
@@ -20,6 +21,9 @@ int TasksFactory::createTask(TaskInfo *info) {
     }
     else if(task_type==2){
         new_task= new FFmpegCommandsTask();
+    }
+    else if(task_type==3){
+        new_task= new FFmpegServiceTask();
     }
     if(new_task!=NULL){
         new_task->setInfo(info);

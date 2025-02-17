@@ -47,17 +47,45 @@ fun SootheBottomNavigation(onTabSelected: (Destination) -> Unit,currentScreen:De
         )
         NavigationBarItem(
             icon={
-                Icon(painter = painterResource(id = R.drawable.baseline_person_24),
+                Icon(painter = painterResource(id = R.drawable.baseline_folder_24),
                     contentDescription =null
                 )
             },
             label = {
                 Text(
-                    text = LocalContext.current.resources.getString(R.string.user_center)
+                    text = LocalContext.current.resources.getString(R.string.file)
                 )
             },
-            selected= currentScreen==UserCenter,
-            onClick = {onTabSelected(UserCenter)}
+            selected= currentScreen==FilesList2,
+            onClick = {onTabSelected(FilesList2)}
+        )
+//        NavigationBarItem(
+//            icon={
+//                Icon(painter = painterResource(id = R.drawable.baseline_person_24),
+//                    contentDescription =null
+//                )
+//            },
+//            label = {
+//                Text(
+//                    text = LocalContext.current.resources.getString(R.string.user_center)
+//                )
+//            },
+//            selected= currentScreen==UserCenter,
+//            onClick = {onTabSelected(UserCenter)}
+//        )
+        NavigationBarItem(
+            icon={
+                Icon(painter = painterResource(id = R.drawable.settings_24px),
+                    contentDescription =null
+                )
+            },
+            label = {
+                Text(
+                    text = LocalContext.current.resources.getString(R.string.settings)
+                )
+            },
+            selected= currentScreen==Config,
+            onClick = {onTabSelected(Config)}
         )
     }
 }

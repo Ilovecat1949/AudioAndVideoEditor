@@ -40,6 +40,19 @@ object FilesUtils {
         }
         return ""
     }
+    fun getTypeFromPath(path:String):String{
+        var i=path.length-1
+        while(i>-1){
+            if(path[i]=='.'){
+                break
+            }
+            i--
+        }
+        if(i>=0 && i<path.length-1){
+            return path.substring(i+1)
+        }
+        return ""
+    }
     fun copyStr(copyStr:String,ctx:Context):Boolean{
         return try {
             val cm=ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

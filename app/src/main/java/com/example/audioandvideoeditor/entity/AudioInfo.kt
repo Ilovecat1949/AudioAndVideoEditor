@@ -7,6 +7,6 @@ data class AudioInfo(
     val uri: Uri,
     val path:String,
     val name: String,
-    val duration: Int,
-    val size: Int
+    val duration: Long,
+    val size: Long
 )

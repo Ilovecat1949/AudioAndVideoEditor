@@ -19,7 +19,8 @@ import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.viewmodel.HomeViewModel
 
 private fun NavHostController.navigateSingleTopTo(route: String) =
-    this.navigate(route) {
+    this.navigate(route)
+    {
         popUpTo(
             this@navigateSingleTopTo.graph.findStartDestination().id
         ) {
@@ -156,6 +157,27 @@ fun HomeScreen(
                 {
                  FilesListScreen()
                 }
+            composable(
+                route=FilesList2.route
+            )
+            {
+                FilesListScreen2(
+                    {file, route ->
+                        homeViewModel.file=file
+                        homeNavController.navigateSingleTopTo(route)
+                    }
+                )
+            }
+
+            composable(
+                route=VideoClipping.route
+            ){
+               VideoClippingScreen(
+                    activity
+                   ,homeViewModel.file!!
+                   ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
+               )
+            }
         }
     }
 }

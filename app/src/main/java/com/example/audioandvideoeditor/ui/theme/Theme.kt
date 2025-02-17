@@ -208,21 +208,21 @@ private val highContrastDarkColorScheme = darkColorScheme(
 
 
 //private val DarkColorScheme = darkColorScheme(
-////    primary = Purple80,
-////    secondary = PurpleGrey80,
-////    tertiary = Pink80
-//    primary = Color.Black,
-//    secondary = Color.Black,
-//    tertiary = Color.Black
+//    primary = Purple80,
+//    secondary = PurpleGrey80,
+//    tertiary = Pink80
+////    primary = Color.Black,
+////    secondary = Color.Black,
+////    tertiary = Color.Black
 //)
-
+//
 //private val LightColorScheme = lightColorScheme(
-////    primary = Purple40,
-////    secondary = PurpleGrey40,
-////    tertiary = Pink40
-//    primary = Color.Black,
-//    secondary = Color.Black,
-//    tertiary = Color.Black
+//    primary = Purple40,
+//    secondary = PurpleGrey40,
+//    tertiary = Pink40
+////    primary = Color.Black,
+////    secondary = Color.Black,
+////    tertiary = Color.Black
 //    /* Other default colors to override
 //    background = Color(0xFFFFFBFE),
 //    surface = Color(0xFFFFFBFE),
@@ -241,15 +241,18 @@ fun AudioAndVideoEditorTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> darkScheme
-        else -> lightScheme
-    }
+//    val colorScheme = when {
+//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+//            val context = LocalContext.current
+//            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+//        }
+//
+//        darkTheme -> darkScheme
+//        else -> lightScheme
+////        darkTheme -> DarkColorScheme
+////        else -> LightColorScheme
+//    }
+    val colorScheme =lightScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

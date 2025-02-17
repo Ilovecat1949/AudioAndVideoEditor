@@ -101,7 +101,7 @@ class ImagesPagingSource: PagingSource<Int, ImageInfo>() {
                 val name = cursor.getString(nameColumn)
                 val height = cursor.getInt(heightColumn)
                 val width = cursor.getInt(widthColumn)
-                val size = cursor.getInt(sizeColumn)
+                val size = cursor.getLong(sizeColumn)
                 val path = cursor.getString(pathColumn)
                 val contentUri: Uri = ContentUris.withAppendedId(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,

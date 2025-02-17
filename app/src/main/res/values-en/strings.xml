@@ -54,4 +54,15 @@
     <string name="edit_command_line">Edit Command Line</string>
     <string name="log">log</string>
     <string name="loading">loading</string>
+    <string name="info">info</string>
+    <string name="type">type</string>
+    <string name="size">size</string>
+    <string name="copy">copy</string>
+    <string name="copy_to_clipboard">Copied to the clipboard</string>
+    <string name="video_clipping">Video clipping</string>
+    <string name="start_time">Start Time</string>
+    <string name="end_time">End Time</string>
+    <string name="quick_crop">Quick Crop</string>
+    <string name="precise_crop">Precise Crop</string>
+    <string name="wait">Please wait</string>
 </resources>

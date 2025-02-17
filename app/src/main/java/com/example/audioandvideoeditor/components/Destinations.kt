@@ -16,7 +16,9 @@ val HomeNavigationRow= listOf(
     VideoPlay,
     RePackaging,
     FFmpegCommands,
-    FilesList
+    FilesList,
+    FilesList2,
+    VideoClipping
 )
 object FunctionsCenter:Destination{
     override val route: String
@@ -70,4 +72,13 @@ object FFmpegCommands:Destination{
 object FilesList:Destination{
     override val route: String
         get() = "fileslist"
+}
+object FilesList2:Destination{
+    override val route: String
+        get() = "fileslist2"
+}
+
+object VideoClipping:Destination{
+    override val route: String
+        get() = "video_clipping"
 }
