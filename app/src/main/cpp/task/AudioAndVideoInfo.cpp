@@ -12,23 +12,67 @@ char *AudioAndVideoInfo::getStrInfo() {
     }
     if(video_stream_index!=-1){
 //        sprintf(info, "%sMediaType:Video\n", info);
-        sprintf(info, "%sWidth:%d\n", info,m_format_ctx->streams[video_stream_index]->codecpar->width);
-        sprintf(info, "%sHeight:%d\n", info,m_format_ctx->streams[video_stream_index]->codecpar->height);
+        sprintf(info, "%swidth:%d\n", info,m_format_ctx->streams[video_stream_index]->codecpar->width);
+        sprintf(info, "%sheight:%d\n", info,m_format_ctx->streams[video_stream_index]->codecpar->height);
         if(m_format_ctx->streams[video_stream_index]->r_frame_rate.den!=0) {
-            sprintf(info, "%sFrameRate:%f\n", info,
+            sprintf(info, "%sframe_rate:%f\n", info,
                     m_format_ctx->streams[video_stream_index]->r_frame_rate.num * 1.0 /
                     m_format_ctx->streams[video_stream_index]->r_frame_rate.den);
         }
-        sprintf(info, "%sVideoBitRate:%lld\n", info,m_format_ctx->streams[video_stream_index]->codecpar->bit_rate);
-        sprintf(info, "%sDuration:%lld\n", info,(int64_t)(m_format_ctx->streams[video_stream_index]->duration*av_q2d(m_format_ctx->streams[video_stream_index]->time_base)));
+        sprintf(info, "%svideo_bit_rate:%lld\n", info,m_format_ctx->streams[video_stream_index]->codecpar->bit_rate);
+        sprintf(info, "%svideo_duration:%lld\n", info,(int64_t)(m_format_ctx->streams[video_stream_index]->duration*av_q2d(m_format_ctx->streams[video_stream_index]->time_base)));
         //LOGE(TAG,"video time_base num %d,den %d ",m_format_ctx->streams[video_stream_index]->time_base.num,m_format_ctx->streams[video_stream_index]->time_base.den)
         //sprintf(info, "%sDuration2:%lld\n", info,m_format_ctx->duration/AV_TIME_BASE);
+
+        enum AVCodecID codec_id = m_format_ctx->streams[video_stream_index]->codecpar->codec_id;
+        const char* codec_name = avcodec_get_name(codec_id);
+        // 映射到目标类型
+        if (codec_id == AV_CODEC_ID_H264) {
+            sprintf(info, "%svideo_codec_type:%s\n", info,"H.264(AVC)");
+        } else if (codec_id == AV_CODEC_ID_H265) {
+            sprintf(info, "%svideo_codec_type:%s\n", info,"H.265(HEVC)");
+        } else if (codec_id == AV_CODEC_ID_MPEG1VIDEO) {
+            sprintf(info, "%svideo_codec_type:%s\n", info,"MPEG-1");
+        } else if (codec_id == AV_CODEC_ID_MPEG2VIDEO) {
+            sprintf(info, "%svideo_codec_type:%s\n", info,"MPEG-2");
+        } else if (codec_id == AV_CODEC_ID_MPEG4) {
+            sprintf(info, "%svideo_codec_type:%s\n", info,"MPEG-4 Part 2");
+            // 进一步通过长名称判断具体编码器（如 XVID/DIVX）
+//            AVCodec* codec = avcodec_find_decoder(codec_id);
+//            if (codec && strstr(codec->long_name, "Xvid")) {
+//                std::cout << "  Encoder: XVID" << std::endl;
+//            } else if (codec && strstr(codec->long_name, "DivX")) {
+//                std::cout << "  Encoder: DIVX" << std::endl;
+//            }
+        } else if (codec_id == AV_CODEC_ID_VP9) {
+//            std::cout << "Format: VP9" << std::endl;
+            sprintf(info, "%svideo_codec_type:%s\n", info,"VP9");
+        }
     }
     if(audio_stream_index!=-1){
 //        sprintf(info, "%sMediaType:Audio\n", info);
-        sprintf(info, "%sSampleRate:%d\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->sample_rate);
-        sprintf(info, "%sChannels:%d\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->channels);
-        sprintf(info, "%saudioBitRate:%lld\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->bit_rate);
+        sprintf(info, "%ssample_rate:%d\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->sample_rate);
+        sprintf(info, "%schannels:%d\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->channels);
+        sprintf(info, "%saudio_bit_rate:%lld\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->bit_rate);
+        sprintf(info, "%saudio_duration:%lld\n", info,(int64_t)(m_format_ctx->streams[audio_stream_index]->duration*av_q2d(m_format_ctx->streams[audio_stream_index]->time_base)));
+        // 获取编解码器ID
+        enum AVCodecID codec_id = m_format_ctx->streams[audio_stream_index]->codecpar->codec_id;
+        const char* codec_name = avcodec_get_name(codec_id);
+        // 判断具体格式类型
+        if (codec_id == AV_CODEC_ID_AAC) {
+            sprintf(info, "%saudio_codec_type:%s\n", info,"AAC");
+        } else if (codec_id == AV_CODEC_ID_MP3) {
+            sprintf(info, "%saudio_codec_type:%s\n", info,"MP3");
+        } else if (codec_id == AV_CODEC_ID_FLAC) {
+            sprintf(info, "%saudio_codec_type:%s\n", info,"FLAC");
+        } else if (codec_id == AV_CODEC_ID_VORBIS) {
+            // OGG容器通常对应Vorbis
+            sprintf(info, "%saudio_codec_type:%s\n", info,"VORBIS");
+        } else if (codec_id == AV_CODEC_ID_OPUS) {
+            sprintf(info, "%saudio_codec_type:%s\n", info,"OPUS");
+        } else if (codec_id == AV_CODEC_ID_AC3) {
+            sprintf(info, "%saudio_codec_type:%s\n", info,"AC3");
+        }
         //sprintf(info, "%sDuration:%f\n", info,m_format_ctx->streams[audio_stream_index]->duration*av_q2d(m_format_ctx->streams[audio_stream_index]->time_base));
         //LOGE(TAG," format: %d,  layout: %lld",m_format_ctx->streams[audio_stream_index]->codecpar->format,m_format_ctx->streams[audio_stream_index]->codecpar->channel_layout)
         //LOGE(TAG," time_base  %d",m_format_ctx->streams[audio_stream_index]->time_base.den)

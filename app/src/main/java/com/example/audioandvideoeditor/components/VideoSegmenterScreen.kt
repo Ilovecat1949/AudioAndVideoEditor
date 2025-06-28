@@ -2,8 +2,6 @@ package com.example.audioandvideoeditor.components
 
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,24 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,20 +35,18 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.utils.ConfigsUtils
+import com.example.audioandvideoeditor.utils.FormatsUtils
 import com.example.audioandvideoeditor.utils.TextsUtils
-import com.example.audioandvideoeditor.viewmodel.VideoClippingViewModel
+import com.example.audioandvideoeditor.viewmodel.VideoSegmenterViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -69,26 +54,26 @@ import java.util.Locale
 
 private val TAG="VideoClippingScreen"
 @Composable
-fun VideoClippingScreen(
+fun VideoSegmenterScreen(
     activity: MainActivity,
     file: File,
     nextDestination:()->Unit,
-    videoClippingViewModel: VideoClippingViewModel= viewModel()
+    videoSegmenterViewModel: VideoSegmenterViewModel= viewModel()
 ){
-    VideoClipScreen(
+    VideoSegmenter(
         activity,
         file,
         nextDestination,
-        videoClippingViewModel
+        videoSegmenterViewModel
     )
 }
 
 @Composable
-fun VideoClipScreen(
+fun VideoSegmenter(
     activity: MainActivity,
     file: File,
     nextDestination:()->Unit,
-    viewModel: VideoClippingViewModel
+    viewModel: VideoSegmenterViewModel
 ) {
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(false) }
@@ -107,11 +92,12 @@ fun VideoClipScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_RESUME) {
-                viewModel.initializePlayer(context)
+                viewModel.initializeSource(context)
 
             } else if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
                 viewModel.releasePlayer()
                 videoReady = false // Reset when player is released
+                viewModel.initialize_source_flag=false
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -142,25 +128,31 @@ fun VideoClipScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        if (viewModel.currentVideoUri != null && videoReady)
+        if (viewModel.initialize_source_flag)
         { // Check videoReady!
-
-            AndroidView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                factory = { ctx ->
-                    playerView = PlayerView(ctx).apply {
-                        player = viewModel.getExoPlayer()
-                        useController = true // Important: Enable the default controls
+            if(viewModel.currentVideoUri != null && videoReady) {
+                AndroidView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    factory = { ctx ->
+                        playerView = PlayerView(ctx).apply {
+                            player = viewModel.getExoPlayer()
+                            useController = true // Important: Enable the default controls
+                        }
+                        playerView!!
                     }
-                    playerView!!
+                )
+            }
+            else{
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                ) {
+                    Text("...")
                 }
-            )
-
-
-
-
+            }
             Column {
                 Spacer(modifier = Modifier.height(20.dp))
                 Text("${context.getString(R.string.start_time)}: ${TextsUtils.millisecondsToString ((viewModel.startTime * duration ).toLong())}")
@@ -190,8 +182,8 @@ fun VideoClipScreen(
             ) {
                 // Toggle Buttons for Cropping Mode
                 ToggleButton(
-                    checked = viewModel.croppingMode == VideoClippingViewModel.CroppingMode.Quick, // Access from ViewModel
-                    onCheckedChange = { viewModel.croppingMode = VideoClippingViewModel.CroppingMode.Quick }, // Set in ViewModel
+                    checked = viewModel.croppingMode == VideoSegmenterViewModel.CroppingMode.Quick, // Access from ViewModel
+                    onCheckedChange = { viewModel.croppingMode = VideoSegmenterViewModel.CroppingMode.Quick }, // Set in ViewModel
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(context.getString(R.string.quick_crop))
@@ -200,8 +192,8 @@ fun VideoClipScreen(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 ToggleButton(
-                    checked = viewModel.croppingMode == VideoClippingViewModel.CroppingMode.Precise, // Access from ViewModel
-                    onCheckedChange = { viewModel.croppingMode = VideoClippingViewModel.CroppingMode.Precise }, // Set in ViewModel
+                    checked = viewModel.croppingMode == VideoSegmenterViewModel.CroppingMode.Precise, // Access from ViewModel
+                    onCheckedChange = { viewModel.croppingMode = VideoSegmenterViewModel.CroppingMode.Precise }, // Set in ViewModel
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(context.getString(R.string.precise_crop))
@@ -217,7 +209,7 @@ fun VideoClipScreen(
                         val endTimeSeconds = viewModel.endTime * duration / 1000
                         Log.d(TAG,"Start Time: $startTimeSeconds seconds, End Time: $endTimeSeconds seconds")
                         val currentTime = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                        viewModel.outputFileName= currentTime+".mp4"
+                        viewModel.outputFileName= currentTime//+".mp4"
                         viewModel.showFileNameDialog=true
                         // ... Your video clipping logic here ...
                 }
@@ -226,17 +218,17 @@ fun VideoClipScreen(
                     .fillMaxWidth()
                     .padding(top = 16.dp)
             ) {
-                Text(context.getString(R.string.video_clipping))
+                Text(context.getString(R.string.video_duration_trimming))
             }
             // Time error dialog
             if (viewModel.showTimeErrorDialog) { // Access from ViewModel
                 AlertDialog(
                     onDismissRequest = { viewModel.showTimeErrorDialog = false }, // Set in ViewModel
-                    title = { Text("Invalid Time Selection") },
-                    text = { Text("End time must be greater than start time.") },
+                    title = { Text(stringResource(id = R.string.invalid_time_selection)) },
+                    text = { Text(stringResource(id = R.string.end_greater_than_start)) },
                     confirmButton = {
                         TextButton(onClick = { viewModel.showTimeErrorDialog = false }) { // Set in ViewModel
-                            Text("OK")
+                            Text(stringResource(id = R.string.ok))
                         }
                     }
                 )
@@ -245,12 +237,12 @@ fun VideoClipScreen(
             if (viewModel.showFileNameDialog) { // Access from ViewModel
                 AlertDialog(
                     onDismissRequest = { viewModel.showFileNameDialog = false }, // Set in ViewModel
-                    title = { Text(context.getString(R.string.file_title)) },
+                    title = { Text(context.getString(R.string.file_name)) },
                     text = {
                         OutlinedTextField(
                             value = viewModel.outputFileName, // Access from ViewModel
                             onValueChange = { viewModel.outputFileName = it }, // Set in ViewModel
-                            label = { Text(context.getString(R.string.file_title)) }
+                            label = { Text(context.getString(R.string.file_name)) }
                         )
                     },
                     confirmButton = {
@@ -274,7 +266,7 @@ fun VideoClipScreen(
                                 viewModel.outputFileName = "" // Reset for next use (Optional)
                             }
                         }) {
-                            Text(context.getString(R.string.determine))
+                            Text(context.getString(R.string.ok))
                         }
                     },
                     dismissButton = {
@@ -342,7 +334,7 @@ private fun startTask(
     activity: MainActivity,
     file: File,
     nextDestination:()->Unit,
-    viewModel: VideoClippingViewModel
+    viewModel: VideoSegmenterViewModel
 ){
     val start_time=
         if(viewModel.startTime==0f){
@@ -359,15 +351,28 @@ private fun startTask(
             (viewModel.endTime * viewModel.getDuration()).toLong()
         }
     val new_duration=end_time-start_time
-    val target_path=ConfigsUtils.target_dir+"/${viewModel.outputFileName}"
+    val target_path=ConfigsUtils.target_dir+"/${viewModel.outputFileName}.${file.extension}"
     val cmd_str=
-        if(viewModel.croppingMode==VideoClippingViewModel.CroppingMode.Quick){
-            "ffmpeg -ss ${TextsUtils.millisecondsToString(start_time)} -t ${TextsUtils.millisecondsToString(new_duration)} -i ${file.path}  -c copy ${target_path}"
+        if(viewModel.croppingMode==VideoSegmenterViewModel.CroppingMode.Quick){
+            "ffmpeg -ss ${TextsUtils.millisecondsToString(start_time)} -t ${TextsUtils.millisecondsToString(new_duration)} -i input_file  -c copy output_file"
         }
-    else{
-            "ffmpeg -ss ${TextsUtils.millisecondsToString(start_time)} -t ${TextsUtils.millisecondsToString(new_duration)} -i ${file.path}  ${target_path}"
+        else if(
+            FormatsUtils.FullySupportsFormatsConfigs.containsKey(file.extension.uppercase())
+            &&FormatsUtils.FullySupportsFormatsConfigs[file.extension.uppercase()]!!.videoCodecs.contains("H.264(AVC)")){
+            "ffmpeg -ss ${TextsUtils.millisecondsToString(start_time)} -t ${TextsUtils.millisecondsToString(new_duration)} -i input_file -vcodec libx264 -preset ultrafast -q:v 5  output_file"
         }
+        else
+        {
+            "ffmpeg -ss ${TextsUtils.millisecondsToString(start_time)} -t ${TextsUtils.millisecondsToString(new_duration)} -i input_file  output_file"
+       }
     val command_arg_list=cmd_str.trim().split("[\\s\\n]+".toRegex())
+        .map {
+            when(it){
+                "input_file"->file.path
+                "output_file"->target_path
+                else -> it
+            }
+        }
     val int_arr=ArrayList<Int>()
     int_arr.add(3)
     int_arr.add(command_arg_list.size)
@@ -375,6 +380,10 @@ private fun startTask(
     long_arr.add(new_duration)
     val str_arr=ArrayList<String>()
     str_arr.add(target_path)
+    val date= Date(System.currentTimeMillis())
+    val formatter= SimpleDateFormat("yyyyMMddHHmmss", activity.resources.configuration.locales[0])
+    val task_log_path= activity.filesDir.absolutePath+"/ffmpeg"+formatter.format(date)+".log"
+    str_arr.add(task_log_path)
     str_arr.addAll(command_arg_list)
     val float_arr=ArrayList<Float>()
     val info= TaskInfo(

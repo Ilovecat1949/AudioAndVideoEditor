@@ -34,17 +34,24 @@ object ConfigsUtils {
     val Simplified_Chinese="simplified_chinese"
     var language=Simplified_Chinese
         private set
-
+    var show_crash_message_flag=false
+    private set
+    var show_on_screen_ad_again_flag=true
+        private set
+//    var notificationsRemind=true
+//        private set
+//    var externalStoragePermissionRemind=true
+//        private set
     fun InitConfig(context: Context){
         val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
         val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
         var target_dir_name=prefs.getString("target_dir","")!!
         if(target_dir_name.length==0){
-            target_dir_name="Download"
-            editor.putString("target_dir",target_dir_name)
+            target_dir_name=target_dir
+            editor.putString("target_dir",target_dir)
         }
         else{
-            target_dir= Environment.getExternalStorageDirectory().path +"/"+target_dir_name
+            target_dir= target_dir_name
         }
         var size=prefs.getLong("sizeForVideoEncodingTask",-1)
         if(size<0){
@@ -68,6 +75,10 @@ object ConfigsUtils {
             language=Simplified_Chinese
             editor.putString("language",language)
         }
+        show_crash_message_flag=prefs.getBoolean("show_crash_message_flag",false)
+        show_on_screen_ad_again_flag=prefs.getBoolean("show_on_screen_ad_again_flag",true)
+//        notificationsRemind=prefs.getBoolean("notificationsRemind",true)
+//        externalStoragePermissionRemind=prefs.getBoolean("externalStoragePermissionRemind",true)
         editor.apply()
     }
     fun setSizeForVideoEncodingTask(size:Long,activity: Activity){
@@ -94,6 +105,12 @@ object ConfigsUtils {
         editor.putString("language",new_language)
         editor.apply()
     }
+    fun setTargetDir(new_target_dir_name:String,activity: Activity){
+        val editor = activity.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
+        target_dir=new_target_dir_name
+        editor.putString("target_dir",target_dir)
+        editor.apply()
+    }
     private fun getLocaleLanguage():Locale{
         return when(language){
             English-> Locale.ENGLISH
@@ -111,4 +128,31 @@ object ConfigsUtils {
         }
         return context
     }
+    fun setCrashMessageFlag(context: Context,flag:Boolean){
+        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
+        editor.putBoolean("show_crash_message_flag",flag)
+        editor.apply()
+        show_crash_message_flag=flag
+    }
+    fun setShowOnScreenAdAgainFlag(context: Context,flag:Boolean){
+        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
+        editor.putBoolean("show_on_screen_ad_again_flag",flag)
+        editor.apply()
+        show_on_screen_ad_again_flag=flag
+    }
+
+//    fun setPermissionRemind(context: Context,remindFlag:Boolean,permission:Int){
+//        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
+//        when(permission){
+//          0->  {
+//              editor.putBoolean("externalStoragePermissionRemind",remindFlag)
+//              externalStoragePermissionRemind=remindFlag
+//          }
+//          1->  {
+//              editor.putBoolean("notificationsRemind",remindFlag)
+//              notificationsRemind=remindFlag
+//          }
+//        }
+//        editor.apply()
+//    }
 }

@@ -9,9 +9,6 @@ import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.services.TasksBinder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.File
 import kotlin.concurrent.thread
@@ -21,7 +18,7 @@ class TasksCenterViewModel: ViewModel() {
     var tasks_binder_flag= mutableStateOf(false)
     lateinit var tasksBinder: TasksBinder
     lateinit var tasksDao: TasksDao
-    lateinit var videoPlay:(file: File, route:String)->Unit
+    lateinit var readContext:(file: File, route:String, flag:Boolean)->Unit
     val watingTasksList= mutableStateListOf<TaskInfo>()
     val runningTasksList= mutableStateListOf<TaskInfo>()
     val cancelledTasksList= mutableStateListOf<TaskInfo>()
@@ -52,9 +49,15 @@ class TasksCenterViewModel: ViewModel() {
             i=0
             while(i<runningTasksList.size){
                 if(tasksState.containsKey(runningTasksList[i].long_arr[0])){
-                    val progress=tasksBinder.getTaskProgress(runningTasksList[i].long_arr[0])*100
-                    if(progress!=0f){
-                        tasksState[runningTasksList[i].long_arr[0]]!!.value=String.format("%.2f",progress)+"%"
+                    val progress=tasksBinder.getTaskProgress(runningTasksList[i].long_arr[0])
+                    if(progress>0 && progress<1){
+                        tasksState[runningTasksList[i].long_arr[0]]!!.value=String.format("%.2f",progress*100)+"%"
+                    }
+                    else if(progress<0){
+                        tasksState[runningTasksList[i].long_arr[0]]!!.value="0%"
+                    }
+                    else if(progress>1){
+                        tasksState[runningTasksList[i].long_arr[0]]!!.value="99.99%"
                     }
                 }
                 i++
@@ -141,6 +144,7 @@ class TasksCenterViewModel: ViewModel() {
             int_arr.add(tasksList[i].type)
             val str_arr=ArrayList<String>()
             str_arr.add(tasksList[i].path)
+            str_arr.add(tasksList[i].log_path)
             infosList.add(
                 TaskInfo(
                     int_arr,

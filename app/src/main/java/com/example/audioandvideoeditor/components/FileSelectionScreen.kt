@@ -1,6 +1,9 @@
 package com.example.audioandvideoeditor.components
 
+import android.graphics.Bitmap
 import android.os.Environment
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,20 +25,37 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,10 +68,15 @@ import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.viewmodel.FilesViewModel
 import com.example.audioandvideoeditor.viewmodel.VideoFilesListViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.io.File
 
 
 private val TAG="FileSelectionScreen"
+
 @Composable
 fun FileSelectionScreen(
     backDestination:()->Unit,
@@ -78,7 +104,7 @@ fun FileSelectionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
-                    //.background(color = Color.Yellow)
+                    .background(color = MaterialTheme.colorScheme.primary)
                     .padding(top = 20.dp)
             ){
                 Row (
@@ -88,6 +114,7 @@ fun FileSelectionScreen(
                 ) {
                     Icon(painter = painterResource(id = R.drawable.baseline_arrow_back_24),
                         contentDescription = null,
+                        tint =  Color.White ,
                         modifier = Modifier
                             .padding(start = 20.dp)
                             .size(32.dp)
@@ -96,7 +123,7 @@ fun FileSelectionScreen(
                             }
                     )
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.select_file), fontSize =20.sp )
+                    Text(text = LocalContext.current.resources.getString(R.string.select_file), fontSize =20.sp, color = Color.White )
                 }
                 Row (
                     horizontalArrangement = Arrangement.End,
@@ -104,6 +131,7 @@ fun FileSelectionScreen(
                 ) {
                     Icon(painter = painterResource(id = R.drawable.baseline_check_24),
                         contentDescription = null,
+                        tint =  Color.White ,
                         modifier = Modifier
                             .padding(end = 20.dp)
                             .size(32.dp)
@@ -124,58 +152,225 @@ fun FileSelectionScreen(
 
         ) {
             innerPadding ->ShowListScreen(innerPadding,filesViewModel)
-           //FilesList(innerPadding,filesViewModel)
+        //FilesList(innerPadding,filesViewModel)
 
     }
 }
 
 
 @Composable
+private fun ShowListScreen_20250606(padding: PaddingValues,filesViewModel: FilesViewModel){
+    filesViewModel.setContentResolver(LocalContext.current.contentResolver)
+    Scaffold(
+        topBar ={
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(top = padding.calculateTopPadding())
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .background(
+                        color = Color.White
+                    )
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically)
+                {
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Text(text = LocalContext.current.resources.getString(R.string.video))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Checkbox(
+                        checked =(filesViewModel.show_flag.value==0),
+                        onCheckedChange = {
+                            if(it){
+                                filesViewModel.show_flag.value=0
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(20.dp))
+                }
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically)
+                {
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Text(text = LocalContext.current.resources.getString(R.string.audio))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Checkbox(
+                        checked =(filesViewModel.show_flag.value==1),
+                        onCheckedChange = {
+                            if(it){
+                                filesViewModel.show_flag.value=1
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(20.dp))
+                }
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically)
+                {
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Text(text = LocalContext.current.resources.getString(R.string.file))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Checkbox(
+                        checked =(filesViewModel.show_flag.value==2),
+                        onCheckedChange = {
+                            if(it){
+                                filesViewModel.show_flag.value=2
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(20.dp))
+                }
+            }
+        }
+    ){
+            innerPadding->
+        ShowList(innerPadding, filesViewModel )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ShowListScreen(padding: PaddingValues,filesViewModel: FilesViewModel){
+    filesViewModel.setContentResolver(LocalContext.current.contentResolver)
+    val context= LocalContext.current
+    val titles = remember {
+        listOf(
+            context.getString(R.string.video),
+            context.getString(R.string.audio),
+            context.getString(R.string.file),
+        )
+    }
+    val pagerState = rememberPagerState(initialPage = 0) {
+        titles.size
+    }
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = padding.calculateTopPadding())
+
+    ) {
+        // 顶部 TabRow
+        TabRow(
+            selectedTabIndex = pagerState.currentPage,
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = MaterialTheme.colorScheme.primary, // 标签背景色
+            contentColor = MaterialTheme.colorScheme.onPrimary // 标签内容颜色（文字和指示器）
+        ) {
+            titles.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                            filesViewModel.show_flag.value=index
+                        }
+                    },
+                    text = { Text(title) }
+                )
+            }
+        }
+        // 页面内容
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+            //.weight(1f) // 让内容占据剩余空间
+        ) { page ->
+//            val padding= PaddingValues(5.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ){
+                when(page){
+                    0->VideoFilesList(padding,filesViewModel)
+                    1->AudioFilesList(padding, filesViewModel)
+                    2->FilesList(padding ,filesViewModel)
+                }
+                Spacer(modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
 private fun FilesList(
     padding: PaddingValues,
     filesViewModel: FilesViewModel
 ){
-    Row(
-        modifier = Modifier
-            .padding(top = padding.calculateTopPadding(), start = 20.dp)
-            .height(40.dp)
-            .fillMaxWidth()
-            .clickable {
-                if (filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path) {
-                    if (filesViewModel.parent!!.parentFile != null) {
-                        filesViewModel.parent!!.parentFile
-                            ?.listFiles()
-                            ?.let {
-                                filesViewModel.filesList.clear()
-                                filesViewModel.filesList.addAll(it)
-                                //filesViewModel.initFilesState()
-                                filesViewModel.parent = filesViewModel.parent!!.parentFile
-                            }
-                    } else {
-                        filesViewModel.filesList.clear()
-                        filesViewModel.filesList.add(filesViewModel.parent!!)
-                        //filesViewModel.initFilesState()
-                        filesViewModel.parent = null
-                    }
-
-                }
-            }
-    ){
-        Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
-        Spacer(modifier = Modifier.width(40.dp))
-        Text(text="..")
-    }
     LazyColumn(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.Start,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = padding.calculateTopPadding() + 40.dp)
+//            .padding(top = padding.calculateTopPadding() + 40.dp)
     ){
+        item {
+            Row(
+            modifier = Modifier
+//                .padding(top = padding.calculateTopPadding(), start = 20.dp)
+                .height(40.dp)
+                .fillMaxWidth()
+                .clickable {
+                    if (filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path) {
+                        if (filesViewModel.parent!!.parentFile != null) {
+                            filesViewModel.parent!!.parentFile
+                                ?.listFiles()
+                                ?.let {
+                                    filesViewModel.filesList.clear()
+                                    filesViewModel.filesList.addAll(it)
+                                    //filesViewModel.initFilesState()
+                                    filesViewModel.parent = filesViewModel.parent!!.parentFile
+                                }
+                        } else {
+                            filesViewModel.filesList.clear()
+                            filesViewModel.filesList.add(filesViewModel.parent!!)
+                            //filesViewModel.initFilesState()
+                            filesViewModel.parent = null
+                        }
+
+                    }
+                }
+        ){
+            Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(text="..")
+        } }
         items(count =filesViewModel.filesList.size){
-            ShowFile(filesViewModel,it)
+            ShowFile2(filesViewModel,it)
         }
+    }
+    BackHandler(enabled =filesViewModel.backHandler_flag ){
+        if (filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path) {
+            if (filesViewModel.parent!!.parentFile != null) {
+                filesViewModel.parent!!.parentFile
+                    ?.listFiles()
+                    ?.let {
+                        filesViewModel.filesList.clear()
+                        filesViewModel.filesList.addAll(it)
+                        //filesViewModel.initFilesState()
+                        filesViewModel.parent = filesViewModel.parent!!.parentFile
+                    }
+            } else {
+                filesViewModel.filesList.clear()
+                filesViewModel.filesList.add(filesViewModel.parent!!)
+                //filesViewModel.initFilesState()
+                filesViewModel.parent = null
+            }
+
+        }
+        filesViewModel.backHandler_flag=(filesViewModel.show_flag.value==2 &&filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path )
     }
 }
 
@@ -264,82 +459,104 @@ private fun ShowFile(
 }
 
 @Composable
-private fun ShowListScreen(padding: PaddingValues,filesViewModel: FilesViewModel){
-    filesViewModel.setContentResolver(LocalContext.current.contentResolver)
-    Scaffold(
-        topBar ={
+private fun ShowFile2(
+    filesViewModel: FilesViewModel,
+    id:Int
+){
+    val file=filesViewModel.filesList[id]
+    if(!filesViewModel.filesState.containsKey(file.path)){
+        filesViewModel.filesState[file.path]= mutableStateOf(false)
+    }
+    if(file.isFile){
+        Column (
+            modifier = Modifier
+                .fillMaxWidth()
+
+        ){
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
-                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(top =padding.calculateTopPadding() )
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .background(
-                        color = Color.White
-                    )
             ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_insert_drive_file_24),
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                Text(
+                    text =file.name,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 5,
+                    softWrap = true
+                )
                 Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.video))
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ){
                     Spacer(modifier = Modifier.width(5.dp))
                     Checkbox(
-                        checked =(filesViewModel.show_flag.value==0),
+                        checked =filesViewModel.filesState[file.path]!!.value,
                         onCheckedChange = {
+                            filesViewModel.updateFilesState(file.path,it)
                             if(it){
-                                filesViewModel.show_flag.value=0
+                                filesViewModel.file=file
+                            }
+                            else{
+                                filesViewModel.file=null
                             }
                         },
                         modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(20.dp))
-                }
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.audio))
                     Spacer(modifier = Modifier.width(5.dp))
-                    Checkbox(
-                        checked =(filesViewModel.show_flag.value==1),
-                        onCheckedChange = {
-                            if(it){
-                                filesViewModel.show_flag.value=1
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                }
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.file))
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Checkbox(
-                        checked =(filesViewModel.show_flag.value==2),
-                        onCheckedChange = {
-                            if(it){
-                                filesViewModel.show_flag.value=2
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
                 }
             }
+            Spacer(modifier = Modifier.height(20.dp))
+            Divider(color = Color.LightGray, thickness = 1.dp)
         }
-    ){
-            innerPadding->
-            ShowList(innerPadding, filesViewModel )
+    }
+    else if(file.isDirectory){
+        Column (
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val dir = file
+                    if (dir.listFiles() != null) {
+                        filesViewModel.filesList.clear()
+                        filesViewModel.parent = dir
+                        filesViewModel.backHandler_flag =
+                            (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
+                        dir
+                            .listFiles()
+                            ?.let { it1 ->
+                                filesViewModel.filesList.addAll(it1)
+                                filesViewModel.initFilesState()
+                            }
+                    }
+                }
+        ){
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
+                Spacer(modifier = Modifier.width(20.dp))
+                Text(
+                    text =file.name,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 5,
+                    softWrap = true
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Divider(color = Color.LightGray, thickness = 1.dp)
+        }
     }
 }
+
+
 
 @Composable
 private fun ShowList(padding: PaddingValues,filesViewModel: FilesViewModel){
@@ -367,7 +584,7 @@ private fun VideoFilesList(
         columns = GridCells.Adaptive(minSize = 128.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         modifier = Modifier
-                  .padding(top = padding.calculateTopPadding())
+//                  .padding(top = padding.calculateTopPadding())
     ) {
         item(span = { GridItemSpan(maxLineSpan) }){
             Spacer(modifier = Modifier
@@ -425,8 +642,8 @@ private fun AudioFilesList(
     LazyVerticalGrid (
         columns = GridCells.Adaptive(minSize = 128.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        modifier = Modifier.
-                   padding(top = padding.calculateTopPadding())
+        modifier = Modifier
+//            .padding(top = padding.calculateTopPadding())
     ) {
         item(span = { GridItemSpan(maxLineSpan) }){
             Spacer(modifier = Modifier
@@ -484,8 +701,38 @@ private fun ShowVideoFileInfo(
     if(!filesViewModel.filesState.containsKey(info.path)){
          filesViewModel.filesState[info.path]= mutableStateOf(false)
      }
-    val  bitmap= FilesUtils.getThumbnail(LocalContext.current.contentResolver,info.uri)
-    bitmap?.prepareToDraw()
+    val context = LocalContext.current
+    var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(info.uri) {
+        withContext(Dispatchers.IO){
+            filesViewModel.mutex.withLock {
+                if(thumbnailBitmap==null){
+                    val bitmap=filesViewModel.thumbnailBitmapArray.find { it.first==info.path }?.second
+                    if(bitmap!=null){
+                        thumbnailBitmap=bitmap
+                    }
+                    else{
+                        thumbnailBitmap =FilesUtils.getVideoCover(info.path)
+                        if(thumbnailBitmap!=null){
+                            if(filesViewModel.thumbnailBitmapArray.size>filesViewModel.thumbnailsMaxNum){
+                                val pair=filesViewModel.thumbnailBitmapArray.first()
+                                filesViewModel.thumbnailBitmapArray.removeAt(0)
+                                pair.second.recycle()
+                            }
+                            filesViewModel.thumbnailBitmapArray.add(Pair(info.path,thumbnailBitmap!!))
+                        }
+                    }
+                    thumbnailBitmap?.prepareToDraw()
+                }
+            }
+        }
+    }
+//    val lifecycleOwner = LocalLifecycleOwner.current
+//    DisposableEffect(lifecycleOwner) {
+//        onDispose {
+//            thumbnailBitmap?.recycle()
+//        }
+//    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement= Arrangement.Center,
@@ -503,13 +750,13 @@ private fun ShowVideoFileInfo(
                     }
                 }
         ){
-            if(bitmap!=null) {
+            if(thumbnailBitmap!=null) {
                 Image(
-                    bitmap = bitmap,
+                    bitmap = thumbnailBitmap!!.asImageBitmap(),
                     modifier = Modifier
                         .width(128.dp)
                         .height(128.dp)
-                        .background(color = Color.Black),
+                        .background(color = Color.Black, shape = RoundedCornerShape(10.dp)),
                     contentDescription = null
                 )
             }
@@ -519,7 +766,7 @@ private fun ShowVideoFileInfo(
                     modifier = Modifier
                         .width(128.dp)
                         .height(128.dp)
-                        .background(color = Color.Black,shape= RoundedCornerShape(10.dp))
+                        .background(color = Color.Black, shape = RoundedCornerShape(10.dp))
                     ,
                     contentDescription = null)
             }
@@ -532,14 +779,22 @@ private fun ShowVideoFileInfo(
                     contentDescription =null)
             }
         }
-        Spacer(modifier = Modifier.height(5.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         val file_name=info.name
-        if(file_name.length<=19) {
-            Text(text = file_name)
-        }
-        else{
-            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
-        }
+        Text(
+            text =info.name,
+//            fontWeight = FontWeight.Bold,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 5,
+            softWrap = true
+        )
+        Spacer(modifier = Modifier.height(50.dp))
+//        if(file_name.length<=19) {
+//            Text(text = file_name)
+//        }
+//        else{
+//            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
+//        }
     }
 }
 
@@ -574,7 +829,7 @@ private fun ShowAudioFileInfo(
                 modifier = Modifier
                     .width(128.dp)
                     .height(128.dp)
-                    .background(color = Color.White,shape= RoundedCornerShape(10.dp))
+                    .background(color = Color.White, shape = RoundedCornerShape(10.dp))
                 ,
                 contentDescription = null)
             if(filesViewModel.filesState[info.path]!!.value) {
@@ -586,15 +841,22 @@ private fun ShowAudioFileInfo(
                     contentDescription =null)
             }
         }
-
-        Spacer(modifier = Modifier.height(5.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         val file_name=info.name
-        if(file_name.length<=19) {
-            Text(text = file_name)
-        }
-        else{
-            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
-        }
+        Text(
+            text =info.name,
+//            fontWeight = FontWeight.Bold,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 5,
+            softWrap = true
+        )
+        Spacer(modifier = Modifier.height(50.dp))
+//        if(file_name.length<=19) {
+//            Text(text = file_name)
+//        }
+//        else{
+//            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
+//        }
     }
 }
 

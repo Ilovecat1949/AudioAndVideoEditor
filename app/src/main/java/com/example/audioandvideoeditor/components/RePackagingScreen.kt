@@ -90,7 +90,7 @@ fun RePackagingScreen2(
                 onValueChange = {
                     rePackagingViewModel.input_file_name.value = it
                 },
-                label = { Text(LocalContext.current.resources.getString(R.string.file_title)) }
+                label = { Text(LocalContext.current.resources.getString(R.string.file_name)) }
             )
             Spacer(modifier = Modifier.width(5.dp))
             TypesMenu(

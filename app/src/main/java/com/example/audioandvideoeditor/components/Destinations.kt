@@ -18,7 +18,18 @@ val HomeNavigationRow= listOf(
     FFmpegCommands,
     FilesList,
     FilesList2,
-    VideoClipping
+    VideoSegmenter,
+    PrivacyPolicy,
+    APPInfo,
+    VideoFormatConversion,
+    SpeedChange,
+    VideoAspectRatio,
+    VideoCrop,
+    FileRead,
+    LogDisplay,
+    APPTest,
+    Permissions,
+    ContactDeveloper,
 )
 object FunctionsCenter:Destination{
     override val route: String
@@ -78,7 +89,71 @@ object FilesList2:Destination{
         get() = "fileslist2"
 }
 
-object VideoClipping:Destination{
+object VideoSegmenter:Destination{
     override val route: String
-        get() = "video_clipping"
+        get() = "video_segmenter"
+}
+
+object PrivacyPolicy:Destination{
+    override val route: String
+        get() = "privacy_policy"
+
+}
+
+object APPInfo:Destination{
+    override val route: String
+        get() = "app_info"
+}
+
+object VideoFormatConversion:Destination{
+    override val route: String
+        get() = "video_format_conversion"
+
+}
+
+object SpeedChange:Destination{
+    override val route: String
+        get() = "speed_change"
+}
+object ExtractAudio:Destination{
+    override val route: String
+        get() = "extract_audio"
+}
+
+object VideoMute:Destination{
+    override val route: String
+        get() = "video_mute"
+}
+
+object VideoAspectRatio:Destination{
+    override val route: String
+        get() = "video_aspect_ratio"
+}
+object VideoCrop:Destination{
+    override val route: String
+        get() = "video_crop"
+
+}
+
+object FileRead:Destination{
+    override val route: String
+        get() = "file_read"
+}
+
+object LogDisplay:Destination{
+    override val route: String
+        get() = "log_display"
+}
+object APPTest:Destination{
+    override val route: String
+        get() = "app_test"
+}
+object Permissions:Destination{
+    override val route: String
+        get() = "permissions"
+}
+
+object ContactDeveloper:Destination{
+    override val route: String
+        get() = "contact_developer"
 }

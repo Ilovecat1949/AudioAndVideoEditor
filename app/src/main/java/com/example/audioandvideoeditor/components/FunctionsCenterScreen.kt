@@ -1,7 +1,5 @@
 package com.example.audioandvideoeditor.components
 
-import android.app.Activity
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.example.audioandvideoeditor.R
 
 @Composable
@@ -78,21 +76,150 @@ private fun FunctionsListScreen2(
         modifier = Modifier
             .padding(top = 20.dp)
     ){
-     item {
-        Column(
-           verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.height(150.dp)
-                .width(200.dp)
-                .background(color =  Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-                .clickable {
-                    setNextToNextDestination(ReEncoding.route)
-                    nextDestination(FileSelection.route)
-                }
-        ){
-            Text(text= LocalContext.current.resources.getString(R.string.reencoding))
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        nextDestination(FFmpegCommands.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.ffmpeg_command_line),
+                    modifier = Modifier
+                        .padding(10.dp)
+                )
+            }
         }
-     }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(VideoFormatConversion.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.video_format_conversion),
+                    modifier = Modifier
+                        .padding(10.dp)
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(VideoSegmenter.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.video_duration_trimming)
+                    , modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(VideoCrop.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.video_screen_cropping)
+                    , modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(VideoAspectRatio.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.video_scaling),
+                    modifier = Modifier.padding(10.dp)
+
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(SpeedChange.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(text= LocalContext.current.getString(R.string.video_shifting),
+                    modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(ExtractAudio.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.extract_audio),
+                    modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(VideoMute.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(text= LocalContext.current.getString(R.string.video_muting),
+                    modifier = Modifier.padding(10.dp))
+            }
+        }
         item {
             Column(
                 verticalArrangement = Arrangement.Center,
@@ -105,7 +232,11 @@ private fun FunctionsListScreen2(
                         nextDestination(FileSelection.route)
                     }
             ){
-                Text(text=LocalContext.current.resources.getString(R.string.obtain_audio_and_video_information))
+                Text(
+                    text=LocalContext.current.resources.getString(R.string.av_info),
+                    modifier = Modifier.padding(10.dp)
+                )
+
             }
         }
         item {
@@ -122,51 +253,50 @@ private fun FunctionsListScreen2(
                 Text(text=LocalContext.current.resources.getString(R.string.get_ffmpeg_information))
             }
         }
-        item {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.height(150.dp)
-                    .width(200.dp)
-                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-                    .clickable {
-                        setNextToNextDestination(RePackaging.route)
-                        nextDestination(FileSelection.route)
-                    }
-            ){
-                Text(text= LocalContext.current.getString(R.string.reencoding))
-
-            }
-        }
-        item {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.height(150.dp)
-                    .width(200.dp)
-                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-                    .clickable {
-                        nextDestination(FFmpegCommands.route)
-                    }
-            ){
-                Text(text= LocalContext.current.getString(R.string.ffmpeg_command_line))
-            }
-        }
-        item {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.height(150.dp)
-                    .width(200.dp)
-                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-                    .clickable {
-                        setNextToNextDestination(VideoClipping.route)
-                        nextDestination(FileSelection.route)
-                    }
-            ){
-                Text(text= LocalContext.current.getString(R.string.video_clipping))
-            }
-        }
+//        item {
+//            Column(
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                modifier = Modifier.height(150.dp)
+//                    .width(200.dp)
+//                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+//                    .clickable {
+//                        nextDestination(APPTest.route)
+//                    }
+//            ){
+//                Text(text=LocalContext.current.resources.getString(R.string.test))
+//            }
+//        }
+//        item {
+//        Column(
+//           verticalArrangement = Arrangement.Center,
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            modifier = Modifier.height(150.dp)
+//                .width(200.dp)
+//                .background(color =  Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+//                .clickable {
+//                    setNextToNextDestination(ReEncoding.route)
+//                    nextDestination(FileSelection.route)
+//                }
+//        ){
+//            Text(text= LocalContext.current.resources.getString(R.string.reencoding))
+//        }
+//     }
+//        item {
+//            Column(
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                modifier = Modifier.height(150.dp)
+//                    .width(200.dp)
+//                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+//                    .clickable {
+//                        setNextToNextDestination(RePackaging.route)
+//                        nextDestination(FileSelection.route)
+//                    }
+//            ){
+//                Text(text= LocalContext.current.getString(R.string.repack))
+//            }
+//        }
     }
 }
 

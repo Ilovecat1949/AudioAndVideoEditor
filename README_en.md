@@ -23,11 +23,18 @@ Android 15 should not run on Android 15 because I am not compatible with 16K Pag
 The application of this project requires obtaining file read and write permissions as well as notification permissions.   
 File read and write permissions are necessary for reading local audio and video files and generating new ones.  
 Notification permission is mainly used to inform users of the progress of task execution and is not necessary.
-## Basic functions
-### Obtain audio and video information
-By selecting audio and video files, you can obtain information such as resolution, frame rate, bitrate, duration, and number of channels for the audio and video
-### Audio and video re encoding
-Select audio and video files to set encoding frame rates, bitrate, and other information, and re encode the audio and video files.
+## Functions
+|Function Name | Function Details|
+|-----------|--------------------------------------------------------------------------------|  
+|Ffmpeg command line | Execute ffmpeg command line on mobile phone|
+|Video format conversion function | Used to reset video packaging type, video encoding type, audio encoding type, video resolution, video bitrate, video frame rate, audio bitrate, and audio sampling rate.                          |
+|Video duration clipping | Used to clip user specified video clips, with two modes: fast clipping and precise clipping. The execution speed of quick cutting is fast, and the timing of the cut may not be so accurate. The execution speed of precise cutting is slower, and the captured time points will be more accurate.  |
+|Video cropping | Used to crop user specified video frames.                                                                  |
+|Adjust Video Scale | Used to reset the video scale and background color.                                                              |
+|Video speed change | Used to set the video playback speed.                                                                     |
+|Extract Audio | Used to extract audio from videos.                                                                     |
+|Video Mute | Used to eliminate the audio part in a video.                                                                   |
+
 ## Reference
 1.[Android 音视频开发打怪升级系列文章](https://juejin.cn/post/6844903949451919368)  
 2.[LearningVideo](https://github.com/ChenLittlePing/LearningVideo)  

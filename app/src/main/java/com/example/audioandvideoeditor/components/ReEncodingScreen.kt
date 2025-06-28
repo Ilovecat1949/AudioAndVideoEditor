@@ -36,7 +36,6 @@ import com.example.audioandvideoeditor.viewmodel.ReEncodingViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 
 @Composable
@@ -119,7 +118,7 @@ private fun ReEncodingScreen2(
                 onValueChange = {
                     reEncodingViewModel.input_file_name.value = it
                 },
-                label = { Text(LocalContext.current.resources.getString(R.string.file_title)) }
+                label = { Text(LocalContext.current.resources.getString(R.string.file_name)) }
             )
             Spacer(modifier = Modifier.width(5.dp))
             TypesMenu(
@@ -277,7 +276,7 @@ private fun showEditBitRateScreen(
                         reEncodingViewModel.editBitRateFlag.value = false
                     }
                 ) {
-                    Text(LocalContext.current.getString(R.string.determine))
+                    Text(LocalContext.current.getString(R.string.ok))
                 }
 
             },
@@ -329,7 +328,7 @@ private fun showFrameRateScreen(
                         reEncodingViewModel.editFrameRateFlag.value = false
                     }
                 ) {
-                    Text(LocalContext.current.getString(R.string.determine))
+                    Text(LocalContext.current.getString(R.string.ok))
                 }
 
             },

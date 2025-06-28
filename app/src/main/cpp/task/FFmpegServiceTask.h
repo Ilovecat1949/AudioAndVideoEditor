@@ -10,11 +10,13 @@
 #include <thread>
 #include <string>
 #include <sstream>
+#include<fstream>
 extern "C" int main(int argc, char **argv);
 extern "C" void set_exit_program_fun(void (*cb)(int ret));
 static jmp_buf buf2;
 static std::mutex mtx2;
 static int m_ret2=0;
+static std::fstream ffmpeg_log_file2;
 static char * log_str=NULL;
 extern "C" {
 #include "libavutil/log.h"
@@ -32,6 +34,7 @@ public:
     ~FFmpegServiceTask();
 private:
     const char * TAG="FFmpegServiceTask";
+    const char * END_TAG="FFmpegTask END";
     TaskInfo *info;
     JNIEnv *m_env;
     JavaVM *m_jvm_for_thread = NULL;
@@ -77,6 +80,42 @@ private:
         const char* found = strstr(input, timeMarker);
         // 如果 found 不是 nullptr，说明找到了 "time="
         return found != nullptr;
+    }
+    const char * getAVLevel(int level){
+        switch (level){
+            case AV_LOG_QUIET:
+                return "AV_LOG_QUIET";
+                break;
+            case AV_LOG_PANIC:
+                return "AV_LOG_PANIC";
+                break;
+            case AV_LOG_FATAL:
+                return "AV_LOG_FATAL";
+                break;
+            case AV_LOG_ERROR:
+                return "AV_LOG_ERROR";
+                break;
+            case AV_LOG_WARNING:
+                return "AV_LOG_WARNING";
+                break;
+            case AV_LOG_INFO:
+                return "AV_LOG_INFO";
+                break;
+            case AV_LOG_VERBOSE:
+                return "AV_LOG_VERBOSE";
+                break;
+            case AV_LOG_DEBUG:
+                return "AV_LOG_DEBUG";
+                break;
+            case AV_LOG_TRACE:
+                return "AV_LOG_TRACE";
+                break;
+            case AV_LOG_MAX_OFFSET:
+                return "AV_LOG_MAX_OFFSET";
+                break;
+            default :
+                return "UNKNOWN";
+        }
     }
 };
 

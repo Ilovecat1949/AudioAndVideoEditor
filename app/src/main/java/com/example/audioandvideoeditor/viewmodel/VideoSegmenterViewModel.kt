@@ -3,17 +3,12 @@ package com.example.audioandvideoeditor.viewmodel
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
-class VideoClippingViewModel : ViewModel() {
+class VideoSegmenterViewModel : ViewModel() {
     var currentVideoUri by mutableStateOf<Uri?>(null)
         private set
 
@@ -22,8 +17,8 @@ class VideoClippingViewModel : ViewModel() {
     fun setVideoUri(uri: Uri?) {
         currentVideoUri = uri
     }
-
-    fun initializePlayer(context: android.content.Context) {
+    var initialize_source_flag by mutableStateOf(false)
+    fun initializeSource(context: android.content.Context) {
         if (exoPlayer == null && currentVideoUri != null) {
             exoPlayer = ExoPlayer.Builder(context).build().apply {
                 val mediaItem = MediaItem.fromUri(currentVideoUri!!)
@@ -31,6 +26,7 @@ class VideoClippingViewModel : ViewModel() {
                 prepare()
             }
         }
+        initialize_source_flag=true
     }
 
     fun releasePlayer() {

@@ -1,8 +1,10 @@
 package com.example.audioandvideoeditor.viewmodel
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -94,4 +96,26 @@ class FFmpegCommandsViewModel: ViewModel()  {
 //            read_log_flag=0
 //        }
     }
+    var input_file by mutableStateOf("")
+    var output_file_name by mutableStateOf("")
+    val extensionTemplate= listOf("mp4","mkv","mov","flv","ts","avi")
+    var extensionText by mutableStateOf(extensionTemplate[0])
+    var parameterTemplateName= listOf<String>()
+    val parameterTemplateContext=
+        listOf(
+            "-c:v libx264 -q:v 5 -c:a aac -ab 128k -ar 44100",
+            "-vn -c:a aac -ab 128k -ar 44100",
+            "-vf scale=1280:720",
+            "-b:v 500k",
+            "-b:a 128k",
+            "-r 45",
+            "-ar 48000",
+            "-ss 00:02:00 -t 00:03:00",
+            "-vf crop=3/5*iw:ih:iw/5:0",
+//            "-vf scale=1280:720",
+            "-vn",
+            "-c:v copy -an",
+        )
+    var parameterNameText by mutableStateOf("")
+    var parameterContextText by mutableStateOf(parameterTemplateContext[0])
 }

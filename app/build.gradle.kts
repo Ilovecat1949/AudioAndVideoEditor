@@ -19,8 +19,22 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        ndk{
-            abiFilters.addAll(arrayOf("arm64-v8a", "x86"))
+//        ndk{
+//            abiFilters.addAll(arrayOf("arm64-v8a", "x86"))
+//        }
+        splits {
+            abi {
+                // 启用 ABI 分割
+                isEnable = true
+                // 清除默认包含的 ABI（如果有的话）
+                reset()
+                // 指定你想要包含的 ABI。
+                // 建议包含 arm64-v8a 和 armeabi-v7a，因为它们覆盖了绝大多数设备。
+                // 如果你的应用在模拟器上运行，或者需要支持一些较老的Intel设备，可以加上 x86 和 x86_64。"armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+                include("arm64-v8a", "x86")
+                // 设置为 false，表示生成多个 ABI 特定的 APK，而不是一个包含所有 ABI 的通用 APK
+                isUniversalApk = false
+            }
         }
     }
 
@@ -70,6 +84,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    //implementation("com.android.volley:volley:1.2.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
@@ -92,4 +107,5 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
+    //implementation("io.coil-kt.coil3:coil-compose:3.1.0")
 }

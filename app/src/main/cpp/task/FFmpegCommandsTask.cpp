@@ -33,6 +33,7 @@ void FFmpegCommandsTask::release() {
        ffmpeg_log_file.write(END_TAG, sizeof(char)* strlen(END_TAG));
        ffmpeg_log_file.flush();
        ffmpeg_log_file.close();
+       ffmpeg_log_file.clear(std::ios::goodbit);
    }
    delete info;
    info=NULL;
@@ -69,9 +70,12 @@ void FFmpegCommandsTask::ffmpeg_exec() {
                             AVBPrint part;
                             av_bprint_init(&part, 0, 65536);
                             av_vbprintf(&part, fmt, vl);
-                            __android_log_print(ANDROID_LOG_INFO, "ffmpeg", "%d,%s",level, part.str);
-                            ffmpeg_log_file.write(part.str, part.len);
-                            ffmpeg_log_file.flush();
+                            if(level<=AV_LOG_INFO) {
+                                __android_log_print(ANDROID_LOG_INFO, "ffmpeg", "%d:%s", level,
+                                                    part.str);
+                                ffmpeg_log_file.write(part.str, part.len);
+                                ffmpeg_log_file.flush();
+                            }
                             av_bprint_finalize(&part, NULL);
                             mtx.unlock();
                         }

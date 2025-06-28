@@ -25,6 +25,11 @@ class ConfigViewModel: ViewModel()  {
     val LanguageText= mutableStateOf("")
     val editLanguageFlag=mutableStateOf(false)
     val checkLanguageFlag=mutableStateOf(0)
+
+    val showPathDialog= mutableStateOf(false)
+    private val _downloadPath = mutableStateOf("")
+    val downloadPath: State<String> = _downloadPath
+
     fun initConfig(activity: MainActivity){
         when(ConfigsUtils.sizeForVideoEncodingTask){
             ConfigsUtils.AV_10MB->{sizeForVideoEncodingTaskText.value="10MB"
@@ -82,6 +87,28 @@ class ConfigViewModel: ViewModel()  {
             else->{
                 LanguageText.value=activity.resources.getString(R.string.simplified_chinese)
                 checkLanguageFlag.value=0
+            }
+        }
+        _downloadPath.value=ConfigsUtils.target_dir
+    }
+
+    private val _errorMessage = mutableStateOf<String?>(null)
+    val errorMessage: State<String?> = _errorMessage
+    fun clearErrorMessage() {
+        _errorMessage.value = null
+    }
+    fun updateDownloadPath(newPath: String,activity:Activity) {
+        viewModelScope.launch {
+            try {
+                val file = File(newPath)
+                if (!file.exists() && !file.mkdirs()) {
+                    throw Exception("Failed to create directory.")
+                }
+                _downloadPath.value = newPath
+
+                ConfigsUtils.setTargetDir(newPath,activity)
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "Unknown error"
             }
         }
     }
@@ -156,42 +183,6 @@ class ConfigViewModel: ViewModel()  {
         }
         activity.setCurrLanguageMode()
     }
-
-
-    private val _downloadPath = mutableStateOf("")
-    val downloadPath: State<String> = _downloadPath
-
-    private val _appLanguage = mutableStateOf("en") // Default: English
-    val appLanguage: State<String> = _appLanguage
-
-    init {
-        // Load settings (e.g., from SharedPreferences)
-        // For demonstration, we'll use a hardcoded path.
-        _downloadPath.value = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-    }
-
-    fun updateDownloadPath(newPath: String) {
-        viewModelScope.launch {
-            try {
-                val file = File(newPath)
-                if (!file.exists()) {
-                    if (!file.mkdirs()) {
-                        // Handle directory creation failure.
-                        throw Exception("Failed to create directory.")
-                    }
-                }
-                _downloadPath.value = newPath
-                // Save to SharedPreferences
-            } catch (e: Exception) {
-                // Show error message
-                println("Error updating download path: ${e.message}")
-            }
-        }
-    }
-
-
-    fun setAppLanguage(language: String) {
-        _appLanguage.value = language
-        // Save language setting (e.g., SharedPreferences)
-    }
+    var showClearFFmpegLogFilesDialogFlag = mutableStateOf(false)
+    var showUpdateDialogFlag = mutableStateOf(false)
 }

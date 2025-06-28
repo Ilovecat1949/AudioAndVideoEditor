@@ -11,7 +11,7 @@ void FFmpegServiceTask::setInfo(TaskInfo *info) {
     this->argc=this->info->int_arr[1];
     this->argv=new char *[this->argc+1];
     for(int i=0;i<this->argc;i++){
-        this->argv[i]=this->info->str_arr[i+1];
+        this->argv[i]=this->info->str_arr[i+2];
     }
     this->argv[this->argc]=NULL;
     if(this->info->int_arr [0]==3) {
@@ -21,6 +21,7 @@ void FFmpegServiceTask::setInfo(TaskInfo *info) {
 
 int FFmpegServiceTask::taskInit() {
     m_env->GetJavaVM(&m_jvm_for_thread);
+    ffmpeg_log_file2.open(this->info->str_arr[1], std::ios::app);
     return 0;
 }
 
@@ -42,6 +43,13 @@ void FFmpegServiceTask::cancel() {
 }
 
 void FFmpegServiceTask::release() {
+    if(ffmpeg_log_file2.is_open()){
+        ffmpeg_log_file2.write("\n", sizeof(char));
+        ffmpeg_log_file2.write(END_TAG, sizeof(char)* strlen(END_TAG));
+        ffmpeg_log_file2.flush();
+        ffmpeg_log_file2.close();
+        ffmpeg_log_file2.clear(std::ios::goodbit);
+    }
     delete info;
     info=NULL;
     delete log_str;
@@ -55,6 +63,7 @@ float FFmpegServiceTask::getProgress() {
           if(target_duration>0){
               //LOGI(TAG,"time:%lld,duration %lld",extractTimeInMilliseconds(log_str),target_duration)
               progress_num=extractTimeInMilliseconds(log_str)*1.0/target_duration;
+              //LOGI(TAG,"time:%lld,duration %lld,progress_num:%f",extractTimeInMilliseconds(log_str),target_duration,progress_num);
           }
         }
     }
@@ -78,10 +87,12 @@ void FFmpegServiceTask::ffmpeg_exec() {
                             av_bprint_init(&part, 0, 65536);
                             av_vbprintf(&part, fmt, vl);
                             if(level<=AV_LOG_INFO){
-                                __android_log_print(ANDROID_LOG_INFO, "ffmpeg", "%d,%s",level, part.str);
+                                __android_log_print(ANDROID_LOG_INFO, "ffmpeg", "%d:%s",level, part.str);
                                 delete log_str;
                                 log_str=new char[strlen(part.str)+1];
                                 strcpy(log_str,part.str);
+                                ffmpeg_log_file2.write(part.str, part.len);
+                                ffmpeg_log_file2.flush();
                             }
                             av_bprint_finalize(&part, NULL);
                             mtx2.unlock();
