@@ -2,7 +2,7 @@
 
 ![Image](app/src/main/ic_launcher-playstore.png)  
 
-[![Download](https://img.shields.io/badge/download-App-blue.svg)](https://github.com/Ilovecat1949/AudioAndVideoEditor/raw/refs/heads/master/app/release/app-release.apk)
+[![Download](https://img.shields.io/badge/download-App-blue.svg)](https://github.com/Ilovecat1949/AudioAndVideoEditor/releases)
 
 
 
