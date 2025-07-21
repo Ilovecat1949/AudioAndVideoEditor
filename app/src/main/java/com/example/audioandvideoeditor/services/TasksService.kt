@@ -180,7 +180,7 @@ class TasksService : Service() {
                         if(runningTasksQueue[i].int_arr[0]<2){
                             releaseTask(m_tasksFactory, runningTasksQueue[i].long_arr[0])
                         }
-                        else if(state!=2){
+                        else {
                             iFFmpegService!!.releaseTask(runningTasksQueue[i].long_arr[0])
                         }
                         val date= Date(System.currentTimeMillis())
@@ -342,11 +342,12 @@ class TasksService : Service() {
         while(i<runningTasksQueue.size){
             if(runningTasksQueue[i].long_arr[0]==id && runningTasksQueue[i].int_arr[0]>=2){
 //                runningTasksQueue.removeAt(i)
-                taskStateMap[id]=2
-                unbindService(mConnection)
-                iFFmpegServiceFlag=false
-                iFFmpegService = null
-                sleep(100)
+//                taskStateMap[id]=2
+                iFFmpegService!!.cancelTask(id)
+//                unbindService(mConnection)
+//                iFFmpegServiceFlag=false
+//                iFFmpegService = null
+//                sleep(100)
                 break
             }
             i++

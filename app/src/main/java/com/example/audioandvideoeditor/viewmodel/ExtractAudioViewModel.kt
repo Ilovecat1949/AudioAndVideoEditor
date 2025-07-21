@@ -42,8 +42,8 @@ class ExtractAudioViewModel : ViewModel()  {
     var editFileNameFlag = mutableStateOf(false)
     var target_name=""
 
-    val targetFormatOptions = listOf("AAC","FLAC","WAV","OGG","M4A","AC3","EAC3",)//"AVI"   ,"MPEG" "MP2" ,"AIFF" ,"OPUS" ,"WMA"
-    val targetFormatText= mutableStateOf("AAC")
+    val targetFormatOptions = listOf("M4A","MP3","AAC","FLAC","WAV","OGG","AC3","EAC3",)//"AVI"   ,"MPEG" "MP2" ,"AIFF" ,"OPUS" ,"WMA"
+    val targetFormatText= mutableStateOf(targetFormatOptions[0])
     val changeTargetFormatFlag=mutableStateOf(false)
     val checkTargetFormatFlag=mutableStateOf(0)
 }

@@ -41,12 +41,12 @@ object FilesUtils {
             retriever.release()
         }
     }
-    fun getThumbnail(contentResolver: ContentResolver, uri: Uri): ImageBitmap?{
+    fun getThumbnail(contentResolver: ContentResolver, uri: Uri): Bitmap?{
         try {
             return if(Build.VERSION.SDK_INT >=Build.VERSION_CODES.Q) {
                 contentResolver.loadThumbnail(
                     uri, Size(640, 480), null
-                ).asImageBitmap()//640, 480
+                )//640, 480
             } else{
                 null
             }

@@ -479,6 +479,7 @@ private fun startConversion(
                 "VORBIS"->{audio_cmd_str=audio_cmd_str+"-acodec vorbis "}
                 "OPUS"->{audio_cmd_str=audio_cmd_str+"-acodec opus -strict -2 "}
                 "AC3"->{audio_cmd_str=audio_cmd_str+"-acodec ac3 "}
+                "MP3"->{audio_cmd_str=audio_cmd_str+"-acodec mp3 "}
             }
         }
         if(viewModel.checkAudioBitRateFlag.value>0){
@@ -503,6 +504,7 @@ private fun startConversion(
         if(viewModel.checkVideoFormatFlag.value>0){
             when(viewModel.videoFormatOptions[viewModel.checkVideoFormatFlag.value]){
                 "H.264(AVC)"->{video_cmd_str=video_cmd_str+"-vcodec libx264 -preset ultrafast -q:v 5 "}
+                "H.265(HEVC)"->{video_cmd_str=video_cmd_str+"-vcodec libx265 -preset ultrafast -q:v 5 "}
                 "MPEG-1"->{video_cmd_str=video_cmd_str+"-vcodec mpeg1video  -q:v 5 "}
                 "MPEG-2"->{video_cmd_str=video_cmd_str+"-vcodec mpeg2video  -q:v 5 "}
                 "MPEG-4 Part 2"->{video_cmd_str=video_cmd_str+"-vcodec mpeg4  -q:v 5 "}

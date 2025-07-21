@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
+import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.MediaInfo
 import com.example.audioandvideoeditor.services.TasksBinder
 
@@ -18,13 +19,13 @@ class VideoFormatConversionViewModel:ViewModel(){
         val changeTargetFormatFlag=mutableStateOf(false)
         val checkTargetFormatFlag=mutableStateOf(0)
 
-        val audioFormatOptions = listOf("","AAC","FLAC","VORBIS","OPUS","AC-3")
+        val audioFormatOptions = listOf("","AAC","MP3","FLAC","VORBIS","OPUS","AC-3",)
         var source_audio_format=""
         val audioFormatText= mutableStateOf("")
         val changeAudioFormatFlag=mutableStateOf(false)
         val checkAudioFormatFlag=mutableStateOf(0)
 
-        val videoFormatOptions = listOf("","H.264(AVC)","MPEG-1","MPEG-2","MPEG-4 Part 2")
+        val videoFormatOptions = listOf("","H.264(AVC)","H.265(HEVC)","MPEG-1","MPEG-2","MPEG-4 Part 2")
         var source_video_format=""
         val videoFormatText= mutableStateOf("")
         val changeVideoFormatFlag=mutableStateOf(false)
@@ -103,28 +104,28 @@ class VideoFormatConversionViewModel:ViewModel(){
             val text = tasksBinder.getAVInfo(currentVideoUri!!.path!!)
             info.initInfo(text)
             source_audio_format=info.audio_codec_type
-            audioFormatText.value="${source_audio_format}(原编码格式)"
+            audioFormatText.value="${source_audio_format}(${context.getString(R.string.original)})"
             source_video_format=info.video_codec_type
-            videoFormatText.value="${source_video_format}(原编码格式})"
+            videoFormatText.value="${source_video_format}(${context.getString(R.string.original)})"
             source_height=info.height
             source_width=info.width
             video_height=info.height
             video_width=info.width
-            videoResolutionText.value="${info.width}×${info.height}(原分辨率)"
+            videoResolutionText.value="${info.width}×${info.height}(${context.getString(R.string.original)})"
 
             source_video_bit_rate=info.video_bit_rate
             video_bit_rate=info.video_bit_rate
-            videoBitRateText.value="${source_video_bit_rate/1000}(原码率)"
+            videoBitRateText.value="${source_video_bit_rate/1000}(${context.getString(R.string.original)})"
 
             source_audio_bit_rate=info.audio_bit_rate
             audio_bit_rate=info.audio_bit_rate
-            audioBitRateText.value="${source_audio_bit_rate/1000}(原码率)"
+            audioBitRateText.value="${source_audio_bit_rate/1000}(${context.getString(R.string.original)})"
             source_frame_rate= info.frame_rate.toInt()
             frame_rate=source_frame_rate
-            frameRateText.value="${source_frame_rate}(原帧率)"
+            frameRateText.value="${source_frame_rate}(${context.getString(R.string.original)})"
 
             source_sample_rate=info.sample_rate
-            sampleRateText.value="${source_sample_rate}(原采样率)"
+            sampleRateText.value="${source_sample_rate}(${context.getString(R.string.original)})"
 
         }
         if (exoPlayer == null && currentVideoUri != null) {

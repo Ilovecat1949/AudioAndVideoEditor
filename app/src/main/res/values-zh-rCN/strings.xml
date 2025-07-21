@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">音视频编辑器</string>
+    <string name="app_version">1.0.1</string>
     <string name="size_for_video_encoding_task_text">每个任务编码视频的缓存空间</string>
     <string name="size_for_audio_encoding_task_text">每个任务编码音频的缓存空间</string>
     <string name="size_for_max_tasks_num_text">最大的并发任务数量</string>
@@ -83,6 +84,7 @@
     <string name="date">日期</string>
     <string name="extension">扩展名</string>
     <string name="original_format">原格式</string>
+    <string name="original">原</string>
     <string name="width">宽</string>
     <string name="height">高</string>
     <string name="original_resolution">原分辨率</string>
@@ -161,5 +163,5 @@
     <string name="check_for_updates">检查更新</string>
     <string name="updates_tip">请点击下列网址检查更新</string>
     <string name="lanzout_link">https://wwbv.lanzout.com/b00wm6q5oh</string>
-    <string name="app_version">1.0.0</string>
+    <string name="video_compress">视频压缩</string>
 </resources>

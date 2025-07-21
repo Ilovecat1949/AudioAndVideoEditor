@@ -72,6 +72,20 @@ set_target_properties( h264
         PROPERTIES IMPORTED_LOCATION
         ${ffmpeg_lib_dir}/libx264.so )
 
+add_library( mp3lame
+        SHARED
+        IMPORTED)
+set_target_properties( mp3lame
+        PROPERTIES IMPORTED_LOCATION
+        ${ffmpeg_lib_dir}/libmp3lame.so )
+
+add_library( h265
+        SHARED
+        IMPORTED)
+set_target_properties( h265
+        PROPERTIES IMPORTED_LOCATION
+        ${ffmpeg_lib_dir}/libx265.so )
+
 include_directories(${ffmpeg_head_dir}/include)
 
 # 查找代码中使用到的系统库
@@ -131,6 +145,8 @@ target_link_libraries(
         avformat
         avdevice
         h264
+        h265
+        mp3lame
         ffmpeg
 
         -landroid

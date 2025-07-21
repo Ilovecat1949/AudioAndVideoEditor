@@ -9,7 +9,9 @@
 #include "task.h"
 #include <thread>
 extern "C" int main(int argc, char **argv);
+extern "C" void set_ffmpeg_cancel_flag(int flag);
 extern "C" void set_exit_program_fun(void (*cb)(int ret));
+extern "C" double get_ffmpeg_progress_time();
 static jmp_buf buf;
 static std::fstream ffmpeg_log_file;
 static std::mutex mtx;
@@ -37,6 +39,7 @@ private:
     int argc;
     char **argv;
     int job_flag=0;
+    int cancel_flag=0;
     void ffmpeg_exec();
 };
 

@@ -10,9 +10,12 @@
 #include <thread>
 #include <string>
 #include <sstream>
-#include<fstream>
+#include <fstream>
+#include <cstring>
 extern "C" int main(int argc, char **argv);
+extern "C" void set_ffmpeg_cancel_flag(int flag);
 extern "C" void set_exit_program_fun(void (*cb)(int ret));
+extern "C" double get_ffmpeg_progress_time();
 static jmp_buf buf2;
 static std::mutex mtx2;
 static int m_ret2=0;
@@ -116,6 +119,44 @@ private:
             default :
                 return "UNKNOWN";
         }
+    }
+    int cancel_flag=0;
+    bool startsWith(const char* mainString, const char* prefix) {
+        size_t mainLen = strlen(mainString);
+        size_t prefixLen = strlen(prefix);
+
+        if (prefixLen > mainLen) {
+            return false; // Prefix is longer than the main string
+        }
+
+        return strncmp(mainString, prefix, prefixLen) == 0;
+    }
+    bool endsWith(const char* mainString, const char* suffix) {
+        size_t mainLen = strlen(mainString);
+        size_t suffixLen = strlen(suffix);
+
+        if (suffixLen > mainLen) {
+            return false; // Suffix is longer than the main string
+        }
+
+        // Calculate the starting position in mainString to compare
+        // We cast to char* because mainString is const char* and we're doing pointer arithmetic
+        const char* compareStart = mainString + (mainLen - suffixLen);
+
+        return strcmp(compareStart, suffix) == 0;
+    }
+    const char* error_messages[4]={
+            "Option ",
+            " not found.\n",
+            "Too many packets buffered for output stream ",
+            "aborting.\n"
+    };
+    bool isErrorLog(const char* str){
+        return
+                (startsWith(str,error_messages[0]) && endsWith(str,error_messages[1]))
+              ||startsWith(str,error_messages[2])
+              ||strcmp(str,error_messages[3])
+        ;
     }
 };
 

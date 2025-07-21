@@ -2,6 +2,7 @@ package com.example.audioandvideoeditor.components
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.view.Gravity
@@ -674,7 +675,11 @@ private fun ShowVideoFileInfo(
                             thumbnailBitmap=bitmap
                         }
                         else{
-                            thumbnailBitmap =FilesUtils.getVideoCover(info.path)
+                            thumbnailBitmap = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                                FilesUtils.getThumbnail(context.contentResolver,info.uri)
+                            }else{
+                                FilesUtils.getVideoCover(info.path)
+                            }
                             if(thumbnailBitmap!=null){
                                 if(filesViewModel.thumbnailBitmapArray.size>filesViewModel.thumbnailsMaxNum){
                                     val pair=filesViewModel.thumbnailBitmapArray.first()

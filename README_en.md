@@ -27,7 +27,7 @@ Notification permission is mainly used to inform users of the progress of task e
 |Function Name | Function Details|
 |-----------|--------------------------------------------------------------------------------|  
 |Ffmpeg command line | Execute ffmpeg command line on mobile phone|
-|Video format conversion function | Used to reset video packaging type, video encoding type, audio encoding type, video resolution, video bitrate, video frame rate, audio bitrate, and audio sampling rate.                          |
+|Video format conversion function | Used to reset video packaging type, video encoding type, audio encoding type, video resolution, video bitrate, video frame rate, audio bitrate, and audio sampling rate. Supports MP3 and H.265                         |
 |Video duration clipping | Used to clip user specified video clips, with two modes: fast clipping and precise clipping. The execution speed of quick cutting is fast, and the timing of the cut may not be so accurate. The execution speed of precise cutting is slower, and the captured time points will be more accurate.  |
 |Video cropping | Used to crop user specified video frames.                                                                  |
 |Adjust Video Scale | Used to reset the video scale and background color.                                                              |

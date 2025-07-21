@@ -20,17 +20,23 @@ void FFmpegCommandsTask::setInfo(TaskInfo *info) {
 int FFmpegCommandsTask::taskInit() {
     m_env->GetJavaVM(&m_jvm_for_thread);
     ffmpeg_log_file.open(this->info->str_arr[0], std::ios::app);
+    cancel_flag=0;
+    set_ffmpeg_cancel_flag(cancel_flag);
     return 0;
 }
 
 void FFmpegCommandsTask::cancel() {
-
+    cancel_flag=1;
+    set_ffmpeg_cancel_flag(cancel_flag);
 }
 
 void FFmpegCommandsTask::release() {
    if(ffmpeg_log_file.is_open()){
        ffmpeg_log_file.write("\n", sizeof(char));
-       ffmpeg_log_file.write(END_TAG, sizeof(char)* strlen(END_TAG));
+//       ffmpeg_log_file.write(END_TAG, sizeof(char)* strlen(END_TAG));
+       char end_info[100] = {0};
+       sprintf(end_info, "FFmpegCommandsTask EXIT  %d",m_ret);
+       ffmpeg_log_file.write(end_info, sizeof(char)* strlen(end_info));
        ffmpeg_log_file.flush();
        ffmpeg_log_file.close();
        ffmpeg_log_file.clear(std::ios::goodbit);
@@ -40,11 +46,19 @@ void FFmpegCommandsTask::release() {
 }
 
 float FFmpegCommandsTask::getProgress() {
-    return 0;
+    return get_ffmpeg_progress_time();
 }
 
 int FFmpegCommandsTask::getState() {
-    return job_flag;
+    if(job_flag!=0 && cancel_flag!=0){
+        return 2;
+    }
+    else if(job_flag!=0 && m_ret==1){
+        return -1;
+    }
+    else{
+        return job_flag;
+    }
 }
 
 FFmpegCommandsTask::~FFmpegCommandsTask() {
@@ -66,7 +80,7 @@ void FFmpegCommandsTask::start() {
 void FFmpegCommandsTask::ffmpeg_exec() {
     av_log_set_callback([](void *avcl, int level, const char *fmt, va_list vl)
                         {
-                            mtx.lock();
+//                            mtx.lock();
                             AVBPrint part;
                             av_bprint_init(&part, 0, 65536);
                             av_vbprintf(&part, fmt, vl);
@@ -77,7 +91,7 @@ void FFmpegCommandsTask::ffmpeg_exec() {
                                 ffmpeg_log_file.flush();
                             }
                             av_bprint_finalize(&part, NULL);
-                            mtx.unlock();
+//                            mtx.unlock();
                         }
     );
     set_exit_program_fun([](int ret){

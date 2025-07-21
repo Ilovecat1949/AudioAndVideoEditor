@@ -73,6 +73,9 @@ char *AudioAndVideoInfo::getStrInfo() {
         } else if (codec_id == AV_CODEC_ID_AC3) {
             sprintf(info, "%saudio_codec_type:%s\n", info,"AC3");
         }
+        else if (codec_id == AV_CODEC_ID_MP3ADU ||codec_id == AV_CODEC_ID_MP3ON4 ) {
+            sprintf(info, "%saudio_codec_type:%s\n", info,"MP3");
+        }
         //sprintf(info, "%sDuration:%f\n", info,m_format_ctx->streams[audio_stream_index]->duration*av_q2d(m_format_ctx->streams[audio_stream_index]->time_base));
         //LOGE(TAG," format: %d,  layout: %lld",m_format_ctx->streams[audio_stream_index]->codecpar->format,m_format_ctx->streams[audio_stream_index]->codecpar->channel_layout)
         //LOGE(TAG," time_base  %d",m_format_ctx->streams[audio_stream_index]->time_base.den)

@@ -9,6 +9,7 @@ import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.services.TasksBinder
+import com.example.audioandvideoeditor.utils.TextsUtils
 import java.io.BufferedReader
 import java.io.File
 import kotlin.concurrent.thread
@@ -50,14 +51,18 @@ class TasksCenterViewModel: ViewModel() {
             while(i<runningTasksList.size){
                 if(tasksState.containsKey(runningTasksList[i].long_arr[0])){
                     val progress=tasksBinder.getTaskProgress(runningTasksList[i].long_arr[0])
-                    if(progress>0 && progress<1){
-                        tasksState[runningTasksList[i].long_arr[0]]!!.value=String.format("%.2f",progress*100)+"%"
+                    if(runningTasksList[i].int_arr[0]!=2) {
+                        if (progress > 0 && progress < 1) {
+                            tasksState[runningTasksList[i].long_arr[0]]!!.value =
+                                String.format("%.2f", progress * 100) + "%"
+                        } else if (progress < 0) {
+                            tasksState[runningTasksList[i].long_arr[0]]!!.value = "0%"
+                        } else if (progress > 1) {
+                            tasksState[runningTasksList[i].long_arr[0]]!!.value = "99.99%"
+                        }
                     }
-                    else if(progress<0){
-                        tasksState[runningTasksList[i].long_arr[0]]!!.value="0%"
-                    }
-                    else if(progress>1){
-                        tasksState[runningTasksList[i].long_arr[0]]!!.value="99.99%"
+                    else{
+                        tasksState[runningTasksList[i].long_arr[0]]!!.value= TextsUtils.millisecondsToString(progress.toLong())
                     }
                 }
                 i++

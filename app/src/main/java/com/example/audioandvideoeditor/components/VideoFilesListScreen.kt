@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -242,7 +243,7 @@ private fun ShowVideoFileInfo(
         Spacer(modifier = Modifier.height(5.dp))
         if(bitmap!=null) {
             Image(
-                bitmap = bitmap,
+                bitmap = bitmap.asImageBitmap(),
                 modifier = Modifier
                     .width(128.dp)
                     .height(128.dp)

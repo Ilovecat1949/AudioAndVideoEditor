@@ -22,6 +22,9 @@ void FFmpegServiceTask::setInfo(TaskInfo *info) {
 int FFmpegServiceTask::taskInit() {
     m_env->GetJavaVM(&m_jvm_for_thread);
     ffmpeg_log_file2.open(this->info->str_arr[1], std::ios::app);
+    cancel_flag=0;
+    set_ffmpeg_cancel_flag(cancel_flag);
+    progress_num=0;
     return 0;
 }
 
@@ -39,13 +42,17 @@ void FFmpegServiceTask::start() {
 }
 
 void FFmpegServiceTask::cancel() {
-
+    cancel_flag=1;
+    set_ffmpeg_cancel_flag(cancel_flag);
 }
 
 void FFmpegServiceTask::release() {
     if(ffmpeg_log_file2.is_open()){
         ffmpeg_log_file2.write("\n", sizeof(char));
-        ffmpeg_log_file2.write(END_TAG, sizeof(char)* strlen(END_TAG));
+//        ffmpeg_log_file2.write(END_TAG, sizeof(char)* strlen(END_TAG));
+        char end_info[100] = {0};
+        sprintf(end_info, "FFmpegServiceTask EXIT  %d",m_ret2);
+        ffmpeg_log_file2.write(end_info, sizeof(char)* strlen(end_info));
         ffmpeg_log_file2.flush();
         ffmpeg_log_file2.close();
         ffmpeg_log_file2.clear(std::ios::goodbit);
@@ -57,22 +64,40 @@ void FFmpegServiceTask::release() {
 }
 
 float FFmpegServiceTask::getProgress() {
-    mtx2.lock();
-    if(log_str!=NULL){
-        if(this->containsTime(log_str)){
-          if(target_duration>0){
-              //LOGI(TAG,"time:%lld,duration %lld",extractTimeInMilliseconds(log_str),target_duration)
-              progress_num=extractTimeInMilliseconds(log_str)*1.0/target_duration;
-              //LOGI(TAG,"time:%lld,duration %lld,progress_num:%f",extractTimeInMilliseconds(log_str),target_duration,progress_num);
-          }
+//    mtx2.lock();
+//    if(log_str!=NULL){
+//        if(this->containsTime(log_str)){
+//          if(target_duration>0){
+//              //LOGI(TAG,"time:%lld,duration %lld",extractTimeInMilliseconds(log_str),target_duration)
+//              progress_num=extractTimeInMilliseconds(log_str)*1.0/target_duration;
+//              //LOGI(TAG,"time:%lld,duration %lld,progress_num:%f",extractTimeInMilliseconds(log_str),target_duration,progress_num);
+//          }
+//        }
+//    }
+    if(target_duration>0){
+        double p = get_ffmpeg_progress_time() / target_duration;
+        if (p > progress_num && p<1.5) {
+            progress_num = p;
         }
+//        if(p>1){
+//            LOGI(TAG, "FFmpegServiceTask time  %f,%lld",get_ffmpeg_progress_time(),target_duration);
+//        }
     }
-    mtx2.unlock();
+//    LOGI(TAG, "FFmpegServiceTask time  %f",get_ffmpeg_progress_time());
+//    mtx2.unlock();
     return progress_num;
 }
 
 int FFmpegServiceTask::getState() {
-    return job_flag;
+    if(job_flag!=0 && cancel_flag!=0){
+        return 2;
+    }
+    else if(job_flag!=0 && m_ret2==1){
+        return -1;
+    }
+    else{
+        return job_flag;
+    }
 }
 
 FFmpegServiceTask::~FFmpegServiceTask() {
@@ -82,7 +107,7 @@ FFmpegServiceTask::~FFmpegServiceTask() {
 void FFmpegServiceTask::ffmpeg_exec() {
     av_log_set_callback([](void *avcl, int level, const char *fmt, va_list vl)
                         {
-                            mtx2.lock();
+//                            mtx2.lock();
                             AVBPrint part;
                             av_bprint_init(&part, 0, 65536);
                             av_vbprintf(&part, fmt, vl);
@@ -95,7 +120,7 @@ void FFmpegServiceTask::ffmpeg_exec() {
                                 ffmpeg_log_file2.flush();
                             }
                             av_bprint_finalize(&part, NULL);
-                            mtx2.unlock();
+//                            mtx2.unlock();
                         }
     );
     set_exit_program_fun([](int ret){

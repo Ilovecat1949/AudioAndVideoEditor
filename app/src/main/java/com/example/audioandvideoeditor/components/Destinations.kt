@@ -30,6 +30,7 @@ val HomeNavigationRow= listOf(
     APPTest,
     Permissions,
     ContactDeveloper,
+    VideoCompress,
 )
 object FunctionsCenter:Destination{
     override val route: String
@@ -156,4 +157,9 @@ object Permissions:Destination{
 object ContactDeveloper:Destination{
     override val route: String
         get() = "contact_developer"
+}
+
+object VideoCompress:Destination{
+    override val route: String
+        get() = "video_compress"
 }

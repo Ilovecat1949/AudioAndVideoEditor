@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.viewmodel.TasksCenterViewModel
@@ -389,7 +390,12 @@ private fun RunningTasksList(
                     Spacer(modifier = Modifier.height(40.dp))
                     Text(
                         modifier = Modifier.width(
-                            (LocalConfiguration.current.screenWidthDp-250).dp
+                            if(task_type!=2) {
+                                (LocalConfiguration.current.screenWidthDp - 250).dp
+                            }
+                            else{
+                                (LocalConfiguration.current.screenWidthDp - 300).dp
+                            }
                         ),
                         text =name,
 //                    fontWeight = FontWeight.Bold,
@@ -414,12 +420,19 @@ private fun RunningTasksList(
                         }) {
                             Text(text = LocalContext.current.resources.getString(R.string.cancel))
                         }
-                        if(task_type!=2) {
+//                        if(task_type!=2) {
 //                            showRunningTaskState(tasksCenterViewModel, id)
                             Text(text=tasksCenterViewModel.tasksState[id]!!.value,
-                                modifier = Modifier.width(80.dp)
+                                modifier = Modifier.width(
+                                    if(task_type!=2){
+                                        80.dp
+                                    }
+                                    else{
+                                     140.dp
+                                    }
+                                )
                             )
-                        }
+//                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
@@ -511,7 +524,7 @@ private fun WatingTasksList(
         ){
             val path=tasksCenterViewModel.watingTasksList[it].str_arr[0]
             val name=FilesUtils.getNameFromPath(path)
-            showTaskInfo(text = name)
+            showTaskInfo(tasksCenterViewModel.watingTasksList[it],tasksCenterViewModel)
 //            Row(
 //                verticalAlignment = Alignment.CenterVertically,
 //                modifier = Modifier
@@ -557,7 +570,7 @@ private fun CancelledTasksList(
         ){
             val path=tasksCenterViewModel.cancelledTasksList[it].str_arr[0]
             val name=FilesUtils.getNameFromPath(path)
-            showTaskInfo(text = name)
+            showTaskInfo(tasksCenterViewModel.cancelledTasksList[it],tasksCenterViewModel)
 //            Row(
 //                verticalAlignment = Alignment.CenterVertically,
 //                modifier = Modifier
@@ -599,9 +612,9 @@ private fun FailedTasksList(
                 tasksCenterViewModel.failedTasksList[it].long_arr[0]
             }
         ) {
-            val path=tasksCenterViewModel.endedTasksList[it].str_arr[0]
+            val path=tasksCenterViewModel.failedTasksList[it].str_arr[0]
             val name=FilesUtils.getNameFromPath(path)
-            showTaskInfo(text = name)
+            showTaskInfo(tasksCenterViewModel.failedTasksList[it],tasksCenterViewModel)
 //            Row(
 //                verticalAlignment = Alignment.CenterVertically,
 //                modifier = Modifier
@@ -836,19 +849,46 @@ private fun readLog(
 }
 
 @Composable
-private fun showTaskInfo(text:String){
+private fun showTaskInfo(info:TaskInfo,tasksCenterViewModel: TasksCenterViewModel){
+    val task_type=info.int_arr[0]
+    val path=info.str_arr[0]
+    val log_path=if(task_type!=2) info.str_arr[1] else ""
+    val name=FilesUtils.getNameFromPath(path)
     Column (
         modifier = Modifier
             .fillMaxWidth()
     ){
         Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text =text,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text(
+                text =name,
 //          fontWeight = FontWeight.Bold,
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 5,
-            softWrap = true
-        )
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 5,
+                softWrap = true,
+                modifier = Modifier.width(
+                    (LocalConfiguration.current.screenWidthDp*3/5).dp
+                ),
+            )
+            Row(
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ){
+                val file=if(task_type!=2) File(log_path) else File(path)
+                TextButton(onClick = {
+                    tasksCenterViewModel.readContext(file,FileRead.route,false)
+                }) {
+                    Text(text=LocalContext.current.getString(R.string.log))
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+            }
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
         Divider(color = Color.LightGray, thickness = 1.dp)
     }

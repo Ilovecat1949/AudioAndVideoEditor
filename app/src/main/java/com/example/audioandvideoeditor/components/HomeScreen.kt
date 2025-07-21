@@ -463,6 +463,18 @@ fun HomeScreen(
             ){
                 PermissionsScreen()
             }
+            composable(
+                route=VideoCompress.route
+            ){
+                VideoCompressScreen(
+                    activity
+                    ,homeViewModel.file!!
+                    ,{
+                        homeNavController.navigateSingleTopTo(TasksCenter.route)
+                        homeViewModel.show_interstistial_ad=true
+                    }
+                )
+            }
         }
         homeViewModel.show_crash_message_flag=ConfigsUtils.show_crash_message_flag
         if(homeViewModel.show_crash_message_flag){

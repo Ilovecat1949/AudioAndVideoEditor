@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AudioAndVideoEditor</string>
+    <string name="app_version">1.0.1</string>
     <string name="size_for_video_encoding_task_text">Cache space for encoding videos for each task</string>
     <string name="size_for_audio_encoding_task_text">Cache space for encoding audio for each task</string>
     <string name="size_for_max_tasks_num_text">Maximum number of concurrent tasks</string>
@@ -83,6 +84,7 @@
     <string name="date">date</string>
     <string name="extension">extension</string>
     <string name="original_format">Original format</string>
+    <string name="original">original</string>
     <string name="width">width</string>
     <string name="height">height</string>
     <string name="original_resolution">Original resolution</string>
@@ -166,5 +168,5 @@
     <string name="check_for_updates">Check for updates</string>
     <string name="updates_tip">Please click on the following website to check for updates</string>
     <string name="lanzout_link">https://wwbv.lanzout.com/b00wm6q5oh</string>
-    <string name="app_version">1.0.0</string>
+    <string name="video_compress">Video compress</string>
 </resources>
