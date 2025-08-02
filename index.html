@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Jekyll SEO 插件将自动生成这些 meta 标签，但为了本地预览，我们手动添加 -->
+    <!-- 建议在 _config.yml 中配置 title, description, url 以获得最佳 SEO 效果 -->
+    <title>音视频编辑器 - 基于 FFmpeg 的强大 Android 工具</title>
+    <meta name="description" content="一款基于 FFmpeg 的强大 Android 音视频编辑器，提供视频剪裁、格式转换、命令行等丰富功能。">
+    <link rel="icon" href="assets/images/ic_launcher-playstore.png">
+    <!-- 使用 Tailwind CSS CDN 来快速构建精美界面 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* 自定义 CSS 确保一些图标能正常显示 */
+        .icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-xl font-bold text-indigo-600">音视频编辑器</a>
+            <div class="flex space-x-6 font-medium text-gray-600">
+                <a href="#features" class="hover:text-indigo-600 transition-colors">功能</a>
+                <a href="#about" class="hover:text-indigo-600 transition-colors">关于</a>
+                <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor/releases" class="px-4 py-1.5 text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors">下载应用</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 英雄区域 - 突出应用的价值和下载按钮 -->
+        <section class="relative bg-white pt-24 pb-32 text-center overflow-hidden">
+            <div class="container mx-auto px-4">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-4">
+                    强大的FFmpeg，尽在你的指尖
+                </h1>
+                <p class="text-lg sm:text-xl lg:text-2xl text-gray-500 mb-8 max-w-3xl mx-auto">
+                    一款基于 FFmpeg 的 Android 音视频编辑器，将复杂功能化繁为简，助你轻松处理各类音视频任务。
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor/releases"
+                       class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 transform hover:scale-105 transition-all duration-300 ease-in-out">
+                       <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                       立即下载
+                    </a>
+                    <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor"
+                       class="inline-flex items-center px-8 py-4 bg-gray-200 text-gray-700 text-lg font-medium rounded-full shadow hover:bg-gray-300 transition-colors">
+                        了解更多
+                    </a>
+                </div>
+                <div class="mt-16 relative">
+                    <!-- 应用图标，使用占位符，建议替换为你的实际图标 -->
+                    <img src="assets/images/ic_launcher-playstore.png" alt="音视频编辑器应用图标" class="w-36 h-36 rounded-2xl shadow-xl mx-auto">
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能介绍区域 -->
+        <section id="features" class="py-20 bg-gray-100">
+            <div class="container mx-auto px-4 text-center">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">核心功能一览</h2>
+                <p class="text-lg text-gray-500 max-w-2xl mx-auto mb-12">
+                    我们致力于将 FFmpeg 的强大功能带到你的手机，提供丰富且易于使用的音视频处理能力。
+                </p>
+
+                <!-- 功能卡片网格布局 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+                    <!-- 卡片 1 -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">FFmpeg 命令行</h3>
+                        <p class="text-gray-500">
+                            在手机上直接执行 FFmpeg 命令行，解锁强大的音视频处理能力，自由掌控一切。
+                        </p>
+                    </div>
+
+                    <!-- 卡片 2 -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 5-4z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">视频格式转换</h3>
+                        <p class="text-gray-500">
+                            支持 MP3 和 H.265，可调整视频封装、编码、分辨率、帧率及码率，轻松适配不同平台。
+                        </p>
+                    </div>
+                    
+                    <!-- 卡片 3 -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">视频时长剪裁</h3>
+                        <p class="text-gray-500">
+                            提供快速剪裁和精准剪裁两种模式，快速高效或精确到帧，满足你的所有需求。
+                        </p>
+                    </div>
+
+                    <!-- 卡片 4 -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">视频画面剪裁</h3>
+                        <p class="text-gray-500">
+                            可根据用户指定的画面区域，精准裁剪视频画面，突出重点。
+                        </p>
+                    </div>
+
+                    <!-- 卡片 5 -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">视频变速与消音</h3>
+                        <p class="text-gray-500">
+                            自由调整视频播放速度，或轻松消除视频中的音频部分，打造全新体验。
+                        </p>
+                    </div>
+
+                    <!-- 卡片 6 -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">提取音频</h3>
+                        <p class="text-gray-500">
+                            一键从视频中提取音频，并保存为独立文件，操作简单快捷。
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 关于项目区域 -->
+        <section id="about" class="py-20">
+            <div class="container mx-auto px-4 max-w-4xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-4">关于这个项目</h2>
+                        <p class="text-gray-500 mb-6">
+                            本项目最初是为了探索和跑通 <strong class="text-indigo-600">FFmpeg</strong> 在 Android 上的完整开发流程而创建的。它证明了在 Android 设备上实现强大音视频处理的可能性。
+                        </p>
+                        <p class="text-gray-500 mb-6">
+                            目前应用已支持 Android 10 至 Android 14 系统，并使用 Kotlin 和 C++ 语言开发，FFmpeg 版本为 4.2.9。项目仍在不断完善中，欢迎有兴趣的开发者参与贡献或提出宝贵建议。
+                        </p>
+                        <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor"
+                           class="inline-block px-6 py-3 bg-indigo-600 text-white font-medium rounded-full hover:bg-indigo-700 transition-colors">
+                            访问 GitHub 仓库
+                        </a>
+                    </div>
+                    <div class="hidden md:block">
+                        <!-- 项目示意图或代码截图占位符 -->
+                        <img src='assets/images/架构示意图.jpg' alt="项目示意图" class="rounded-lg shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 下载号召区域 -->
+        <section class="py-20 bg-indigo-600 text-white text-center">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">准备好体验强大的音视频编辑了吗？</h2>
+                <p class="text-lg mb-8 max-w-2xl mx-auto">
+                    下载应用，开启你的移动端音视频处理之旅。
+                </p>
+                <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor/releases"
+                   class="inline-flex items-center px-8 py-4 bg-white text-indigo-600 text-lg font-bold rounded-full shadow-lg hover:bg-gray-100 transition-colors">
+                   <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                   前往下载页面
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 音视频编辑器. 保留所有权利。</p>
+            <div class="mt-4 flex justify-center space-x-6">
+                <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor" class="hover:text-indigo-400 transition-colors">GitHub 仓库</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
