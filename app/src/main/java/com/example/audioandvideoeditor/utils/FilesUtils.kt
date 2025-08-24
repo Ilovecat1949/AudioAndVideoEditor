@@ -12,14 +12,14 @@ import android.media.MediaMetadataRetriever
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
+import android.util.LruCache
 import android.util.Size
 import android.webkit.MimeTypeMap
-import androidx.annotation.RequiresApi
+import android.webkit.WebView
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import java.io.File
-import java.io.FileNotFoundException
 
 object FilesUtils {
     fun getThumbnail(context:Context,contentResolver: ContentResolver, uri: Uri):Bitmap?{
@@ -173,7 +173,6 @@ object FilesUtils {
             e.printStackTrace()
         }
     }
-
     // 打开网页链接
     fun openWebLink(context: Context, url: String) {
         val webpage: Uri? = try {
@@ -199,4 +198,19 @@ object FilesUtils {
             }
         }
     }
+    private const val cacheSize = 10 * 1024 * 1024L
+    private val memoryCache: LruCache<String, Bitmap> = object : LruCache<String, Bitmap>(cacheSize.toInt()) {
+        override fun sizeOf(key: String, value: Bitmap): Int {
+            return value.byteCount
+        }
+    }
+
+    fun getCacheImage(key: String): Bitmap? = memoryCache.get(key)
+    fun putCacheImage(key: String, bitmap: Bitmap) = memoryCache.put(key, bitmap)
+
+}
+sealed class ImageState {
+    object Loading : ImageState()
+    data class Success(val bitmap: Bitmap) : ImageState()
+    object Error : ImageState()
 }

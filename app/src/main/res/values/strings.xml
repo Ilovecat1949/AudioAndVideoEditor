@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">音视频编辑器</string>
-    <string name="app_version">1.0.1</string>
+<!--    <string name="app_version">1.0.1</string>-->
     <string name="size_for_video_encoding_task_text">每个任务编码视频的缓存空间</string>
     <string name="size_for_audio_encoding_task_text">每个任务编码音频的缓存空间</string>
     <string name="size_for_max_tasks_num_text">最大的并发任务数量</string>
@@ -51,6 +51,7 @@
     <string name="path">文件路径</string>
     <string name="request_file_permissions">编辑音视频需要获取文件读写权限</string>
     <string name="request_notification_permissions">任务进度通知需要获取通知权限</string>
+    <string name="request_battery_permissions">取消省电限制以便后台运行任务</string>
     <string name="ffmpeg_command_line">ffmpeg命令行</string>
     <string name="edit_command_line">编辑命令行</string>
     <string name="log">日志</string>
@@ -98,8 +99,43 @@
     <string name="custom_ratio">自定义比例</string>
     <string name="select_background_color">选择背景颜色</string>
     <string name="privacy_policy">隐私政策</string>
-    <string name="privacy_policy_context">本产品不会主动收集用户的信息，谢谢。
-    \n为了更好地改进本应用，我们期待您在百忙之中能抽空跟我们反馈在使用过程中产生的建议和发现的问题。
+    <string name="privacy_policy_context">
+音视频编辑器（以下简称“本应用”）由我们开发并提供服务。我们深知个人信息对你的重要性，并致力于保护你的隐私。在使用本应用前，请你务必仔细阅读并理解本隐私政策。一旦你开始使用本应用，即表示你已同意本隐私政策的全部内容。\n
+
+1. 我们如何收集和使用你的信息\n
+本应用通过集成第三方广告服务，会在你使用应用时展示广告。为了优化广告展示效果和统计广告数据，我们可能会收集以下信息：\n
+
+设备信息：包括设备型号、操作系统版本、应用版本。这些信息用于确保广告能够正确地在你的设备上显示。\n
+
+广告互动数据：包括你对广告的阅读次数和点击次数。这些数据是匿名的，仅用于统计广告的展示效果和收入结算，不会与你的个人身份信息关联。\n
+
+重要提示：我们不会收集你的姓名、电话号码、电子邮件地址等个人身份信息。\n
+
+2. 我们如何使用Cookie和同类技术\n
+本应用的广告服务提供商可能会使用Cookie或其他同类技术来收集上述设备信息和广告互动数据，以提供更相关的广告内容。这些技术由广告服务提供商独立运营。\n
+
+3. 我们如何共享、公开披露你的信息\n
+我们承诺，在未经你明确同意的情况下，我们不会向任何第三方公司、组织和个人共享、转让或公开披露你的个人信息，但以下情况除外：\n
+
+在法律法规允许的范围内：为了遵守适用的法律法规、法律程序或政府强制要求。\n
+
+出于保护本应用和用户安全的需要：例如，为了调查、预防或处理欺诈、安全或技术问题。\n
+
+我们仅会与上述广告服务提供商共享匿名的广告互动数据，以实现广告展示和收入结算。\n
+
+4. 你的权利\n
+作为用户，你有权随时选择是否继续使用本应用。如果你不希望我们收集上述广告互动数据，你可以选择停止使用本应用。\n
+
+5. 我们如何保护你的信息\n
+我们采取了合理的安全措施来保护我们所收集的匿名数据，以防止数据丢失、滥用、未经授权的访问或披露。但是，请你理解，任何安全措施都无法做到百分之百的安全。\n
+
+6. 隐私政策的更新\n
+我们可能会不时更新本隐私政策。如果发生重大变更，我们会在应用内显著位置通知你，或通过其他适当方式告知。修订后的隐私政策一经发布即生效。\n
+
+7. 联系我们\n
+如果你对本隐私政策有任何疑问或建议，请通过以下方式联系我们：\n
+
+邮箱：running_in_storm@qq.com\n
     </string>
     <string name="app_info">应用信息</string>
     <string name="app_info_context">在你的手机上使用全世界最强的开源音视频库FFmpeg。
@@ -115,6 +151,8 @@
     <string name="file_read_and_write">文件读写</string>
     <string name="notification">通知</string>
     <string name="grant">授予</string>
+    <string name="cancel_power_saving">取消省电限制</string>
+    <string name="cancel_power_saving2">您可以前往设置/权限里面取消省电限制避免任务被杀死</string>
     <string name="reminder_when_not_granted">未授予时提醒</string>
     <string name="permissions">权限</string>
     <string name="remind">提醒</string>
@@ -140,6 +178,7 @@
     <string name="form2_link">https://forms.gle/o9stobwLrKtsgHwP6</string>
     <string name="link_name">本应用开源地址</string>
     <string name="link">https://github.com/Ilovecat1949/AudioAndVideoEditor</string>
+    <string name="releases_link">https://github.com/Ilovecat1949/AudioAndVideoEditor/releases</string>
     <string name="task_tip">您已开启一个新任务</string>
     <string name="crash_message_title">抱歉，出错了</string>
     <string name="feedback_text2">很抱歉，应用出现了问题，请通过下面邮箱、群聊号、表单反馈报错信息帮助我们改进应用</string>
@@ -160,7 +199,20 @@
     <string name="distance_from_the_top">与顶部的距离</string>
     <string name="distance_from_the_left_side">与左边的距离</string>
     <string name="check_for_updates">检查更新</string>
-    <string name="updates_tip">请点击下列网址检查更新</string>
+    <string name="updates_tip">发现最新版</string>
+    <string name="updates_tip2">请点击下列网址更新</string>
+    <string name="updates_tip3">已经是最新版</string>
     <string name="lanzout_link">https://wwbv.lanzout.com/b00wm6q5oh</string>
     <string name="video_compress">视频压缩</string>
+    <string name="select_tip">请先选择一个选项！</string>
+    <string name="sort">排序</string>
+    <string name="criteria">依据</string>
+    <string name="modified_time">更新时间</string>
+    <string name="order">顺序</string>
+    <string name="asc">正序</string>
+    <string name="desc">倒序</string>
+    <string name="ad">广告</string>
+    <string name="owner">Ilovecat1949</string>
+    <string name="repo">AudioAndVideoEditor</string>
+
 </resources>

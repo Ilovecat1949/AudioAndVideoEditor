@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import com.example.audioandvideoeditor.components.HomeScreen
 import com.example.audioandvideoeditor.dao.AppDatabase
 import com.example.audioandvideoeditor.dao.TasksDao
@@ -44,8 +45,10 @@ import com.example.audioandvideoeditor.services.TasksBinder
 import com.example.audioandvideoeditor.services.TasksService
 import com.example.audioandvideoeditor.ui.theme.AudioAndVideoEditorTheme
 import com.example.audioandvideoeditor.utils.ConfigsUtils
+import com.example.audioandvideoeditor.utils.FirebaseUtils
 import com.example.audioandvideoeditor.utils.LogUtils
 import com.example.audioandvideoeditor.utils.PermissionsUtils
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -95,10 +98,27 @@ class MainActivity : ComponentActivity() {
         bindService(intent, connection, Context.BIND_AUTO_CREATE) // 绑定Service
         PermissionsUtils.requestSelfExternalStoragePermission(this)
         PermissionsUtils.requestNotificationsPermission(this)
+        //PermissionsUtils.requestIgnoreBatteryOptimizations(this)
+        if(!FirebaseUtils.init_flag){
+            FirebaseUtils.initFirebase(this)
+        }
+        else{
+            FirebaseUtils.reFreshRemoteConfig()
+        }
+        lifecycleScope.launch{
+            ConfigsUtils.gitHubRelease=ConfigsUtils.getLatestGitHubRelease(getString(R.string.owner),getString(R.string.repo))
+            ConfigsUtils.gitHubRelease?.let {
+                println("ConfigsUtils.gitHubRelease"+ConfigsUtils.gitHubRelease!!.tagName)
+            }
+
+        }
     }
     override fun onResume() {
         super.onResume()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        PermissionsUtils.checkNotificationsPermission(this)
+        PermissionsUtils.checkSelfExternalStoragePermission(this)
+        PermissionsUtils.isIgnoringBatteryOptimizations(this)
     }
 
     override fun onPause() {

@@ -76,4 +76,41 @@ private fun releaseBitmaps() {
     thumbnailBitmapArray.clear() // 清空列表
     //println("ViewModel中的所有Bitmap资源已释放并清空列表。")
 }
+    fun initSortCriteriaAndOrder(flag:Int){
+        sortCriteria=flag/3
+        sortOrder=flag%3
+    }
+    val displayFilesList: List<File> get() = filesList.sortedWith(currentComparator)
+    var sortCriteria by mutableStateOf(0)
+        private set
+    var sortOrder by mutableStateOf(1)
+        private set
+    fun setFileSortCriteria(criteria: Int) {
+        sortCriteria = criteria
+    }
+    fun toggleSortOrder() {
+        sortOrder = if (sortOrder == 1) 0 else 1
+    }
+    // New Enum for Sort Criteria
+
+    private val currentComparator: Comparator<File>
+        get() = Comparator<File> { file1, file2 ->
+            val result = when (sortCriteria) {
+                0 -> file1.name.compareTo(file2.name, ignoreCase = true)
+                1 -> file1.length().compareTo(file2.length())
+                2 -> file1.lastModified() .compareTo(file2.lastModified())
+                else -> file1.name.compareTo(file2.name, ignoreCase = true)
+            }
+            if (sortOrder == 0) -result else result
+        }.let {
+            // Always show directories first, regardless of other sorting criteria
+            // This is a common and good UX practice for file managers
+            Comparator<File> { file1, file2 ->
+                when {
+                    file1.isDirectory && !file2.isDirectory -> -1
+                    !file1.isDirectory && file2.isDirectory -> 1
+                    else -> 0
+                }
+            }.then(it) // Apply directory sorting first, then the chosen criteria
+        }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AudioAndVideoEditor</string>
-    <string name="app_version">1.0.1</string>
+<!--    <string name="app_version">1.0.1</string>-->
     <string name="size_for_video_encoding_task_text">Cache space for encoding videos for each task</string>
     <string name="size_for_audio_encoding_task_text">Cache space for encoding audio for each task</string>
     <string name="size_for_max_tasks_num_text">Maximum number of concurrent tasks</string>
@@ -52,6 +52,7 @@
     <string name="path">path</string>
     <string name="request_file_permissions">Editing audio and video requires file read and write permissions.</string>
     <string name="request_notification_permissions">Notifying task progress requires notification permissions.</string>
+    <string name="request_battery_permissions">Cancel power-saving restrictions to enable background task execution</string>
     <string name="ffmpeg_command_line">FFmpegCommand</string>
     <string name="edit_command_line">Edit Command Line</string>
     <string name="log">log</string>
@@ -61,8 +62,8 @@
     <string name="size">size</string>
     <string name="copy">copy</string>
     <string name="copy_to_clipboard">Copied to the clipboard</string>
-    <string name="video_duration_trimming">Video duration trimming</string>
-    <string name="video_screen_cropping">Video screen cropping</string>
+    <string name="video_duration_trimming">Duration trimming</string>
+    <string name="video_screen_cropping">Screen cropping</string>
     <string name="video_scaling">Video scaling</string>
     <string name="video_shifting">Video shifting</string>
     <string name="extract_audio">Extract audio</string>
@@ -74,7 +75,7 @@
     <string name="precise_crop">Precise Crop</string>
     <string name="wait">Please wait</string>
     <string name="repack">repack</string>
-    <string name="video_format_conversion">Video format conversion</string>
+    <string name="video_format_conversion">Format conversion</string>
     <string name="test">test</string>
     <string name="export">export</string>
     <string name="attributes">attributes</string>
@@ -99,10 +100,46 @@
     <string name="custom_ratio">Custom scale</string>
     <string name="select_background_color">Select background color</string>
     <string name="privacy_policy">Privacy Policy</string>
-    <string name="privacy_policy_context">This product does not actively collect user information. Thank you
-    \nIn order to better improve this application,
-        we look forward to you taking the time out of your busy schedule to give us feedback on the suggestions
-        and issues you have encountered during use.
+    <string name="privacy_policy_context">
+Audio and Video Editor (hereinafter referred to as the "App") is developed and provided by us. We understand the importance of personal information to you and are committed to protecting your privacy. Before using this App, please carefully read and understand this Privacy Policy. By starting to use this App, you agree to its entirety.\n
+
+1. How We Collect and Use Your Information\n
+
+This App integrates with third-party advertising services and displays advertisements when you use the App. To optimize ad display performance and calculate advertising data, we may collect the following information:\n
+
+Device information: This includes device model, operating system version, and app version. This information is used to ensure that ads are displayed correctly on your device.\n
+
+Ad interaction data: This includes the number of times you view and click on an ad. This data is anonymous and used only for ad display performance and revenue calculation purposes. It is not associated with your personally identifiable information.\n
+
+Important: We do not collect personally identifiable information such as your name, phone number, or email address.\n
+
+2. How We Use Cookies and Similar Technologies\n
+
+The advertising service providers in this App may use cookies or other similar technologies to collect the aforementioned device information and ad interaction data to provide more relevant advertising content. These technologies are independently operated by advertising service providers.\n
+
+3. How We Share and Publicly Disclose Your Information\n
+We promise not to share, transfer, or publicly disclose your personal information to any third-party company, organization, or individual without your explicit consent, except in the following circumstances:\n
+
+To the extent permitted by law: To comply with applicable laws, regulations, legal process, or government mandates.\n
+
+To protect the safety of this app and its users: For example, to investigate, prevent, or address fraud, security, or technical issues.\n
+
+We only share anonymous ad interaction data with the aforementioned advertising service providers to enable ad display and revenue settlement.\n
+
+4. Your Rights\n
+
+As a user, you have the right to choose whether to continue using this app at any time. If you do not wish us to collect the aforementioned ad interaction data, you can choose to stop using this app.\n
+
+5. How We Protect Your Information\n
+We implement reasonable security measures to protect the anonymous data we collect to prevent data loss, misuse, unauthorized access, or disclosure. However, please understand that no security measures can be 100% secure. \n
+
+6. Privacy Policy Updates\n
+We may update this Privacy Policy from time to time. If there are significant changes, we will notify you prominently within the app or through other appropriate means. The revised Privacy Policy will take effect upon posting.\n
+
+7. Contact Us\n
+If you have any questions or suggestions regarding this Privacy Policy, please contact us through the following means:\n
+
+Email: running_in_storm@qq.com\n
     </string>
     <string name="app_info">APP info</string>
     <string name="app_info_context">Use the world\'s strongest open-source audio and video library FFmpeg on your phone.
@@ -121,6 +158,8 @@
     <string name="file_read_and_write">File read and write</string>
     <string name="notification">Notification</string>
     <string name="grant">Grant</string>
+    <string name="cancel_power_saving">Cancel power saving restrictions</string>
+    <string name="cancel_power_saving2">You can go to Settings/Permissions to disable power saving restrictions to avoid tasks being killed.</string>
     <string name="reminder_when_not_granted">Reminder when not granted</string>
     <string name="permissions">Permissions</string>
     <string name="remind">Remind</string>
@@ -146,6 +185,7 @@
     <string name="form2_link">https://forms.gle/o9stobwLrKtsgHwP6</string>
     <string name="link_name">open source address</string>
     <string name="link">https://github.com/Ilovecat1949/AudioAndVideoEditor</string>
+    <string name="releases_link">https://github.com/Ilovecat1949/AudioAndVideoEditor/releases</string>
     <string name="task_tip">You have started a new task</string>
     <string name="crash_message_title">Sorry, there was an error</string>
     <string name="feedback_text2">Sorry, there is an issue with the application. Please provide feedback on the error message through the email, group chat, or form below to help us improve the application</string>
@@ -166,7 +206,19 @@
     <string name="distance_from_the_top">Distance from the top</string>
     <string name="distance_from_the_left_side">Distance from the left side</string>
     <string name="check_for_updates">Check for updates</string>
-    <string name="updates_tip">Please click on the following website to check for updates</string>
+    <string name="updates_tip">Discover the latest version</string>
+    <string name="updates_tip2">Please click on the following website to updates</string>
+    <string name="updates_tip3">It\'s already the latest version</string>
     <string name="lanzout_link">https://wwbv.lanzout.com/b00wm6q5oh</string>
     <string name="video_compress">Video compress</string>
+    <string name="select_tip">Please select an option first!</string>
+    <string name="sort">Sort By</string>
+    <string name="criteria">Criteria</string>
+    <string name="modified_time">Modified Time</string>
+    <string name="order">Order</string>
+    <string name="asc">Ascending</string>
+    <string name="desc">Descending</string>
+    <string name="ad">AD</string>
+    <string name="owner">Ilovecat1949</string>
+    <string name="repo">AudioAndVideoEditor</string>
 </resources>

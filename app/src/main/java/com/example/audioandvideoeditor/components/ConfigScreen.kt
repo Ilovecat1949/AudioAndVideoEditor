@@ -163,6 +163,7 @@ private fun ConfigScreen2_2(
             .verticalScroll(scrollState) // 关键的滚动修饰符
             .fillMaxWidth()
     ) {
+        val currentVersion = LocalContext.current .packageManager.getPackageInfo(LocalContext.current.packageName, 0).versionName
         Column (
             modifier = Modifier
                 .fillMaxWidth(),
@@ -176,7 +177,7 @@ private fun ConfigScreen2_2(
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                stringResource(id = R.string.app_version)
+                currentVersion
                 , fontWeight = FontWeight.Bold
             )           
             Spacer(modifier = Modifier.height(40.dp))
@@ -441,74 +442,110 @@ fun ClearFFmpegLogFilesDialog(
 
 
 @Composable
-fun UpdateDialog(
+private fun UpdateDialog(
     configViewModel: ConfigViewModel
 ){
     val context= LocalContext.current
+    val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
     if(configViewModel.showUpdateDialogFlag.value) {
-        AlertDialog(
-            onDismissRequest = { configViewModel.showUpdateDialogFlag.value = false },
-            title = {
-                Text(
-                    text= stringResource(id = R.string.check_for_updates),
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
+        if(
+            ConfigsUtils.gitHubRelease!=null
+            &&ConfigsUtils.isNewVersionAvailable(currentVersion, ConfigsUtils.gitHubRelease!!.tagName)
+        ) {
+            AlertDialog(
+                onDismissRequest = { configViewModel.showUpdateDialogFlag.value = false },
+                title = {
                     Text(
-                        text= stringResource(id = R.string.updates_tip)
+                        text = stringResource(id = R.string.updates_tip),
+                        fontWeight = FontWeight.Bold
                     )
+                },
+                text = {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.Start
-                    ){
-                        Spacer(modifier = Modifier.height(20.dp))
-                        SelectionContainer {
-                            Text(
-                                text= stringResource(id = R.string.link),
-                                textDecoration = TextDecoration.Underline,
-                                color= Color.Blue,
-                                modifier = Modifier.clickable {
-                                    FilesUtils.openWebLink(context,context.getString(R.string.link))
-                                }
-                            )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.updates_tip2)
+                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Spacer(modifier = Modifier.height(20.dp))
+                            SelectionContainer {
+                                Text(
+                                    text = stringResource(id = R.string.releases_link),
+                                    textDecoration = TextDecoration.Underline,
+                                    color = Color.Blue,
+                                    modifier = Modifier.clickable {
+                                        FilesUtils.openWebLink(
+                                            context,
+                                            context.getString(R.string.releases_link)
+                                        )
+                                    }
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
+                            SelectionContainer {
+                                Text(
+                                    text = stringResource(id = R.string.lanzout_link),
+                                    textDecoration = TextDecoration.Underline,
+                                    color = Color.Blue,
+                                    modifier = Modifier.clickable {
+                                        FilesUtils.openWebLink(
+                                            context,
+                                            context.getString(R.string.lanzout_link)
+                                        )
+                                    }
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.height(20.dp))
-                        SelectionContainer {
-                            Text(
-                                text= stringResource(id = R.string.lanzout_link),
-                                textDecoration = TextDecoration.Underline,
-                                color= Color.Blue,
-                                modifier = Modifier.clickable {
-                                    FilesUtils.openWebLink(context,context.getString(R.string.lanzout_link))
-                                }
-                            )
-                        }
+
                     }
 
-                }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            configViewModel.showUpdateDialogFlag.value = false
 
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        configViewModel.showUpdateDialogFlag.value = false
-
+                        }
+                    ) {
+                        Text(LocalContext.current.getString(R.string.ok))
                     }
-                ) {
-                    Text(LocalContext.current.getString(R.string.ok))
+
+                },
+                dismissButton = {
                 }
+            )
+        }
+        else{
+            AlertDialog(
+                onDismissRequest = { configViewModel.showUpdateDialogFlag.value = false },
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.updates_tip3),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            configViewModel.showUpdateDialogFlag.value = false
 
-            },
-            dismissButton = {
+                        }
+                    ) {
+                        Text(LocalContext.current.getString(R.string.ok))
+                    }
 
-
-            }
-        )
+                },
+                dismissButton = {
+                }
+            )
+        }
     }
 }
 

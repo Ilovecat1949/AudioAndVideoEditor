@@ -95,25 +95,25 @@ private fun FunctionsListScreen2(
                 )
             }
         }
-//        item {
-//            Column(
-//                verticalArrangement = Arrangement.Center,
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                modifier = Modifier.height(150.dp)
-//                    .width(200.dp)
-//                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-//                    .clickable {
-//                        setNextToNextDestination(VideoCompress.route)
-//                        nextDestination(FileSelection.route)
-//                    }
-//            ){
-//                Text(
-//                    text= LocalContext.current.getString(R.string.video_compress),
-//                    modifier = Modifier
-//                        .padding(10.dp)
-//                )
-//            }
-//        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(VideoCompress.route)
+                        nextDestination(FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= LocalContext.current.getString(R.string.video_compress),
+                    modifier = Modifier
+                        .padding(10.dp)
+                )
+            }
+        }
         item {
             Column(
                 verticalArrangement = Arrangement.Center,

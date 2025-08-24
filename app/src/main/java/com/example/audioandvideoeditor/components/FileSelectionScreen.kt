@@ -8,7 +8,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,26 +20,31 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,12 +54,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,9 +68,9 @@ import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.AudioInfo
 import com.example.audioandvideoeditor.entity.VideoInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.viewmodel.FilesViewModel
-import com.example.audioandvideoeditor.viewmodel.VideoFilesListViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
@@ -96,7 +98,7 @@ fun FileSelectionScreen(
             }
             filesViewModel.parent= file
         }
-
+        filesViewModel.initSortCriteriaAndOrder(ConfigsUtils.files_sort_flag)
     }
     Scaffold(
         topBar = {
@@ -309,47 +311,84 @@ private fun FilesList(
     padding: PaddingValues,
     filesViewModel: FilesViewModel
 ){
-    LazyColumn(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.Start,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-//            .padding(top = padding.calculateTopPadding() + 40.dp)
-    ){
-        item {
+    var showSortOptionsDialog by remember { mutableStateOf(false) }
+    val lazyListState = rememberLazyListState() // 1. Create LazyListState
+    val coroutineScope = rememberCoroutineScope() // 2. Create CoroutineScope
+    // 3. Launch a LaunchedEffect to observe sorting changes and scroll
+    LaunchedEffect(filesViewModel.sortCriteria, filesViewModel.sortOrder) {
+        // Only scroll if the list is not empty
+        if (filesViewModel.displayFilesList.isNotEmpty()) {
+            coroutineScope.launch {
+                lazyListState.animateScrollToItem(0) // Animate scroll to the first item
+            }
+        }
+    }
+    Scaffold(
+        topBar = {
             Row(
-            modifier = Modifier
-//                .padding(top = padding.calculateTopPadding(), start = 20.dp)
-                .height(40.dp)
-                .fillMaxWidth()
-                .clickable {
-                    if (filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path) {
-                        if (filesViewModel.parent!!.parentFile != null) {
-                            filesViewModel.parent!!.parentFile
-                                ?.listFiles()
-                                ?.let {
-                                    filesViewModel.filesList.clear()
-                                    filesViewModel.filesList.addAll(it)
-                                    //filesViewModel.initFilesState()
-                                    filesViewModel.parent = filesViewModel.parent!!.parentFile
-                                }
-                        } else {
-                            filesViewModel.filesList.clear()
-                            filesViewModel.filesList.add(filesViewModel.parent!!)
-                            //filesViewModel.initFilesState()
-                            filesViewModel.parent = null
-                        }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .height(40.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ){
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.clickable{
+                        if (filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path) {
+                            if (filesViewModel.parent!!.parentFile != null) {
+                                filesViewModel.parent!!.parentFile
+                                    ?.listFiles()
+                                    ?.let {
+                                        filesViewModel.filesList.clear()
+                                        filesViewModel.filesList.addAll(it)
+                                        //filesViewModel.initFilesState()
+                                        filesViewModel.parent = filesViewModel.parent!!.parentFile
+                                    }
+                            } else {
+                                filesViewModel.filesList.clear()
+                                filesViewModel.filesList.add(filesViewModel.parent!!)
+                                //filesViewModel.initFilesState()
+                                filesViewModel.parent = null
+                            }
 
-                    }
+                        }
+                    },
+                ) {
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(text="..")
                 }
+                IconButton(
+                    onClick = {
+                        showSortOptionsDialog = true
+                    },
+                    modifier =  Modifier.wrapContentSize(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.sort_24px),
+                        modifier=Modifier.size(48.dp),
+                        contentDescription = null
+                    )
+                }
+            }
+
+        }
+    ) {
+        LazyColumn(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start,
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+            state = lazyListState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = it.calculateTopPadding() + 30.dp)
         ){
-            Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(text="..")
-        } }
-        items(count =filesViewModel.filesList.size){
-            ShowFile2(filesViewModel,it)
+            items(count =filesViewModel.displayFilesList.size){
+                ShowFile2(filesViewModel,it)
+            }
         }
     }
     BackHandler(enabled =filesViewModel.backHandler_flag ){
@@ -372,6 +411,98 @@ private fun FilesList(
 
         }
         filesViewModel.backHandler_flag=(filesViewModel.show_flag.value==2 &&filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path )
+    }
+    if (showSortOptionsDialog) {
+        var sortCriteria2 by remember {
+            mutableStateOf(filesViewModel.sortCriteria)
+        }
+
+        var sortOrder2  by remember {
+            mutableStateOf(filesViewModel.sortOrder)
+        }
+        AlertDialog(
+            onDismissRequest = { showSortOptionsDialog = false },
+            title = { Text(stringResource(id = R.string.sort)) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement =  Arrangement.Center,
+                ){
+                    // Sort Criteria Options
+                    Text(
+                        text = stringResource(id = R.string.criteria),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement =  Arrangement.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            RadioButton(
+                                selected = sortCriteria2 == 0,
+                                onClick = { sortCriteria2=0 }
+                            )
+                            Text(stringResource(id = R.string.file_name))
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = sortCriteria2 == 1,
+                                onClick = { sortCriteria2=1 }
+                            )
+                            Text(stringResource(id = R.string.size))
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = sortCriteria2 == 2,
+                                onClick = { sortCriteria2=2 }
+                            )
+                            Text(stringResource(id = R.string.modified_time))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Sort Order Toggle
+                    Text(
+                        text = stringResource(id = R.string.order),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = filesViewModel.sortOrder == 0,
+                            onCheckedChange = { sortOrder2= if (sortOrder2 == 1) 0 else 1 }
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(if (filesViewModel.sortOrder == 1) stringResource(id = R.string.asc) else stringResource(id = R.string.desc))
+                    }
+                }
+            },
+            confirmButton = {
+                val context= LocalContext.current
+                TextButton(onClick = {
+                    val flag=sortCriteria2*3+sortOrder2
+                    if(flag!=ConfigsUtils.files_sort_flag){
+                        ConfigsUtils.setFilesSortFlag(context,flag )
+                        filesViewModel.setFileSortCriteria(flag)
+                    }
+                    showSortOptionsDialog = false
+                }) {
+                    Text(stringResource(id = R.string.ok))
+                }
+            }
+        )
     }
 }
 
@@ -464,7 +595,7 @@ private fun ShowFile2(
     filesViewModel: FilesViewModel,
     id:Int
 ){
-    val file=filesViewModel.filesList[id]
+    val file=filesViewModel.displayFilesList [id]
     if(!filesViewModel.filesState.containsKey(file.path)){
         filesViewModel.filesState[file.path]= mutableStateOf(false)
     }

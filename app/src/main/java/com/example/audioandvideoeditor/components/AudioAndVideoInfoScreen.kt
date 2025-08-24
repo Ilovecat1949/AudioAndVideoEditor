@@ -97,7 +97,7 @@ fun AVInfoScreen2(
                     showFileAttributeItem(stringResource(id = R.string.audio_duration), TextsUtils.millisecondsToString(avInfoViewModel.info.audio_duration*1000))
                     showFileAttributeItem(stringResource(id = R.string.audio_format), avInfoViewModel.info.audio_codec_type)
                     showFileAttributeItem(
-                        "${stringResource(id = R.string.audio_format)}(kb/s)",
+                        "${stringResource(id = R.string.audio_bit_rate)}(kb/s)",
                         "${avInfoViewModel.info.audio_bit_rate / 1000}"
                     )
 

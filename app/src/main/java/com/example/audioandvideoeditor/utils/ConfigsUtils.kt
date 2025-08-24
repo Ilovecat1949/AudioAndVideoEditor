@@ -4,7 +4,36 @@ import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Locale
+
+@Serializable
+data class GitHubRelease(
+    @SerialName("tag_name") val tagName: String,
+    @SerialName("name") val name: String,
+    @SerialName("body") val body: String,
+    @SerialName("html_url") val htmlUrl: String,
+    val assets: List<GitHubAsset>
+)
+
+@Serializable
+data class GitHubAsset(
+    val name: String,
+    val size: Long,
+    @SerialName("browser_download_url") val browserDownloadUrl: String
+)
 
 object ConfigsUtils {
 
@@ -38,6 +67,8 @@ object ConfigsUtils {
     private set
     var show_on_screen_ad_again_flag=true
         private set
+    var files_sort_flag=0
+    private set
 //    var notificationsRemind=true
 //        private set
 //    var externalStoragePermissionRemind=true
@@ -77,6 +108,7 @@ object ConfigsUtils {
         }
         show_crash_message_flag=prefs.getBoolean("show_crash_message_flag",false)
         show_on_screen_ad_again_flag=prefs.getBoolean("show_on_screen_ad_again_flag",true)
+        files_sort_flag=prefs.getInt("files_sort_flag",1)
 //        notificationsRemind=prefs.getBoolean("notificationsRemind",true)
 //        externalStoragePermissionRemind=prefs.getBoolean("externalStoragePermissionRemind",true)
         editor.apply()
@@ -140,6 +172,12 @@ object ConfigsUtils {
         editor.apply()
         show_on_screen_ad_again_flag=flag
     }
+    fun setFilesSortFlag(context: Context,flag:Int){
+        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
+        editor.putInt("files_sort_flag",flag)
+        editor.apply()
+        files_sort_flag=flag
+    }
 
 //    fun setPermissionRemind(context: Context,remindFlag:Boolean,permission:Int){
 //        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
@@ -155,4 +193,61 @@ object ConfigsUtils {
 //        }
 //        editor.apply()
 //    }
+// 创建一个 Json 实例
+private val json = Json { ignoreUnknownKeys = true }
+
+var gitHubRelease by mutableStateOf<GitHubRelease?>(null)
+
+    /**
+     * 比较版本号，格式为 "vX.Y.Z"
+     * @return 如果最新版本号大于当前版本号，返回 true
+     */
+fun isNewVersionAvailable(current: String, latest: String): Boolean {
+        val currentParts = current.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+        val latestParts = latest.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+
+        for (i in 0 until maxOf(currentParts.size, latestParts.size)) {
+            val currentPart = currentParts.getOrElse(i) { 0 }
+            val latestPart = latestParts.getOrElse(i) { 0 }
+            if (latestPart > currentPart) {
+                return true
+            }
+            if (latestPart < currentPart) {
+                return false
+            }
+        }
+        return false // 版本号相同
+    }
+suspend fun getLatestGitHubRelease(owner: String, repo: String): GitHubRelease? = withContext(
+        Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
+        var reader: BufferedReader? = null
+
+        try {
+            val url = URL("https://api.github.com/repos/$owner/$repo/releases/latest")
+            connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connect()
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val stream = connection.inputStream
+                reader = BufferedReader(InputStreamReader(stream))
+                val response = reader.readText()
+                // 使用 kotlinx.serialization 来解析 JSON 字符串
+                json.decodeFromString<GitHubRelease>(response)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            // 如果解析失败，可能是网络问题或 JSON 格式不匹配
+            if (e is SerializationException) {
+                // 记录序列化错误
+            }
+            e.printStackTrace()
+            null
+        } finally {
+            reader?.close()
+            connection?.disconnect()
+        }
+    }
 }

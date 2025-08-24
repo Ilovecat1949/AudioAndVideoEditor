@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,9 +54,6 @@ object PermissionsUtils {
                     .setNeutralButton(activity.getString(R.string.ask_me_later)){ _, _ ->
 
                     }
-//                            .setNegativeButton(activity.getString(R.string.deny_dont_ask_Again)) { _, _ ->
-//                               ConfigsUtils.setPermissionRemind(activity,false,0)
-//                            }
                 builder.show()
             }
         }
@@ -96,6 +94,41 @@ object PermissionsUtils {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         // 检测该应用是否有通知权限
         areNotificationsEnabled=manager.areNotificationsEnabled()
+    }
+
+    /**
+     * 检查应用是否被忽略电池优化。
+     * @return 如果应用被忽略，则返回 true。
+     */
+    var ignoringBatteryOptimizationsEnabled  by mutableStateOf(true)
+        private set
+    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+        val packageName = context.packageName
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        ignoringBatteryOptimizationsEnabled=pm.isIgnoringBatteryOptimizations(packageName)
+        return ignoringBatteryOptimizationsEnabled
+    }
+    /**
+     * 引导用户到电池优化设置页面。
+     */
+    fun requestIgnoreBatteryOptimizations(context: Context) {
+        if(!isIgnoringBatteryOptimizations(context)){
+            val builder = AlertDialog.Builder(context)
+                .setMessage(context.getString(R.string.request_battery_permissions))
+                .setPositiveButton(context.getString(R.string.ok)) { _, _ ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val intent = Intent().apply {
+                            action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                            data = Uri.parse("package:" + context.packageName)
+                        }
+                        context.startActivity(intent)
+                    }
+                }
+                .setNeutralButton(context.getString(R.string.ask_me_later)){ _, _ ->
+
+                }
+            builder.show()
+        }
     }
 }
 

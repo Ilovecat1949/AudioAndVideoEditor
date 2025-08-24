@@ -2,6 +2,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,9 +54,23 @@ fun PermissionsScreen(
 //    }
     val life= rememberLifecycle()
     life.onLifeCreate {
+        //println("PermissionsScreen onLifeCreate")
         PermissionsUtils.checkNotificationsPermission(context)
         PermissionsUtils.checkSelfExternalStoragePermission(context)
+        PermissionsUtils.isIgnoringBatteryOptimizations(context)
     }
+//    var ignoringBatteryOptimizationsEnabled by  remember {
+//        mutableStateOf(PermissionsUtils.ignoringBatteryOptimizationsEnabled)
+//    }
+//    val launcher = rememberLauncherForActivityResult(
+        // 使用 StartActivityForResult 协定
+//        contract = ActivityResultContracts.StartActivityForResult()
+//    ) { result ->
+//        PermissionsUtils.checkNotificationsPermission(context)
+//        PermissionsUtils.checkSelfExternalStoragePermission(context)
+//        PermissionsUtils.isIgnoringBatteryOptimizations(context)
+//        println("PermissionsScreen onLifeCreate")
+//    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement= Arrangement.Center,
@@ -107,11 +123,13 @@ fun PermissionsScreen(
                                 intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                                 intent.data = Uri.fromParts("package", packageName, null)
                                 ContextCompat.startActivity(context, intent, null)
+                                //launcher.launch(intent)
                             }
                             else{
                                 intent.action = Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
                                 intent.data = Uri.fromParts("package", packageName, null)
                                 ContextCompat.startActivity(context, intent, null)
+                                //launcher.launch(intent)
                             }
                         }
                     )
@@ -189,6 +207,7 @@ fun PermissionsScreen(
                                     }
                                 }
                                 ContextCompat.startActivity(context, intent, null)
+                                //launcher.launch(intent)
                             }
                         )
                         Spacer(modifier = Modifier.width(5.dp))
@@ -197,6 +216,50 @@ fun PermissionsScreen(
                 Spacer(modifier = Modifier.height(40.dp))
                 Divider(color = Color.LightGray, thickness = 1.dp)
             }
+        }
+        Column (
+            modifier = Modifier
+                .fillMaxWidth()
+        ){
+            Spacer(modifier = Modifier.height(40.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text=stringResource(R.string.cancel_power_saving)
+                    , fontWeight = FontWeight.Bold
+                )
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+                {
+
+                    Text(stringResource(R.string.grant))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Switch(
+                        checked =PermissionsUtils.ignoringBatteryOptimizationsEnabled,
+                        onCheckedChange = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                val intent = Intent().apply {
+                                    action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                                    data = Uri.parse("package:" + context.packageName)
+                                }
+                                context.startActivity(intent)
+                                //launcher.launch(intent)
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(40.dp))
+            Divider(color = Color.LightGray, thickness = 1.dp)
         }
     }
 }

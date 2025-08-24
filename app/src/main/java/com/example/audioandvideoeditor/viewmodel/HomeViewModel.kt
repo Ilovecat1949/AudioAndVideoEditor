@@ -13,4 +13,5 @@ class HomeViewModel  : ViewModel()  {
     var show_on_screen_ad by mutableStateOf(true)
     var show_interstistial_ad by mutableStateOf(false)
     var show_crash_message_flag by mutableStateOf(false)
+    var showUpdateDialogFlag by mutableStateOf(true)
 }
