@@ -98,7 +98,7 @@ fun FileSelectionScreen(
             }
             filesViewModel.parent= file
         }
-        filesViewModel.initSortCriteriaAndOrder(ConfigsUtils.files_sort_flag)
+        filesViewModel.setSortCriteriaAndOrder(ConfigsUtils.files_sort_flag)
     }
     Scaffold(
         topBar = {
@@ -481,11 +481,11 @@ private fun FilesList(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(
-                            checked = filesViewModel.sortOrder == 0,
+                            checked = sortOrder2 == 0,
                             onCheckedChange = { sortOrder2= if (sortOrder2 == 1) 0 else 1 }
                         )
                         Spacer(modifier = Modifier.width(16.dp))
-                        Text(if (filesViewModel.sortOrder == 1) stringResource(id = R.string.asc) else stringResource(id = R.string.desc))
+                        Text(if (sortOrder2 == 1) stringResource(id = R.string.asc) else stringResource(id = R.string.desc))
                     }
                 }
             },
@@ -495,7 +495,7 @@ private fun FilesList(
                     val flag=sortCriteria2*3+sortOrder2
                     if(flag!=ConfigsUtils.files_sort_flag){
                         ConfigsUtils.setFilesSortFlag(context,flag )
-                        filesViewModel.setFileSortCriteria(flag)
+                        filesViewModel.setSortCriteriaAndOrder(flag)
                     }
                     showSortOptionsDialog = false
                 }) {

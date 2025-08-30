@@ -76,11 +76,16 @@ private fun releaseBitmaps() {
     thumbnailBitmapArray.clear() // 清空列表
     //println("ViewModel中的所有Bitmap资源已释放并清空列表。")
 }
-    fun initSortCriteriaAndOrder(flag:Int){
+//    fun initSortCriteriaAndOrder(flag:Int){
+//        sortCriteria=flag/3
+//        sortOrder=flag%3
+//    }
+    val displayFilesList: List<File> get() = filesList.sortedWith(currentComparator)
+
+    fun setSortCriteriaAndOrder(flag:Int){
         sortCriteria=flag/3
         sortOrder=flag%3
     }
-    val displayFilesList: List<File> get() = filesList.sortedWith(currentComparator)
     var sortCriteria by mutableStateOf(0)
         private set
     var sortOrder by mutableStateOf(1)
