@@ -5,6 +5,8 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.audioandvideoeditor.entity.Task
+import kotlinx.coroutines.flow.Flow
+
 @Dao
 interface TasksDao {
     @Insert
@@ -19,4 +21,6 @@ interface TasksDao {
     fun deleteTask(task:Task)
     @Query("select max(task_id) from Task ")
     fun getMaxTaskId():Long?
+    @Query("select * from Task where type=(:type) order by task_id desc")
+    fun loadTasksByType(type:Int): Flow<List<Task>>
 }

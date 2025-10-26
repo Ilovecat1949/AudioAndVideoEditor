@@ -266,6 +266,20 @@ private fun FunctionsListScreen2(
                     .width(200.dp)
                     .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
                     .clickable {
+                        nextDestination(Recording.route)
+                    }
+            ){
+                Text(text="录屏")
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
                         nextDestination(FFmpegInfo.route)
                     }
             ){

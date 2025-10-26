@@ -27,7 +27,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.audioandvideoeditor.utils.AdContent
 import com.example.audioandvideoeditor.utils.FilesUtils
-import com.example.audioandvideoeditor.utils.FirebaseUtils
+//import com.example.audioandvideoeditor.utils.FirebaseUtils
 
 
 @Composable
@@ -42,11 +42,11 @@ fun APPTestScreen(){
             Text("测试除以0")
         }
         Spacer(modifier = Modifier.height(30.dp))
-        Button(onClick = {
-            FirebaseUtils.reFreshRemoteConfig()
-        }) {
-            Text("刷新FireBase")
-        }
+//        Button(onClick = {
+//            FirebaseUtils.reFreshRemoteConfig()
+//        }) {
+//            Text("刷新FireBase")
+//        }
     }
 //    LocalContext.current
 //    val configuration = LocalConfiguration.current

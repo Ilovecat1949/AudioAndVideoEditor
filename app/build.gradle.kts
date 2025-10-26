@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
-    id("com.google.gms.google-services")
+//    id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
@@ -86,6 +86,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.documentfile:documentfile:1.1.0")
     //implementation("com.android.volley:volley:1.2.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
@@ -105,15 +106,18 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:$room_version")
     // To use Kotlin Symbol Processing (KSP)
     ksp("androidx.room:room-compiler:$room_version")
+    // 🔥 核心：启用 Coroutine 特性（suspend, Flow, withTransaction）
+    implementation("androidx.room:room-ktx:$room_version")
+
 
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
     //implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     //implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
-    implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-config")
+//    implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
+//    implementation("com.google.firebase:firebase-analytics")
+//    implementation("com.google.firebase:firebase-config")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-    implementation("androidx.fragment:fragment-ktx:1.6.2")
+//    implementation("androidx.fragment:fragment-ktx:1.6.2")
 }

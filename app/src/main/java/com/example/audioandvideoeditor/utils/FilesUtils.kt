@@ -15,11 +15,13 @@ import android.os.Build
 import android.util.LruCache
 import android.util.Size
 import android.webkit.MimeTypeMap
-import android.webkit.WebView
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
+//import androidx.documentfile.provider.DocumentFile
 import java.io.File
+
 
 object FilesUtils {
     fun getThumbnail(context:Context,contentResolver: ContentResolver, uri: Uri):Bitmap?{
@@ -135,6 +137,12 @@ object FilesUtils {
         val extension = MimeTypeMap.getFileExtensionFromUrl(file.toURI().toString())
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
     }
+
+    fun getFileNameUsingDocumentFile(context: Context, uri: Uri): String? {
+        val documentFile = DocumentFile.fromSingleUri(context, uri)
+        return documentFile?.name
+    }
+
     fun openLocalFile(context: Context, file: File) {
         if (!file.exists()) {
             // 文件不存在，可以给用户一个提示

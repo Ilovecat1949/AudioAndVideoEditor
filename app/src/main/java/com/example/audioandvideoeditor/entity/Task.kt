@@ -9,7 +9,8 @@ data class Task(
     var task_id:Long,
     var type:Int,
     var status:Int,
-    var path:String,
-    var log_path:String,
+    var path:String="",
+    var log_path:String="",
+    var uri:String="",
     var date:String
 )

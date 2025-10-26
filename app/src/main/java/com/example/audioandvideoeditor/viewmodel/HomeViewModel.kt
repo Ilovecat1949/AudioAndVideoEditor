@@ -7,7 +7,8 @@ import androidx.lifecycle.ViewModel
 import java.io.File
 
 class HomeViewModel  : ViewModel()  {
-    var file:File?=null
+//    var file:File?=null
+    var path_or_uri=""
     var nextDestination:()->Unit={}
     var route_flag=false
     var show_on_screen_ad by mutableStateOf(true)

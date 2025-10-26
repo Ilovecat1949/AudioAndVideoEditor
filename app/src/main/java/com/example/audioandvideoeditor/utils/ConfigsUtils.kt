@@ -73,6 +73,8 @@ object ConfigsUtils {
 //        private set
 //    var externalStoragePermissionRemind=true
 //        private set
+    var recordAudioType=0
+    private set
     fun InitConfig(context: Context){
         val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
         val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
@@ -111,6 +113,12 @@ object ConfigsUtils {
         files_sort_flag=prefs.getInt("files_sort_flag",1)
 //        notificationsRemind=prefs.getBoolean("notificationsRemind",true)
 //        externalStoragePermissionRemind=prefs.getBoolean("externalStoragePermissionRemind",true)
+        var type= prefs.getInt("recordAudioType",-1)
+        if(type==-1){
+            type=0
+            editor.putInt("recordAudioType",type)
+        }
+        recordAudioType=type
         editor.apply()
     }
     fun setSizeForVideoEncodingTask(size:Long,activity: Activity){
@@ -177,6 +185,12 @@ object ConfigsUtils {
         editor.putInt("files_sort_flag",flag)
         editor.apply()
         files_sort_flag=flag
+    }
+    fun setRecordAudioType(context: Context,type:Int){
+        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
+        editor.putInt("recordAudioType",type)
+        editor.apply()
+        recordAudioType=type
     }
 
 //    fun setPermissionRemind(context: Context,remindFlag:Boolean,permission:Int){

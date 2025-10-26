@@ -2,9 +2,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +13,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,8 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
-import com.example.audioandvideoeditor.utils.ConfigsUtils
-import com.example.audioandvideoeditor.utils.PermissionsUtils
+import com.example.audioandvideoeditor.utils.observeIgnoringBatteryPermissionStatus
+import com.example.audioandvideoeditor.utils.observeNotificationsPermissionStatus
+import com.example.audioandvideoeditor.utils.observeStoragePermissionStatus
 
 @Composable
 fun BasicSwitch() {
@@ -55,9 +52,9 @@ fun PermissionsScreen(
     val life= rememberLifecycle()
     life.onLifeCreate {
         //println("PermissionsScreen onLifeCreate")
-        PermissionsUtils.checkNotificationsPermission(context)
-        PermissionsUtils.checkSelfExternalStoragePermission(context)
-        PermissionsUtils.isIgnoringBatteryOptimizations(context)
+//        PermissionsUtils.checkNotificationsPermission(context)
+//        PermissionsUtils.checkSelfExternalStoragePermission(context)
+//        PermissionsUtils.isIgnoringBatteryOptimizations(context)
     }
 //    var ignoringBatteryOptimizationsEnabled by  remember {
 //        mutableStateOf(PermissionsUtils.ignoringBatteryOptimizationsEnabled)
@@ -112,8 +109,9 @@ fun PermissionsScreen(
 //                    Spacer(modifier = Modifier.width(15.dp))
                     Text(stringResource(R.string.grant))
                     Spacer(modifier = Modifier.width(5.dp))
+                    val isGranted by observeStoragePermissionStatus()
                     Switch(
-                        checked = PermissionsUtils.areSelfExternalStoragePermissionEnabled,
+                        checked =isGranted ,//PermissionsUtils.areSelfExternalStoragePermissionEnabled,
                         onCheckedChange = {
                             val packageName = context.packageName
                             val intent = Intent()
@@ -173,8 +171,9 @@ fun PermissionsScreen(
 //                    Spacer(modifier = Modifier.width(15.dp))
                         Text(stringResource(R.string.grant))
                         Spacer(modifier = Modifier.width(5.dp))
+                        val isGranted by observeNotificationsPermissionStatus()
                         Switch(
-                            checked = PermissionsUtils.areNotificationsEnabled,
+                            checked = isGranted,
                             onCheckedChange = {
 //                            if( Build.VERSION.SDK_INT>= Build.VERSION_CODES.TIRAMISU){
 //                                val intent = Intent()
@@ -242,8 +241,9 @@ fun PermissionsScreen(
 
                     Text(stringResource(R.string.grant))
                     Spacer(modifier = Modifier.width(5.dp))
+                    val isGranted by observeIgnoringBatteryPermissionStatus()
                     Switch(
-                        checked =PermissionsUtils.ignoringBatteryOptimizationsEnabled,
+                        checked =isGranted,//PermissionsUtils.ignoringBatteryOptimizationsEnabled,
                         onCheckedChange = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                                 val intent = Intent().apply {

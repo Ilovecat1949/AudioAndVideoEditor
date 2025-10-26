@@ -1,13 +1,18 @@
 package com.example.audioandvideoeditor.components
 
 import PermissionsScreen
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import android.view.Gravity
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
@@ -17,7 +22,6 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,18 +80,19 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.findActivity
 import com.example.audioandvideoeditor.utils.AdContent
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
-import com.example.audioandvideoeditor.utils.FirebaseUtils
 import com.example.audioandvideoeditor.utils.ImageState
 import com.example.audioandvideoeditor.utils.LogUtils
-import com.example.audioandvideoeditor.utils.PermissionsUtils
+import com.example.audioandvideoeditor.utils.PermissionRequestTemplate
+import com.example.audioandvideoeditor.utils.observeIgnoringBatteryPermissionStatus
 import com.example.audioandvideoeditor.viewmodel.AdViewModel
-import com.example.audioandvideoeditor.viewmodel.ConfigViewModel
 import com.example.audioandvideoeditor.viewmodel.HomeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -172,8 +177,9 @@ fun HomeScreen(
               //  TasksCenterScreen3(task_binder,taskDao)
                 TasksCenterScreen(
                     activity,
-                    {file, route,flag ->
-                        homeViewModel.file=file
+                    {path_or_uri, route,flag ->
+//                        homeViewModel.file=file
+                        homeViewModel.path_or_uri=path_or_uri
                         homeViewModel.route_flag=flag
                         homeNavController.navigateSingleTopTo(route)
                     }
@@ -195,7 +201,8 @@ fun HomeScreen(
                 FileSelectionScreen(
                     backDestination = { homeNavController .popBackStack() },
                     setFile = {
-                      homeViewModel.file=it
+//                      homeViewModel.file=it
+                        homeViewModel.path_or_uri=it.path
                     },
                     nextDestination = homeViewModel.nextDestination)
             }
@@ -203,21 +210,22 @@ fun HomeScreen(
                 route=ReEncoding.route
             ){
                 ReEncodingScreen(activity
-                                ,homeViewModel.file!!
+                                ,File(homeViewModel.path_or_uri)
                                 ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
             composable(
                 route=AudioAndVideoInfo.route
             ){
-                AVInfoScreen2(activity, homeViewModel.file!!.path)
+                AVInfoScreen2(activity, File(homeViewModel.path_or_uri).path)
             }
             composable(
                 route=VideoFilesList.route
             ){
                 VideoFilesListScreen(
                     {file, route ->
-                        homeViewModel.file=file
+//                        homeViewModel.file=file
+                        homeViewModel.path_or_uri=file.path
                         homeNavController.navigateSingleTopTo(route)
                     }
                 )
@@ -241,13 +249,13 @@ fun HomeScreen(
             composable(
                 route=VideoPlay.route
             ){
-                VideosPlayScreen(modifier = Modifier.fillMaxSize(), path=homeViewModel.file!!.path)
+                VideosPlayScreen(modifier = Modifier.fillMaxSize(), path_or_uri=homeViewModel.path_or_uri)
             }
             composable(
                 route=RePackaging.route
             ){
                 RePackagingScreen(activity
-                    ,homeViewModel.file!!
+                    ,File(homeViewModel.path_or_uri)
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
@@ -266,7 +274,7 @@ fun HomeScreen(
                     {route:String->
                         homeViewModel.nextDestination={homeNavController.navigateSingleTopTo(route)}
                     },
-                    homeViewModel.file
+                    File(homeViewModel.path_or_uri)
                 )
             }
             composable(
@@ -281,7 +289,8 @@ fun HomeScreen(
             {
                 FilesListScreen2(
                     {file, route ->
-                        homeViewModel.file=file
+//                        homeViewModel.file=file
+                        homeViewModel.path_or_uri=file.path
                         homeNavController.navigateSingleTopTo(route)
                     }
                 )
@@ -292,7 +301,7 @@ fun HomeScreen(
             ){
                VideoSegmenterScreen(
                     activity
-                   ,homeViewModel.file!!
+                   ,File(homeViewModel.path_or_uri)
                    ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                )
             }
@@ -432,7 +441,7 @@ fun HomeScreen(
             ){
                VideoFormatConversionScreen(
                    activity
-                   ,homeViewModel.file!!
+                   ,File(homeViewModel.path_or_uri)
                    ,{
                        homeNavController.navigateSingleTopTo(TasksCenter.route)
                        homeViewModel.show_interstistial_ad=true
@@ -444,7 +453,7 @@ fun HomeScreen(
             ){
                 SpeedChangeScreen(
                     activity
-                    ,homeViewModel.file!!
+                    ,File(homeViewModel.path_or_uri)
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
@@ -453,7 +462,7 @@ fun HomeScreen(
             ){
                 ExtractAudioScreen(
                     activity
-                    ,homeViewModel.file!!
+                    ,File(homeViewModel.path_or_uri)
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
@@ -463,7 +472,7 @@ fun HomeScreen(
             ){
                 VideoMuteScreen(
                     activity
-                    ,homeViewModel.file!!
+                    , File(homeViewModel.path_or_uri)
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
@@ -472,7 +481,7 @@ fun HomeScreen(
             ){
                 VideoAspectRatioScreen(
                     activity
-                    ,homeViewModel.file!!
+                    ,File(homeViewModel.path_or_uri)
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
             }
@@ -482,7 +491,7 @@ fun HomeScreen(
             ){
                 VideoCropScreen2(
                     activity
-                    ,homeViewModel.file!!
+                    ,File(homeViewModel.path_or_uri)
                     ,{homeNavController.navigateSingleTopTo(TasksCenter.route)}
                 )
  //               NineGridPage()
@@ -490,7 +499,7 @@ fun HomeScreen(
             composable(
                 route=FileRead.route
             ){
-                FileReadingScreen(homeViewModel.file!!,homeViewModel.route_flag)
+                FileReadingScreen(File(homeViewModel.path_or_uri),homeViewModel.route_flag)
             }
             composable(
                 route=LogDisplay.route
@@ -512,12 +521,22 @@ fun HomeScreen(
             ){
                 VideoCompressScreen(
                     activity
-                    ,homeViewModel.file!!
+                    ,File(homeViewModel.path_or_uri)
                     ,{
                         homeNavController.navigateSingleTopTo(TasksCenter.route)
                         homeViewModel.show_interstistial_ad=true
                     }
                 )
+            }
+            composable(
+                route=Recording.route
+            ){
+                RecordingScreen({
+                        uri, route->
+                        homeViewModel.path_or_uri=uri
+                        homeNavController.navigateSingleTopTo(route)
+
+                })
             }
         }
         homeViewModel.show_crash_message_flag=ConfigsUtils.show_crash_message_flag
@@ -559,6 +578,128 @@ fun HomeScreen(
 //            )
 //        }
     }
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R){
+        PermissionRequestTemplate(
+            permission = Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            text= stringResource(id = R.string.request_write_permission),
+            rationaleContent = { onRequest, onOpenSettings ->
+                Column {
+                    Text(text = stringResource(id = R.string.read_and_write_permissions), fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row {
+                        // 引导用户再次请求
+                        Button(onClick = onRequest) { Text(stringResource(id = R.string.reauthorization)) }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // 引导用户进入设置页（处理永久拒绝场景）
+                        Button(onClick = onOpenSettings) { Text(stringResource(id = R.string.go_to_settings)) }
+                    }
+                }
+
+            },
+            onOpenSettings = {
+                val packageName = context.packageName
+                val intent = Intent()
+                intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                intent.data = Uri.fromParts("package", packageName, null)
+                startActivity(context, intent, null)
+            }
+        )
+        PermissionRequestTemplate(
+            permission = Manifest.permission.READ_EXTERNAL_STORAGE,
+            text=stringResource(id = R.string.request_read_permission),
+            rationaleContent = { onRequest, onOpenSettings ->
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.read_and_write_permissions),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row {
+                        // 引导用户再次请求
+                        Button(onClick = onRequest) { Text(stringResource(id = R.string.reauthorization)) }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // 引导用户进入设置页（处理永久拒绝场景）
+                        Button(onClick = onOpenSettings) { Text(stringResource(id = R.string.go_to_settings)) }
+                    }
+                }
+            },
+            onOpenSettings = {
+                val packageName = context.packageName
+                val intent = Intent()
+                intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                intent.data = Uri.fromParts("package", packageName, null)
+                startActivity(context, intent, null)
+            }
+        )
+    }
+    else{
+        val areSelfExternalStoragePermissionEnabled = Environment.isExternalStorageManager()
+        if(!areSelfExternalStoragePermissionEnabled){
+            val activity = context.findActivity()
+            val builder = AlertDialog.Builder(activity)
+                .setMessage(activity.getString(R.string.request_file_permissions))
+                .setPositiveButton(activity.getString(R.string.ok)) { _, _ ->
+                    val packageName = activity.packageName
+                    val intent = Intent()
+                    intent.action = Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
+                    intent.data = Uri.fromParts("package", packageName, null)
+                    startActivity(activity, intent, null)
+                }
+                .setNeutralButton(activity.getString(R.string.ask_me_later)){ _, _ ->
+
+                }
+            builder.show()
+        }
+    }
+    if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.TIRAMISU) {
+        PermissionRequestTemplate(
+            permission = Manifest.permission.POST_NOTIFICATIONS,
+            text= stringResource(id = R.string.request_notification_permission),
+            rationaleContent = { onRequest, onOpenSettings ->
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.apply_for_notification_permission),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row {
+                        // 引导用户再次请求
+                        Button(onClick = onRequest) { Text(stringResource(id = R.string.reauthorization)) }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // 引导用户进入设置页（处理永久拒绝场景）
+                        Button(onClick = onOpenSettings) { Text(stringResource(id = R.string.go_to_settings)) }
+                    }
+                }
+            },
+            onOpenSettings = {
+                val intent = Intent().apply {
+                    when {
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            putExtra(
+                                Settings.EXTRA_APP_PACKAGE,
+                                context.packageName
+                            )
+                        }
+                        // For older versions, you might need to guide them to the general app info screen
+                        // from where they can access notification settings.
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
+                            action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                            data =
+                                Uri.fromParts("package", context.packageName, null)
+                        }
+
+                        else -> {
+                            action =
+                                Settings.ACTION_SETTINGS // Fallback to general settings
+                        }
+                    }
+                }
+                startActivity(context, intent, null)
+            }
+        )
+    }
+
 }
 
 @Composable
@@ -688,7 +829,7 @@ private fun AdItem(ad: AdContent, adIndex: Int) {
             .padding(vertical = 8.dp)
             .clickable {
                 FilesUtils.openWebLink(content, ad.clickUrl)
-                FirebaseUtils.onAdClicked(ad, adIndex)
+//                FirebaseUtils.onAdClicked(ad, adIndex)
             },
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -752,70 +893,52 @@ fun ShowInterstitialAd(
             Text(stringResource(id = R.string.task_tip))
         },
         text ={
+                val isIgnoringBatteryGranted by observeIgnoringBatteryPermissionStatus()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         //.padding(16.dp)
 
                 ) {
-                    if(!PermissionsUtils.isIgnoringBatteryOptimizations(context)){
+                    if(isIgnoringBatteryGranted){
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = stringResource(id = R.string.cancel_power_saving2)
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                     }
-                    if(FirebaseUtils.adContentList.isNotEmpty()) {
+                    if (webViewInstance != null) {
                         Text(
                             text = stringResource(id = R.string.ad),
                             style = MaterialTheme.typography.headlineMedium,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
-                        LazyColumn {
-                            items(FirebaseUtils.adContentList.size) { it ->
-                                AdItem(ad = FirebaseUtils.adContentList[it], it)
-                                FirebaseUtils.logAdImpression(FirebaseUtils.adContentList[it], it)
-                            }
-                        }
-                    }
-                    else{
-//                        AdWebView(
-//                            modifier = Modifier
-//                                .fillMaxSize() ,
-//                            url= stringResource(id = R.string.link)
-//                        )
-                        if (webViewInstance != null) {
-                            Text(
-                                text = stringResource(id = R.string.ad),
-                                style = MaterialTheme.typography.headlineMedium,
-                                modifier = Modifier.padding(bottom = 16.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .fillMaxHeight(0.7f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                        ) {
+                            AndroidView(
+                                modifier = Modifier.fillMaxSize(),
+                                factory = { webViewInstance!! }
                             )
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.9f)
-                                    .fillMaxHeight(0.7f)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Color.White)
-                            ) {
-                                AndroidView(
-                                    modifier = Modifier.fillMaxSize(),
-                                    factory = { webViewInstance!! }
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Transparent) // 设置为透明背景
-                                        .clickable {
-                                            FilesUtils.openWebLink(
-                                                context,
-                                                context.getString(R.string.link)
-                                            )
-                                        }
-                                )
-                                // 由于 Box 是可交互的，它会接收到触摸事件并拦截 WebView
-                              }
+                                    .fillMaxSize()
+                                    .background(Color.Transparent) // 设置为透明背景
+                                    .clickable {
+                                        FilesUtils.openWebLink(
+                                            context,
+                                            context.getString(R.string.link)
+                                        )
+                                    }
+                            )
+                            // 由于 Box 是可交互的，它会接收到触摸事件并拦截 WebView
                         }
                     }
+
                 }
         },
         confirmButton ={
@@ -1237,3 +1360,56 @@ private fun UpdateDialog(
         )
     }
 }
+
+
+//if(FirebaseUtils.adContentList.isNotEmpty()) {
+//    Text(
+//        text = stringResource(id = R.string.ad),
+//        style = MaterialTheme.typography.headlineMedium,
+//        modifier = Modifier.padding(bottom = 16.dp)
+//    )
+//    LazyColumn {
+//        items(FirebaseUtils.adContentList.size) { it ->
+//            AdItem(ad = FirebaseUtils.adContentList[it], it)
+//            FirebaseUtils.logAdImpression(FirebaseUtils.adContentList[it], it)
+//        }
+//    }
+//}
+//else{
+////                        AdWebView(
+////                            modifier = Modifier
+////                                .fillMaxSize() ,
+////                            url= stringResource(id = R.string.link)
+////                        )
+//    if (webViewInstance != null) {
+//        Text(
+//            text = stringResource(id = R.string.ad),
+//            style = MaterialTheme.typography.headlineMedium,
+//            modifier = Modifier.padding(bottom = 16.dp)
+//        )
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth(0.9f)
+//                .fillMaxHeight(0.7f)
+//                .clip(RoundedCornerShape(16.dp))
+//                .background(Color.White)
+//        ) {
+//            AndroidView(
+//                modifier = Modifier.fillMaxSize(),
+//                factory = { webViewInstance!! }
+//            )
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color.Transparent) // 设置为透明背景
+//                    .clickable {
+//                        FilesUtils.openWebLink(
+//                            context,
+//                            context.getString(R.string.link)
+//                        )
+//                    }
+//            )
+//            // 由于 Box 是可交互的，它会接收到触摸事件并拦截 WebView
+//        }
+//    }
+//}

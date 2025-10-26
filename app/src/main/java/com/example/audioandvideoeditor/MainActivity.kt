@@ -1,9 +1,12 @@
 package com.example.audioandvideoeditor
 
+//import com.example.audioandvideoeditor.utils.PermissionsUtils
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -45,12 +48,18 @@ import com.example.audioandvideoeditor.services.TasksBinder
 import com.example.audioandvideoeditor.services.TasksService
 import com.example.audioandvideoeditor.ui.theme.AudioAndVideoEditorTheme
 import com.example.audioandvideoeditor.utils.ConfigsUtils
-import com.example.audioandvideoeditor.utils.FirebaseUtils
 import com.example.audioandvideoeditor.utils.LogUtils
-import com.example.audioandvideoeditor.utils.PermissionsUtils
 import kotlinx.coroutines.launch
 
-
+fun Context.findActivity(): Activity {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    // 权限请求必须在 Activity Context 中进行
+    throw IllegalStateException("Permissions must be requested within an Activity Context.")
+}
 class MainActivity : ComponentActivity() {
     private val TAG="MainActivity"
     lateinit var tasksBinder: TasksBinder
@@ -96,15 +105,16 @@ class MainActivity : ComponentActivity() {
         startService(intent)
         tasks_binder_flag=false
         bindService(intent, connection, Context.BIND_AUTO_CREATE) // 绑定Service
-        PermissionsUtils.requestSelfExternalStoragePermission(this)
-        PermissionsUtils.requestNotificationsPermission(this)
+        //PermissionsUtils.requestSelfExternalStoragePermission(this)
+        //PermissionsUtils.requestNotificationsPermission(this)
+        //PermissionsUtils.requestRecordAudioPermission(this)
         //PermissionsUtils.requestIgnoreBatteryOptimizations(this)
-        if(!FirebaseUtils.init_flag){
-            FirebaseUtils.initFirebase(this)
-        }
-        else{
-            FirebaseUtils.reFreshRemoteConfig()
-        }
+//        if(!FirebaseUtils.init_flag){
+//            FirebaseUtils.initFirebase(this)
+//        }
+//        else{
+//            FirebaseUtils.reFreshRemoteConfig()
+//        }
         lifecycleScope.launch{
             ConfigsUtils.gitHubRelease=ConfigsUtils.getLatestGitHubRelease(getString(R.string.owner),getString(R.string.repo))
             ConfigsUtils.gitHubRelease?.let {
@@ -116,9 +126,10 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        PermissionsUtils.checkNotificationsPermission(this)
-        PermissionsUtils.checkSelfExternalStoragePermission(this)
-        PermissionsUtils.isIgnoringBatteryOptimizations(this)
+//        PermissionsUtils.checkNotificationsPermission(this)
+//        PermissionsUtils.checkSelfExternalStoragePermission(this)
+//        PermissionsUtils.isIgnoringBatteryOptimizations(this)
+
     }
 
     override fun onPause() {

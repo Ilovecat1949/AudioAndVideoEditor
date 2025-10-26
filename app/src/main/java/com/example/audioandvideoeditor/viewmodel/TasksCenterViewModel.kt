@@ -9,6 +9,7 @@ import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.services.TasksBinder
+import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.utils.TextsUtils
 import java.io.BufferedReader
 import java.io.File
@@ -19,7 +20,7 @@ class TasksCenterViewModel: ViewModel() {
     var tasks_binder_flag= mutableStateOf(false)
     lateinit var tasksBinder: TasksBinder
     lateinit var tasksDao: TasksDao
-    lateinit var readContext:(file: File, route:String, flag:Boolean)->Unit
+    lateinit var readContext:(path_or_uri:String, route:String, flag:Boolean)->Unit
     val watingTasksList= mutableStateListOf<TaskInfo>()
     val runningTasksList= mutableStateListOf<TaskInfo>()
     val cancelledTasksList= mutableStateListOf<TaskInfo>()
@@ -148,7 +149,12 @@ class TasksCenterViewModel: ViewModel() {
             val int_arr=ArrayList<Int>()
             int_arr.add(tasksList[i].type)
             val str_arr=ArrayList<String>()
-            str_arr.add(tasksList[i].path)
+            if(tasksList[i].path.isNotEmpty()){
+                str_arr.add(tasksList[i].path)
+            }
+            else{
+                str_arr.add(tasksList[i].uri)
+            }
             str_arr.add(tasksList[i].log_path)
             infosList.add(
                 TaskInfo(

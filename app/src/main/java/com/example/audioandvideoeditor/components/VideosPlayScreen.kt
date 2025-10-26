@@ -1,29 +1,26 @@
 package com.example.audioandvideoeditor.components
 
 import android.net.Uri
-import androidx.compose.foundation.focusable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.ui.PlayerView
-import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.viewmodel.VideosPlayViewModel
 
 @Composable
 fun VideosPlayScreen(
     modifier: Modifier,
-    path:String,
+    path_or_uri:String,
     videosPlayViewModel: VideosPlayViewModel= viewModel()
 ){
 val life= rememberLifecycle()
 videosPlayViewModel.initExoPlayer(LocalContext.current)
 life.onLifeCreate {
-    val mediaItem = MediaItem.fromUri(Uri.parse(path))
+    val mediaItem = MediaItem.fromUri(Uri.parse(path_or_uri))
     videosPlayViewModel.exoplayer.setMediaItem(mediaItem)
     videosPlayViewModel.exoplayer.prepare()
 }
@@ -41,6 +38,9 @@ life.onLifeDestroy {
         it.player=videosPlayViewModel.exoplayer
     }
 }
+
+
+
 
 @Composable
 private fun PlayerSurface(

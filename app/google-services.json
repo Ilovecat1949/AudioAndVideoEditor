@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "42185101687",
+    "project_id": "audioandvideoeditor",
+    "storage_bucket": "audioandvideoeditor.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:42185101687:android:ace279eabe4d5cc0da5172",
+        "android_client_info": {
+          "package_name": "com.example.audioandvideoeditor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQV7bCK6_L2EF1YTwLnOXfS-fSXTNCTl8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

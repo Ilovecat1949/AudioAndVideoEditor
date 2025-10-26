@@ -31,6 +31,7 @@ val HomeNavigationRow= listOf(
     Permissions,
     ContactDeveloper,
     VideoCompress,
+    Recording,
 )
 object FunctionsCenter:Destination{
     override val route: String
@@ -162,4 +163,9 @@ object ContactDeveloper:Destination{
 object VideoCompress:Destination{
     override val route: String
         get() = "video_compress"
+}
+
+object Recording:Destination{
+    override val route: String
+        get() = "recording"
 }

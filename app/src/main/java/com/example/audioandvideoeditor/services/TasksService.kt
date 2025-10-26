@@ -16,10 +16,10 @@ import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.dao.AppDatabase
 import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.entity.Task
-import com.example.audioandvideoeditor.utils.PermissionsUtils
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
+import com.example.audioandvideoeditor.utils.checkNotificationsPermission
 import java.lang.Thread.sleep
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,6 +27,7 @@ import java.util.LinkedList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
+import kotlin.math.log
 
 class TasksService : Service() {
     private val TAG="TasksService"
@@ -125,7 +126,7 @@ class TasksService : Service() {
                            iFFmpegService!!.getProgress(runningTasksQueue[i].long_arr[0])
                         }
                         progressMap[runningTasksQueue[i].long_arr[0]]=progress
-                        if(PermissionsUtils.areNotificationsEnabled && notificationMap.containsKey(runningTasksQueue[i].long_arr[0])) {
+                        if(checkNotificationsPermission(this) && notificationMap.containsKey(runningTasksQueue[i].long_arr[0])) {
                             val notification = notificationMap[runningTasksQueue[i].long_arr[0]]
                             val position = (if(progress<0) 0 else if(progress>1) 99.99 else progress*100)
 //                            Log.d(TAG, "position:" + position + "progress:" + progress)
@@ -141,7 +142,7 @@ class TasksService : Service() {
                         i++
                     }
                     else{
-                        if(PermissionsUtils.areNotificationsEnabled && notificationMap.containsKey(runningTasksQueue[i].long_arr[0])) {
+                        if(checkNotificationsPermission(this) && notificationMap.containsKey(runningTasksQueue[i].long_arr[0])) {
                             if(state==1) {
                                 val notification = notificationMap[runningTasksQueue[i].long_arr[0]]
                                 notification!!.setProgress(100, 100, false)
@@ -187,12 +188,12 @@ class TasksService : Service() {
                         val formatter= SimpleDateFormat("yyyy-MM-dd HH:mm:ss", resources.configuration.locales[0])
                         tasksDao.insertTask(
                             Task(
-                                runningTasksQueue[i].long_arr[0],
-                                runningTasksQueue[i].int_arr[0],
-                                state,
-                                runningTasksQueue[i].str_arr[0],
-                                runningTasksQueue[i].str_arr[1],
-                                formatter.format(date)
+                                task_id =  runningTasksQueue[i].long_arr[0],
+                                type =  runningTasksQueue[i].int_arr[0],
+                                status = state,
+                                path =  runningTasksQueue[i].str_arr[0],
+                                log_path =  runningTasksQueue[i].str_arr[1],
+                                date= formatter.format(date)
                             )
                         )
                         runningTasksQueue.removeAt(i)
@@ -242,7 +243,7 @@ class TasksService : Service() {
                         }
                         taskStateMap[info.long_arr[0]]=state
                         progressMap[info.long_arr[0]]=0f
-                        if(PermissionsUtils.areNotificationsEnabled) {
+                        if(checkNotificationsPermission(this)) {
                             val name=FilesUtils.getNameFromPath(info.str_arr[0])
                             val notification =
                                 if(info.int_arr[0]!=2){

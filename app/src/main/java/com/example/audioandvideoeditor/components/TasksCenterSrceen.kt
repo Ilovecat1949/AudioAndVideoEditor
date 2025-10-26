@@ -63,7 +63,7 @@ private val TAG="TasksCenterScreen"
 @Composable
 fun TasksCenterScreen(
     activity: MainActivity,
-    readContext:(file: File, route:String,flag:Boolean)->Unit,
+    readContext:(path_or_uri:String, route:String,flag:Boolean)->Unit,
     tasksCenterViewModel: TasksCenterViewModel= viewModel()
 ){
     val context= LocalContext.current
@@ -178,7 +178,7 @@ fun TasksCenterScreen(
 @Composable
 fun TasksCenterScreen_20250606(
     activity: MainActivity,
-    readContext:(file: File, route:String,flag:Boolean)->Unit,
+    readContext:(path_or_uri:String, route:String,flag:Boolean)->Unit,
     tasksCenterViewModel: TasksCenterViewModel= viewModel()
 ){
 
@@ -410,7 +410,7 @@ private fun RunningTasksList(
                     ){
                         val file=if(task_type==2) File(path) else File(log_path)
                         TextButton(onClick = {
-                            tasksCenterViewModel.readContext(file,FileRead.route,true)
+                            tasksCenterViewModel.readContext(path,FileRead.route,true)
                         }){
                             Text(text = LocalContext.current.getString(R.string.log))
                         }
@@ -698,7 +698,7 @@ private fun EndedTasksList(
                                     .clickable {
                                         val file = File(path)
                                         tasksCenterViewModel.readContext(
-                                            file,
+                                            path,
                                             VideoPlay.route,
                                             false
                                         )
@@ -707,9 +707,9 @@ private fun EndedTasksList(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                         }
-                        val file=if(task_type!=2) File(log_path) else File(path)
+                        if(task_type!=2) File(log_path) else File(path)
                         TextButton(onClick = {
-                            tasksCenterViewModel.readContext(file,FileRead.route,false)
+                            tasksCenterViewModel.readContext(if(task_type!=2) (log_path) else (path),FileRead.route,false)
                         }) {
                             Text(text=LocalContext.current.getString(R.string.log))
                         }
@@ -879,9 +879,9 @@ private fun showTaskInfo(info:TaskInfo,tasksCenterViewModel: TasksCenterViewMode
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ){
-                val file=if(task_type!=2) File(log_path) else File(path)
+                if(task_type!=2) File(log_path) else File(path)
                 TextButton(onClick = {
-                    tasksCenterViewModel.readContext(file,FileRead.route,false)
+                    tasksCenterViewModel.readContext(if(task_type!=2) (log_path) else (path),FileRead.route,false)
                 }) {
                     Text(text=LocalContext.current.getString(R.string.log))
                 }

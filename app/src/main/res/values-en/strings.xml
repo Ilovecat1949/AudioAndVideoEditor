@@ -221,4 +221,22 @@ Email: running_in_storm@qq.com\n
     <string name="ad">AD</string>
     <string name="owner">Ilovecat1949</string>
     <string name="repo">AudioAndVideoEditor</string>
+    <string name="read_and_write_permissions">Hello, the application requires read and write permissions to process audio and video</string>
+    <string name="reauthorization">Reauthorization</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="apply_for_notification_permission">Hello, the application notification permission displays progress and keeps background tasks alive</string>
+    <string name="recording_permission">Hello, recording sound requires recording permission</string>
+    <string name="start_recording_screen">Start recording screen</string>
+    <string name="request_write_permission">The application needs to request permission to write files</string>
+    <string name="request_read_permission">The application requires permission to read files</string>
+    <string name="request_notification_permission">The application needs to request notification permission</string>
+    <string name="request_permission">Application requires permission request</string>
+    <string name="minimalist_screen_recording">Minimalist screen recording</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
+    <string name="recording">Recording in progress ..</string>
+    <string name="rejected">rejected</string>
+    <string name="recorded_videos">Recorded videos</string>
+    <string name="empty">empty</string>
+    <string name="record">record</string>
 </resources>

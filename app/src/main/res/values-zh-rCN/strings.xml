@@ -215,4 +215,22 @@
     <string name="ad">广告</string>
     <string name="owner">Ilovecat1949</string>
     <string name="repo">AudioAndVideoEditor</string>
+    <string name="read_and_write_permissions">你好，应用需要读写权限处理音视频</string>
+    <string name="reauthorization">再次授权</string>
+    <string name="go_to_settings">前往设置</string>
+    <string name="apply_for_notification_permission">你好，应用通知权限显示进度和保活后台任务</string>
+    <string name="recording_permission">你好，录制声音需要录音权限</string>
+    <string name="start_recording_screen">开始录屏</string>
+    <string name="request_write_permission">应用需要请求写文件权限</string>
+    <string name="request_read_permission">应用需要请求读文件权限</string>
+    <string name="request_notification_permission">应用需要请求通知件权限</string>
+    <string name="request_permission">应用需要请求权限</string>
+    <string name="minimalist_screen_recording">极简录屏</string>
+    <string name="stop">停止</string>
+    <string name="start">开始</string>
+    <string name="recording">正在录制…</string>
+    <string name="rejected">被拒绝</string>
+    <string name="recorded_videos">已录制的视频</string>
+    <string name="empty">空</string>
+    <string name="record">录屏</string>
 </resources>

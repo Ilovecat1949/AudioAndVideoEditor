@@ -55,7 +55,7 @@ fun RePackagingScreen(
         VideosPlayScreen(modifier = Modifier
             .height(200.dp)
             .fillMaxWidth(),
-            path =file.path
+            path_or_uri =file.path
         )
         RePackagingScreen2(activity, file, nextDestination, rePackagingViewModel)
     }

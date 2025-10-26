@@ -26,25 +26,31 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".services.FFmpegService"
-            android:enabled="true"
-            android:exported="true"
-            android:process=":ffmpeg"
-            ></service>
-
-        <service
-            android:name=".services.TasksService"
-            android:enabled="true"
-            android:exported="true" />
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider" android:exported="false"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <service
+            android:name=".services.FFmpegService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":ffmpeg" />
+        <service
+            android:name=".services.TasksService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <service
+            android:name=".services.RecordingService"
+            android:foregroundServiceType="mediaProjection"
+            android:enabled="true"
+            android:exported="false"></service>
     </application>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -58,4 +64,5 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 </manifest>
