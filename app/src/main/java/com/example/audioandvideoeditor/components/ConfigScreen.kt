@@ -177,7 +177,7 @@ private fun ConfigScreen2_2(
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                currentVersion
+                currentVersion!!
                 , fontWeight = FontWeight.Bold
             )           
             Spacer(modifier = Modifier.height(40.dp))
@@ -450,7 +450,7 @@ private fun UpdateDialog(
     if(configViewModel.showUpdateDialogFlag.value) {
         if(
             ConfigsUtils.gitHubRelease!=null
-            &&ConfigsUtils.isNewVersionAvailable(currentVersion, ConfigsUtils.gitHubRelease!!.tagName)
+            &&ConfigsUtils.isNewVersionAvailable(currentVersion!!, ConfigsUtils.gitHubRelease!!.tagName)
         ) {
             AlertDialog(
                 onDismissRequest = { configViewModel.showUpdateDialogFlag.value = false },

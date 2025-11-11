@@ -547,7 +547,7 @@ fun HomeScreen(
         }
         else if(
             ConfigsUtils.gitHubRelease!=null
-            &&ConfigsUtils.isNewVersionAvailable(currentVersion, ConfigsUtils.gitHubRelease!!.tagName)
+            &&ConfigsUtils.isNewVersionAvailable(currentVersion!!, ConfigsUtils.gitHubRelease!!.tagName)
             &&homeViewModel.showUpdateDialogFlag
         )
         {
@@ -578,127 +578,7 @@ fun HomeScreen(
 //            )
 //        }
     }
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R){
-        PermissionRequestTemplate(
-            permission = Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            text= stringResource(id = R.string.request_write_permission),
-            rationaleContent = { onRequest, onOpenSettings ->
-                Column {
-                    Text(text = stringResource(id = R.string.read_and_write_permissions), fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        // 引导用户再次请求
-                        Button(onClick = onRequest) { Text(stringResource(id = R.string.reauthorization)) }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        // 引导用户进入设置页（处理永久拒绝场景）
-                        Button(onClick = onOpenSettings) { Text(stringResource(id = R.string.go_to_settings)) }
-                    }
-                }
 
-            },
-            onOpenSettings = {
-                val packageName = context.packageName
-                val intent = Intent()
-                intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                intent.data = Uri.fromParts("package", packageName, null)
-                startActivity(context, intent, null)
-            }
-        )
-        PermissionRequestTemplate(
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE,
-            text=stringResource(id = R.string.request_read_permission),
-            rationaleContent = { onRequest, onOpenSettings ->
-                Column {
-                    Text(
-                        text = stringResource(id = R.string.read_and_write_permissions),
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        // 引导用户再次请求
-                        Button(onClick = onRequest) { Text(stringResource(id = R.string.reauthorization)) }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        // 引导用户进入设置页（处理永久拒绝场景）
-                        Button(onClick = onOpenSettings) { Text(stringResource(id = R.string.go_to_settings)) }
-                    }
-                }
-            },
-            onOpenSettings = {
-                val packageName = context.packageName
-                val intent = Intent()
-                intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                intent.data = Uri.fromParts("package", packageName, null)
-                startActivity(context, intent, null)
-            }
-        )
-    }
-    else{
-        val areSelfExternalStoragePermissionEnabled = Environment.isExternalStorageManager()
-        if(!areSelfExternalStoragePermissionEnabled){
-            val activity = context.findActivity()
-            val builder = AlertDialog.Builder(activity)
-                .setMessage(activity.getString(R.string.request_file_permissions))
-                .setPositiveButton(activity.getString(R.string.ok)) { _, _ ->
-                    val packageName = activity.packageName
-                    val intent = Intent()
-                    intent.action = Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
-                    intent.data = Uri.fromParts("package", packageName, null)
-                    startActivity(activity, intent, null)
-                }
-                .setNeutralButton(activity.getString(R.string.ask_me_later)){ _, _ ->
-
-                }
-            builder.show()
-        }
-    }
-    if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.TIRAMISU) {
-        PermissionRequestTemplate(
-            permission = Manifest.permission.POST_NOTIFICATIONS,
-            text= stringResource(id = R.string.request_notification_permission),
-            rationaleContent = { onRequest, onOpenSettings ->
-                Column {
-                    Text(
-                        text = stringResource(id = R.string.apply_for_notification_permission),
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        // 引导用户再次请求
-                        Button(onClick = onRequest) { Text(stringResource(id = R.string.reauthorization)) }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        // 引导用户进入设置页（处理永久拒绝场景）
-                        Button(onClick = onOpenSettings) { Text(stringResource(id = R.string.go_to_settings)) }
-                    }
-                }
-            },
-            onOpenSettings = {
-                val intent = Intent().apply {
-                    when {
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
-                            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
-                            putExtra(
-                                Settings.EXTRA_APP_PACKAGE,
-                                context.packageName
-                            )
-                        }
-                        // For older versions, you might need to guide them to the general app info screen
-                        // from where they can access notification settings.
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
-                            action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                            data =
-                                Uri.fromParts("package", context.packageName, null)
-                        }
-
-                        else -> {
-                            action =
-                                Settings.ACTION_SETTINGS // Fallback to general settings
-                        }
-                    }
-                }
-                startActivity(context, intent, null)
-            }
-        )
-    }
 
 }
 

@@ -1,5 +1,6 @@
 package com.example.audioandvideoeditor.components
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -31,9 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -376,7 +379,10 @@ private fun RunningTasksList(
             if(!tasksCenterViewModel.tasksState.containsKey(id)){
                 tasksCenterViewModel.tasksState[id]= mutableStateOf("")
             }
-            tasksCenterViewModel.show_log_flag_map[path]= mutableStateOf(false)
+            //tasksCenterViewModel.show_log_flag_map[path]= mutableStateOf(false)
+            var show_log_flag by remember {
+                mutableStateOf(false)
+            }
             Column (
                 modifier = Modifier
                     .fillMaxWidth()
@@ -492,7 +498,9 @@ private fun RunningTasksList(
 ////                    }
 //                }
 //            }
-            readLog(path,tasksCenterViewModel)
+            readLog(path,tasksCenterViewModel,show_log_flag,{
+                show_log_flag=it
+            })
        }
     }
 }
@@ -642,6 +650,7 @@ private fun EndedTasksList(
     padding: PaddingValues,
     tasksCenterViewModel: TasksCenterViewModel
 ){
+    val context=LocalContext.current
     LazyColumn(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.Start,
@@ -659,8 +668,17 @@ private fun EndedTasksList(
             val task_type=tasksCenterViewModel.endedTasksList[it].int_arr[0]
             val path=tasksCenterViewModel.endedTasksList[it].str_arr[0]
             val log_path=if(task_type!=2) tasksCenterViewModel.endedTasksList[it].str_arr[1] else ""
-            val name=FilesUtils.getNameFromPath(path)
-            tasksCenterViewModel.show_log_flag_map[path]= mutableStateOf(false)
+            val name=
+                if(task_type!=4) {
+                    FilesUtils.getNameFromPath(path)
+                }
+            else{
+                    FilesUtils.getFileNameUsingDocumentFile(context,Uri.parse(path)).toString()
+                }
+            //tasksCenterViewModel.show_log_flag_map[path]= mutableStateOf(false)
+            var show_log_flag by remember {
+                mutableStateOf(false)
+            }
             Column (
                 modifier = Modifier
                     .fillMaxWidth()
@@ -773,7 +791,7 @@ private fun EndedTasksList(
 //                        Text(text = LocalContext.current.resources.getString(R.string.ended))
 //                }
 //            }
-            readLog(path,tasksCenterViewModel)
+            readLog(path,tasksCenterViewModel,show_log_flag,{show_log_flag=it})
         }
     }
 }
@@ -781,9 +799,12 @@ private fun EndedTasksList(
 @Composable
 private fun readLog(
     path:String,
-    tasksCenterViewModel: TasksCenterViewModel
+    tasksCenterViewModel: TasksCenterViewModel,
+    show_log_flag_map: Boolean=false,
+    setShowFlag:(flag: Boolean )-> Unit
 ){
-    if(tasksCenterViewModel.show_log_flag_map[path]!!.value){
+    //tasksCenterViewModel.show_log_flag_map[path]!!.value
+    if(show_log_flag_map){
        val file=File(path)
        if(file.exists()&&file.canRead()){
            tasksCenterViewModel.file=file
@@ -793,7 +814,8 @@ private fun readLog(
            tasksCenterViewModel.readLogFile()
            AlertDialog(
                onDismissRequest = {
-                   tasksCenterViewModel.show_log_flag_map[path]!!.value=false
+                   //tasksCenterViewModel.show_log_flag_map[path]!!.value=false
+                   setShowFlag(false)
                    bufferedReader.close()
                                   },
                title ={Text(text=LocalContext.current.getString(R.string.log))},
@@ -836,7 +858,8 @@ private fun readLog(
                },
                confirmButton ={
                   TextButton(onClick = {
-                      tasksCenterViewModel.show_log_flag_map[path]!!.value=false
+                      //tasksCenterViewModel.show_log_flag_map[path]!!.value=false
+                      setShowFlag(false)
                       bufferedReader.close()
                   }) {
                       Text(text="确定")

@@ -11,13 +11,13 @@ This is an Android audio and video editor based on FFmpeg, with the goal of prov
 At present, it supports functions such as FFmpeg command line, video compression, 
 video format conversion, video duration clipping, video re encoding, and obtaining audio and video information.      
 The code for this project is written quite crudely. If there are any mistakes,  
-please feel free to let me know. If you have any questions or suggestions, please feel free to contact me via email.  
+please feel free to let me know. If you have any questions or suggestions, please feel free to contact me via email.     
 This project supports both Simplified Chinese and English languages, which can be switched in the settings.
 ## Development and operational environment
-This project is developed by Android Studio, using Kotlin and C++programming languages, and FFmpeg version 4.2.9.
-This project should support Android systems from Android 10 to Android 14,   
-and run on my own x86 Android 10 virtual machine and arm64-v8a Android 14 real machine.
-Android 15 should not run on Android 15 because I am not compatible with 16K Page Size.
+This project is developed by Android Studio, using Kotlin and C++programming languages, and FFmpeg version 4.2.11.       
+This project should support Android systems from Android 10 to Android 16,   
+and run on my own x86_64 Android 16 virtual machine and arm64-v8a Android 14 real machine.    
+Adapted to 16KB Page Size.    
 The application of this project requires obtaining file read and write permissions as well as notification permissions.     
 File read and write permissions are necessary for reading local audio and video files and generating new ones.     
 Notification permission is mainly used to inform users of the progress of task execution and is not necessary.    

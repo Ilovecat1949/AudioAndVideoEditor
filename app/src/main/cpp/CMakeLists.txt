@@ -102,16 +102,15 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         native-lib.cpp
-        #
-        #        # 工具
-        ${CMAKE_SOURCE_DIR}/utils/logger.h
-#        ${CMAKE_SOURCE_DIR}/utils/timer.c
-        ${CMAKE_SOURCE_DIR}/utils/one_frame.h
 
+                # 工具
+        ${CMAKE_SOURCE_DIR}/utils/logger.h
+        ${CMAKE_SOURCE_DIR}/utils/one_frame.h
+#
         ${CMAKE_SOURCE_DIR}/media/decoder/BaseDecoder.cpp
         ${CMAKE_SOURCE_DIR}/media/decoder/video/VideoDecoder.cpp
         ${CMAKE_SOURCE_DIR}/media/decoder/audio/AudioDecoder.cpp
-#
+##
         ${CMAKE_SOURCE_DIR}/media/encoder/BaseEncoder.cpp
         ${CMAKE_SOURCE_DIR}/media/encoder/video/VideoEncoder.cpp
         ${CMAKE_SOURCE_DIR}/media/encoder/audio/AudioEncoder.cpp
@@ -136,7 +135,7 @@ target_link_libraries(
         # 指定目标库，native-lib 是在上面 add_library 中配置的目标库
         native-lib
 
-        # 4. 连接 FFmpeg 相关的库
+#        # 4. 连接 FFmpeg 相关的库
         avutil
         swresample
         avcodec
@@ -153,6 +152,9 @@ target_link_libraries(
         OpenSLES
         -lEGL
         -lGLESv2
-        # Links the target library to the log library
-        # included in the NDK.
-        ${log-lib} )
+#        # Links the target library to the log library
+#        # included in the NDK.
+        ${log-lib}
+        -Wl,-z,max-page-size=16384
+        -Wl,-z,common-page-size=16384
+)

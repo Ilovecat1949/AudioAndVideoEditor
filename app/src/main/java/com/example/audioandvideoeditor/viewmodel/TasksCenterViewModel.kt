@@ -182,7 +182,7 @@ class TasksCenterViewModel: ViewModel() {
         tasksBinder.cancelTask(id)
     }
     val show_flag= mutableStateOf(0)
-    val show_log_flag_map=HashMap<String,MutableState<Boolean>>()
+    //val show_log_flag_map=HashMap<String,MutableState<Boolean>>()
 
     lateinit var file: File
     lateinit var bufferedReader: BufferedReader

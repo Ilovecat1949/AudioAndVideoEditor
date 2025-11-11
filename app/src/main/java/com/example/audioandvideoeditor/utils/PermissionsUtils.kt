@@ -296,8 +296,8 @@ fun RationaleDisplay(
         },
         text = {
             rationaleContent(
-                onRequestPermission = onRequest, // 重新请求的 Action
-                onOpenSettings = onOpenSettings // 跳转设置的 Action
+                 onRequest, // 重新请求的 Action
+                onOpenSettings // 跳转设置的 Action
             )
         },
         confirmButton = {
