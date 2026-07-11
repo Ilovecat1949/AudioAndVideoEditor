@@ -112,7 +112,7 @@ void FFmpegServiceTask::ffmpeg_exec() {
                             av_bprint_init(&part, 0, 65536);
                             av_vbprintf(&part, fmt, vl);
                             if(level<=AV_LOG_INFO){
-                                __android_log_print(ANDROID_LOG_INFO, "ffmpeg", "%d:%s",level, part.str);
+//                                __android_log_print(ANDROID_LOG_INFO, "ffmpeg", "%d:%s",level, part.str);
                                 delete log_str;
                                 log_str=new char[strlen(part.str)+1];
                                 strcpy(log_str,part.str);

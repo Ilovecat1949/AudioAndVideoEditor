@@ -9,18 +9,30 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TasksDao {
+    @Query("SELECT MAX(task_id) FROM task")
+    suspend fun getMaxTaskId(): Long?
+
     @Insert
-    fun insertTask(task: Task)
-    @Query("select count(1) from Task ")
-    fun getTaskNum():Long
-    @Query("select * from Task order by task_id desc")
-    fun loadAllTasks():List<Task>
-    @Query("select * from Task where status=(:status) order by task_id desc")
-    fun loadTasksForStatus(status:Int):List<Task>
+    suspend fun insertTask(task: Task)
+
+    @Query("SELECT * FROM task ORDER BY date DESC")
+    suspend fun getAllTasks(): List<Task>?
+
+    @Query("SELECT * FROM task WHERE task_id = :taskId")
+    suspend fun getTaskById(taskId: Long): Task?
+
+    @Query("UPDATE task SET status = :newStatus WHERE task_id = :taskId")
+    suspend fun updateTaskStatus(taskId: Long, newStatus: Int)
+
     @Delete
-    fun deleteTask(task:Task)
-    @Query("select max(task_id) from Task ")
-    fun getMaxTaskId():Long?
+    suspend fun deleteTask(task: Task)
+
+    @Query("DELETE FROM task")
+    suspend fun deleteAllTasks()
+
+    @Query("SELECT * FROM task WHERE status = :status")
+    suspend fun getTasksByStatus(status: Int): List<Task>?
+
     @Query("select * from Task where type=(:type) order by task_id desc")
     fun loadTasksByType(type:Int): Flow<List<Task>>
 }

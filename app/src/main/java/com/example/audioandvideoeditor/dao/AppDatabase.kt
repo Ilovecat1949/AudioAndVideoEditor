@@ -15,6 +15,7 @@ abstract class AppDatabase : RoomDatabase(){
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("alter table Task add column uri text")
+                db.execSQL("alter table Task add column file_name text")
             }
         }
 

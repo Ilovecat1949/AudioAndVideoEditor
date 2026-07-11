@@ -1,11 +1,10 @@
 package com.example.audioandvideoeditor.services
 
 import android.os.Binder
-import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.entity.TaskInfo
 
-class TasksBinder (service: TasksService) : Binder(){
-    private var service: TasksService
+class TasksBinder (service: TaskService) : Binder(){
+    private var service: TaskService
     init{
         this.service=service
     }
@@ -27,8 +26,8 @@ class TasksBinder (service: TasksService) : Binder(){
     fun getTasksQueue():List<TaskInfo>{
         return service.getTasksQueue()
     }
-    fun getWatingTasksQueue():List<TaskInfo>{
-        return service.getWatingTasksQueue()
+    fun getWaitingTasksQueue():List<TaskInfo>{
+        return service.getWaitingTasksQueue()
     }
     fun getRunningTasksQueue():List<TaskInfo>{
         return service.getRunningTasksQueue()

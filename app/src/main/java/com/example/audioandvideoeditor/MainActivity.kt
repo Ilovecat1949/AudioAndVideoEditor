@@ -15,7 +15,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -54,11 +56,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.audioandvideoeditor.application.AppApplication.Companion.INSTANCE
 import com.example.audioandvideoeditor.components.HomeScreen
-import com.example.audioandvideoeditor.dao.AppDatabase
-import com.example.audioandvideoeditor.dao.TasksDao
+import com.example.audioandvideoeditor.services.TaskService
 import com.example.audioandvideoeditor.services.TasksBinder
-import com.example.audioandvideoeditor.services.TasksService
 import com.example.audioandvideoeditor.ui.theme.AudioAndVideoEditorTheme
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.LogUtils
@@ -76,26 +77,39 @@ fun Context.findActivity(): Activity {
 }
 class MainActivity : ComponentActivity() {
     private val TAG="MainActivity"
-    lateinit var tasksBinder: TasksBinder
-        private set
-    lateinit var tasksDao: TasksDao
-    var tasks_binder_flag by mutableStateOf(false)
-        private set
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, service: IBinder) {
-            tasksBinder = service as TasksBinder
-//            tasksBinder.initTasksDao(tasksDao)
-            Log.d(TAG,"tasksBinder = service as TasksBinder")
-            tasks_binder_flag=true
-        }
-        override fun onServiceDisconnected(name: ComponentName) {
+
+    // 🌟 核心保底锁：缓存来自通知栏待跳转的路由目标
+    // 使用 String 类型，和你的 Compose 路由（Destination）完全对齐
+    private var pendingNotificationRoute: String? = null
+    /**
+     * 核心稳妥解析器：只负责安全的将 Intent 里的参数提取出来
+     */
+    private fun handleNotificationIntent(intent: Intent?) {
+        intent?.getStringExtra("TARGET_ROUTE")?.let { route ->
+            // 抓取到了通知栏传来的目标路由卡片
+            pendingNotificationRoute = route
+            // 💡 稳妥微调：立刻在底层的原始 Intent 中擦除它，防止配置变更（如旋转屏幕）导致 onCreate 重新读取旧数据
+            intent.removeExtra("TARGET_ROUTE")
         }
     }
+
+    // 直接获取全局仓库
+// Activity 中安全获取
+    private val repository by lazy {
+        INSTANCE.taskRepository
+    }
+
+    private lateinit var serviceConnection: ServiceConnection
+
     private var showCrashMessageFlag by mutableStateOf(false)
     private var crashMessageText by mutableStateOf("")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setupCrashHandler()
+
+        // 🌟 2. 拦截冷启动（App进程已死，点击通知唤醒）
+        handleNotificationIntent(intent)
+
         setContent {
             AudioAndVideoEditorTheme {
                 // A surface container using the 'background' color from the theme
@@ -103,9 +117,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if(tasks_binder_flag){
-                        HomeScreen(this)//Greeting(ffmpegInfo())
-                    }
+//                    if(tasks_binder_flag){
+                        HomeScreen(
+                            initialRoute = pendingNotificationRoute,
+                            onRouteConsumed = {
+                                // 消费回调：一旦跳转成功，立刻切断指针，防止旋转屏幕重复跳转
+                                pendingNotificationRoute = null
+                            },
+                            this
+                        )//Greeting(ffmpegInfo())
+//                    }
 //                    GreetingPreview()
                     val context= LocalContext.current
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R){
@@ -230,28 +251,25 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-//                if(showCrashMessageFlag){
-//                    showCrashMessage(message = crashMessageText, context = LocalContext.current) {
-//                        handleCrash()
-//                    }
-//                }
+
             }
         }
-        tasksDao=AppDatabase.getDatabase(this).taskDao()
-        val intent = Intent(this, TasksService::class.java)
-        startService(intent)
-        tasks_binder_flag=false
-        bindService(intent, connection, Context.BIND_AUTO_CREATE) // 绑定Service
-        //PermissionsUtils.requestSelfExternalStoragePermission(this)
-        //PermissionsUtils.requestNotificationsPermission(this)
-        //PermissionsUtils.requestRecordAudioPermission(this)
-        //PermissionsUtils.requestIgnoreBatteryOptimizations(this)
-//        if(!FirebaseUtils.init_flag){
-//            FirebaseUtils.initFirebase(this)
-//        }
-//        else{
-//            FirebaseUtils.reFreshRemoteConfig()
-//        }
+
+        // 1. 初始化连接
+        serviceConnection = object : ServiceConnection {
+            override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                val binder = service as TasksBinder
+                repository.setBinder(binder) // 赋值给全局仓库
+            }
+            override fun onServiceDisconnected(arg0: ComponentName) {
+                repository.setBinder(null)
+            }
+        }
+
+        // 2. 绑定服务（双模式：启动+绑定，保证后台任务不被杀）
+        val intent = Intent(this, TaskService::class.java)
+        startService(intent) // 关键：启动服务，独立于Activity生命周期
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
         lifecycleScope.launch{
             ConfigsUtils.gitHubRelease=ConfigsUtils.getLatestGitHubRelease(getString(R.string.owner),getString(R.string.repo))
             ConfigsUtils.gitHubRelease?.let {
@@ -275,11 +293,12 @@ class MainActivity : ComponentActivity() {
     }
     override fun onDestroy() {
         super.onDestroy()
-        unbindService(connection)
-        if(tasksBinder.getRemainingTasksNum()==0){
-            val intent = Intent(this,TasksService::class.java)
-            stopService(intent)
-        }
+//        unbindService(connection)
+        unbindService(serviceConnection) // 仅解绑，不停止服务
+//        if(tasksBinder.getRemainingTasksNum()==0){
+//            val intent = Intent(this,TaskService::class.java)
+//            stopService(intent)
+//        }
     }
 //    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)} passing\n      in a {@link RequestMultiplePermissions} object for the {@link ActivityResultContract} and\n      handling the result in the {@link ActivityResultCallback#onActivityResult(Object) callback}.")
 //    override fun onRequestPermissionsResult(
@@ -304,7 +323,7 @@ class MainActivity : ComponentActivity() {
 //        unbindService(connection)
 //        var intent = Intent(this,TasksService::class.java)
         stopService(intent)
-        intent = Intent(this,MainActivity::class.java)
+        intent = Intent(this,Context::class.java)
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(intent)
         this.finish()
@@ -327,15 +346,23 @@ class MainActivity : ComponentActivity() {
     private fun handleCrash() {
 //        Toast.makeText(this, "An unexpected error occurred. Please send the logs.", Toast.LENGTH_LONG).show()
         //sendLogsToDeveloper()
-        val toast = Toast.makeText( this, getString(R.string.feedback_text3), Toast.LENGTH_SHORT)
-        toast.setGravity(Gravity.CENTER, 0, 0)
-        toast.show()
+//        val toast = Toast.makeText( this, getString(R.string.feedback_text3), Toast.LENGTH_SHORT)
+//        toast.setGravity(Gravity.CENTER, 0, 0)
+//        toast.show()
         stopService(intent)
-        intent = Intent(this,MainActivity::class.java)
+        intent = Intent(this, MainActivity::class.java)
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(intent)
         this.finish()
     }
+private fun showToastFromWorkerThread(context: Context,text: String) {
+    // 🌟 获取主线程的 Looper，确保这个 Runnable 一定在主线程队列中排队执行
+    Handler(Looper.getMainLooper()).post {
+        val toast = Toast.makeText(context, text, Toast.LENGTH_SHORT)
+        toast.setGravity(Gravity.CENTER, 0, 0)
+        toast.show()
+    }
+}
 
     private external fun ffmpegInfo():String
     companion object {
@@ -346,64 +373,7 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@Composable
-fun showCrashMessage(message: String,context: Context,restart:()->Unit) {
-    AlertDialog(
-        onDismissRequest = {
 
-        },
-        title = {
-          Text("出错了")
-        },
-        text = {
-           Column (
-               modifier = Modifier.fillMaxWidth()
-           ){
-               Text("出错了，请复制报错信息发送给开发者")
-               LazyColumn(
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .background(
-                           color = MaterialTheme.colorScheme.background,
-                           shape = RoundedCornerShape(10.dp)
-                       )
-               ){
-                   item {
-                       Row(
-                           modifier = Modifier.fillMaxWidth(),
-                           horizontalArrangement = Arrangement.End
-                       ) {
-                           IconButton(onClick = {
-                               val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                               val clip = ClipData.newPlainText("logs", message)
-                               clipboard.setPrimaryClip(clip)
-                               val toast = Toast.makeText(context, "Logs copied to clipboard", Toast.LENGTH_SHORT)
-                               toast.setGravity(Gravity.CENTER, 0, 0)
-                               toast.show()
-                           }) {
-                               Icon(
-                                   painter = painterResource(id = R.drawable.baseline_content_copy_24)
-                                   , contentDescription = null)
-                           }
-                       }
-                   }
-                   item {
-                        Text(message)
-                    }
-               }
-           }
-        },
-        confirmButton = {
-            Button(onClick = {
-                restart()
-            }) {
-                Text("重启")
-            }
-        },
-        dismissButton = {
-        }
-    )
-}
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(

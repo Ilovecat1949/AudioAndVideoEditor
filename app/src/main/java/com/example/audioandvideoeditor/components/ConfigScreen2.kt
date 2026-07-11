@@ -184,7 +184,7 @@ private fun SettingsScreen(viewModel: ConfigViewModel2, nextDestination: (route:
                 Text(text= stringResource(id = R.string.app_info),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable {  })
-                Text("作者信息",
+                Text(stringResource(R.string.author_info),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable {  })
                 errorMessage?.let { ErrorDialog(it) { viewModel.clearErrorMessage() } }

@@ -1,5 +1,7 @@
 package com.example.audioandvideoeditor.components
 
+
+import android.app.Activity
 import android.content.Context
 import android.view.Gravity
 import android.widget.Toast
@@ -42,12 +44,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.audioandvideoeditor.MainActivity
+
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.viewmodel.ConfigViewModel
@@ -268,7 +271,7 @@ private fun ConfigScreen2_2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    nextDestination(PrivacyPolicy.route)
+                    nextDestination(Destination.PrivacyPolicy.route)
                 }
         ){
             Spacer(modifier = Modifier.height(40.dp))
@@ -287,7 +290,7 @@ private fun ConfigScreen2_2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    nextDestination(APPInfo.route)
+                    nextDestination(Destination.APPInfo.route)
                 }
         ){
             Spacer(modifier = Modifier.height(40.dp))
@@ -306,7 +309,7 @@ private fun ConfigScreen2_2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    nextDestination(LogDisplay.route)
+                    nextDestination(Destination.LogDisplay.route)
                 }
         ){
             Spacer(modifier = Modifier.height(40.dp))
@@ -325,7 +328,7 @@ private fun ConfigScreen2_2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    nextDestination(ContactDeveloper.route)
+                    nextDestination(Destination.ContactDeveloper.route)
                 }
         ){
             Spacer(modifier = Modifier.height(40.dp))
@@ -344,7 +347,7 @@ private fun ConfigScreen2_2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    nextDestination(Permissions.route)
+                    nextDestination(Destination.Permissions.route)
                 }
         ){
             Spacer(modifier = Modifier.height(40.dp))
@@ -552,8 +555,8 @@ private fun UpdateDialog(
 
 @Composable
 fun showEditPathScreen(
-activity: MainActivity,
-configViewModel: ConfigViewModel
+    activity: Activity,
+    configViewModel: ConfigViewModel
 ){
     if (configViewModel.showPathDialog.value) {
         var newDownloadPath by remember { mutableStateOf(configViewModel.downloadPath.value) }
@@ -1004,7 +1007,7 @@ private fun showEditSizeForAudioEncodingTaskScreen(
 
 @Composable
 private fun showEditSizeForMaxTasksNumScreen(
-    activity: MainActivity,
+    activity: Activity,
     configViewModel: ConfigViewModel
 ){
     if(configViewModel.editSizeForMaxTasksNumFlag.value) {

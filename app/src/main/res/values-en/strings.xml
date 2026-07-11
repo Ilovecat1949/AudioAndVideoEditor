@@ -239,4 +239,79 @@ Email: running_in_storm@qq.com\n
     <string name="recorded_videos">Recorded videos</string>
     <string name="empty">empty</string>
     <string name="record">record</string>
+
+
+
+    <!-- 悬浮窗与辅助功能 (Floating Window & Accessibility) -->
+    <string name="desc_control_button">Control Button</string>
+    <string name="desc_close_floating_ball">Close Floating Ball</string>
+    <string name="label_floating_window_settings">Recording Settings</string>
+    <string name="dialog_title_floating_ball">Enable Screen Recording Floating Ball?</string>
+    <string name="dialog_msg_floating_ball">After enabling, you can easily control the screen recording via the desktop ball when the app is in the background.</string>
+    <string name="btn_go_to_enable">OK, Go to Enable</string>
+    <string name="label_desktop_floating_ball">Desktop Floating Ball</string>
+    <string name="desc_desktop_floating_ball">Easily control recording via the floating ball after exiting the app</string>
+
+    <string name="log_err_save_record_history">Failed to save recording history to disk</string>
+    <string name="toast_record_permission_denied">Screen recording permission denied. Cannot start service.</string>
+
+    <!-- 通用控制操作 (Common Actions) -->
+    <string name="btn_confirm">Confirm</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_retry">Restart</string>
+    <string name="btn_share">Share</string>
+    <string name="btn_copy_path">Copy Path</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_success">Success</string>
+    <string name="status_failed">Failed</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="status_unknown_state">Unknown State</string>
+    <string name="label_default">Default</string>
+    <!-- 错误与提示信息 (Errors & Toast Notifications) -->
+    <string name="msg_error_occurred">An error occurred</string>
+    <string name="msg_error_report_dev">An error occurred. Please copy the error details and send them to the developer.</string>
+    <string name="toast_permission_denied">Screen recording permission denied. Cannot start service.</string>
+    <string name="toast_file_not_exist">File does not exist</string>
+    <string name="toast_no_app_to_open_file">No application found to open this file</string>
+    <string name="toast_invalid_web_link">Invalid web link</string>
+    <string name="toast_no_browser_app">No browser application found</string>
+    <string name="msg_permission_required">Permission is required to use this feature.</string>
+    <string name="btn_grant_immediately">Grant Now</string>
+
+    <!-- 录屏前台通知栏 (Screen Recording Notification) -->
+    <string name="notification_channel_desc">Foreground notification for screen recording service</string>
+    <string name="notification_text_stopped">Recording service stopped, waiting for next session</string>
+    <string name="notification_text_paused">Recording service paused, waiting to resume</string>
+
+    <!-- 各个核心功能模块 UI (Feature Screens UI) -->
+    <string name="ad_recommendation">Featured Ads</string>
+    <string name="author_info">Author Info</string>
+    <string name="action_remux">Remux</string>
+    <string name="action_reencode">Re-encode</string>
+    <string name="action_test">Test</string>
+    <string name="action_record">Record</string>
+    <string name="label_start_time">Start Time</string>
+    <string name="label_end_time">End Time</string>
+    <string name="label_video_resolution">Select Video Resolution</string>
+    <string name="label_record_params">Recording Parameters</string>
+    <string name="label_resolution">Resolution</string>
+    <string name="resolution_adaptive">Auto Adaptive</string>
+    <string name="label_file_list">File List</string>
+    <string name="language_simplified_chinese">Simplified Chinese</string>
+
+    <!-- 任务中心与日志 (Task Center & Logs) -->
+    <string name="tab_running">Running</string>
+    <string name="tab_waiting">Waiting</string>
+    <string name="tab_history">History</string>
+    <string name="tip_empty_running">No running tasks</string>
+    <string name="tip_empty_waiting">No waiting tasks</string>
+    <string name="tip_empty_history">No task history</string>
+    <string name="label_task_log">Task Logs</string>
+    <string name="btn_play">Play</string>
+    <string name="btn_log">Log</string>
+    <string name="status_execution_failed">Execution Failed</string>
+    <string name="msg_log_file_not_exist">Log file does not exist</string>
+    <string name="notification_channel_task">Task Notification</string>
+
 </resources>

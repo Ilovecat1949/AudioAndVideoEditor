@@ -1,7 +1,7 @@
 package com.example.audioandvideoeditor.viewmodel
 
 import android.app.Activity
-import android.os.Environment
+import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -30,7 +30,7 @@ class ConfigViewModel: ViewModel()  {
     private val _downloadPath = mutableStateOf("")
     val downloadPath: State<String> = _downloadPath
 
-    fun initConfig(activity: MainActivity){
+    fun initConfig(activity: Context){
         when(ConfigsUtils.sizeForVideoEncodingTask){
             ConfigsUtils.AV_10MB->{sizeForVideoEncodingTaskText.value="10MB"
                 checkSizeForVideoEncodingTaskFlag.value=0
@@ -112,7 +112,7 @@ class ConfigViewModel: ViewModel()  {
             }
         }
     }
-    fun setSizeForVideoEncodingTask(activity: Activity){
+    fun setSizeForVideoEncodingTask(activity: MainActivity){
         var size=0L
         when(checkSizeForVideoEncodingTaskFlag.value){
             0->{size=ConfigsUtils.AV_10MB

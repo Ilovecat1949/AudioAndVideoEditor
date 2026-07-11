@@ -1,5 +1,5 @@
 package com.example.audioandvideoeditor.components
-
+/*
 interface Destination {
     val route: String
 }
@@ -55,7 +55,7 @@ object ReEncoding:Destination{
 }
 object AudioAndVideoInfo:Destination{
     override val route: String
-        get() = "audio_video_info"
+        get() = "audio_and_video_info"
 }
 object VideoFilesList:Destination{
     override val route: String
@@ -169,3 +169,4 @@ object Recording:Destination{
     override val route: String
         get() = "recording"
 }
+ */

@@ -73,7 +73,7 @@ fun APPTestScreen(){
 
 
 @Composable
-private fun AdItem(ad: AdContent,  adIndex: Int) {
+private fun _AdItem(ad: AdContent,  adIndex: Int) {
     val content= LocalContext.current
     Card(
         modifier = Modifier
@@ -100,7 +100,7 @@ private fun AdItem(ad: AdContent,  adIndex: Int) {
 //                contentScale = ContentScale.Crop
 //            )
             NetworkImage(
-                imageUrl=ad.imageUrl,
+                imageUrl = ad.imageUrl,
                 modifier = Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(8.dp)),
@@ -121,48 +121,6 @@ private fun AdItem(ad: AdContent,  adIndex: Int) {
                     maxLines = 2,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-        }
-    }
-}
-
-
-@Composable
-fun AdDialog(
-    ads: List<AdContent>,
-    onDismissRequest: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = false) // 允许自定义宽度
-    ) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
-            modifier = Modifier.fillMaxWidth(0.9f) // 弹窗宽度占比
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "精彩广告推荐",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                LazyColumn {
-                    items(ads.size) { it ->
-                        AdItem(ad = ads[it], it)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = onDismissRequest,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("关闭")
-                }
             }
         }
     }

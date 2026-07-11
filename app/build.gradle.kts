@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.parcelize)
 //    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
@@ -20,7 +21,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 4
-        versionName = "1.0.4"
+        versionName = "1.0.5"
         ndkVersion="25.1.8937393"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

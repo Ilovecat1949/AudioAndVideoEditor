@@ -199,7 +199,7 @@ class FileReadingViewModel: ViewModel(){
                     visibleContent.addAll(lines.map { ContentItem(itemIdCounter++, it) })
                     itemIdFlag= itemIdCounter
 //                    }
-                    Log.d(TAG,"visibleContent.size:${visibleContent.size}")
+//                    Log.d(TAG,"visibleContent.size:${visibleContent.size}")
                     if(currentPosition==0L){
                         readingProgress.value=0f
                     }
@@ -273,7 +273,7 @@ class FileReadingViewModel_20250614: ViewModel(){
                     visibleContent.clear()
                     visibleContent.addAll(lines.map { ContentItem(itemIdCounter++, it) })
                     itemIdFlag= itemIdCounter
-                    Log.d(TAG,"visibleContent.size:${visibleContent.size}")
+//                    Log.d(TAG,"visibleContent.size:${visibleContent.size}")
                     if(currentPosition==0L){
                         readingProgress.value=0f
                     }
@@ -389,7 +389,7 @@ class FileReadingViewModel_20250614: ViewModel(){
                     visibleContent.clear()
                     visibleContent.addAll(lines.map { ContentItem(itemIdCounter++, it) })
                     itemIdFlag= itemIdCounter
-                    Log.d(TAG,"visibleContent.size:${visibleContent.size}")
+//                    Log.d(TAG,"visibleContent.size:${visibleContent.size}")
                     if(currentPosition==0L){
                         readingProgress.value=0f
                     }

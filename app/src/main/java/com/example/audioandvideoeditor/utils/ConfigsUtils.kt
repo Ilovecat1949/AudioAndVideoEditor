@@ -2,13 +2,14 @@ package com.example.audioandvideoeditor.utils
 
 import android.app.Activity
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Environment
+import android.os.Parcelable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -34,6 +35,28 @@ data class GitHubAsset(
     val size: Long,
     @SerialName("browser_download_url") val browserDownloadUrl: String
 )
+
+@Parcelize
+data class RecordingConfig(
+    // 1. 分辨率配置（默认使用 0，0 代表动态获取当前手机全屏物理宽高）
+    val videoWidth: Int = 0,
+    val videoHeight: Int = 0,
+
+    // 2. 帧率配置（默认使用你最新 Service 里写死的 30 帧）
+    val frameRate: Int = 30,
+
+    // 3. 码率配置（默认使用你最新 Service 里写死的 5Mbps: 5 * 1024 * 1024）
+    val bitRate: Int = 5 * 1024 * 1024,
+
+    // 4. 音频源配置（兼容你原有的 recordAudioType: 0无声、1麦克风、2系统声音）
+    val audioType: Int = 0,
+
+    // 🌟 增量无感追加：用户是否期望开启桌面悬浮小球（默认关闭，完全不强求，保证不破坏原有录屏业务）
+//    val isFloatingWindowEnabled: Boolean = false
+    // 🌟 未来可扩展留空区：
+    // 如果你以后想加：videoEncoder (H264/H265)、outputFormat (MP4/MKV)、audioBitRate
+    // 直接往这里继续追加字段即可，完全不会破坏外部的传参通道！
+) : Parcelable
 
 object ConfigsUtils {
 
@@ -192,6 +215,30 @@ object ConfigsUtils {
         editor.apply()
         recordAudioType=type
     }
+
+    // 🌟 核心函数 1：把纯静态账本落盘保存
+    fun saveRecordConfig(context: Context, config: RecordingConfig) {
+        val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
+        prefs.edit().apply {
+            putInt("record_video_width", config.videoWidth)
+            putInt("record_video_height", config.videoHeight)
+            putInt("record_bit_rate", config.bitRate)
+            putInt("record_frame_rate", config.frameRate)
+            apply() // 异步提交，绝对不卡死主线程
+        }
+    }
+
+    // 🌟 核心函数 2：从磁盘捞出上一次保存的真理
+    fun loadRecordConfig(context: Context): RecordingConfig {
+        val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
+        return RecordingConfig(
+            videoWidth = prefs.getInt("record_video_width", 0),       // 默认 0 (自适应全屏)
+            videoHeight = prefs.getInt("record_video_height", 0),     // 默认 0 (自适应全屏)
+            bitRate = prefs.getInt("record_bit_rate", 5 * 1024 * 1024), // 默认 5 Mbps
+            frameRate = prefs.getInt("record_frame_rate", 30),         // 默认 30 帧
+        )
+    }
+
 
 //    fun setPermissionRemind(context: Context,remindFlag:Boolean,permission:Int){
 //        val editor = context.getSharedPreferences("data", Context.MODE_PRIVATE).edit()

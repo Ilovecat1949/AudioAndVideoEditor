@@ -12,11 +12,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,12 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -260,23 +253,6 @@ fun PermissionRequestTemplate(
             }
         }
     }
-}
-
-// A. 权限提示按钮 (State 3 UI)
-@Composable
-fun PermissionPromptButton(onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("需要权限才能使用此功能。")
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onClick) {
-            Text("立即授权")
-        }
-    }
-}
-
-@Composable
-fun PermissionPrompt(showPermissionPromptDialo:Boolean) {
-
 }
 
 // B. 理由展示对话框 (State 2 UI)

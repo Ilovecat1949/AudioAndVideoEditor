@@ -10,82 +10,74 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.navigation.Destination
 
+/**
+ * 优化后的底部导航组件
+ * @param onTabSelected 标签选中回调
+ * @param currentScreen 当前选中的页面
+ */
 @Composable
-fun SootheBottomNavigation(onTabSelected: (Destination) -> Unit,currentScreen:Destination){
+fun SootheBottomNavigation(
+    onTabSelected: (Destination) -> Unit,
+    currentScreen: Destination
+) {
+    val context = LocalContext.current
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = Modifier
-    ){
+    ) {
+        // 功能中心
         NavigationBarItem(
-            icon={
-                Icon(painter = painterResource(id = R.drawable.baseline_business_center_24),
-                    contentDescription =null
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_business_center_24),
+                    contentDescription = null
                 )
             },
-            label = {
-                Text(
-                    text = LocalContext.current.resources.getString(R.string.function_center)
-                )
-            },
-            selected= currentScreen==FunctionsCenter,
-            onClick = {onTabSelected(FunctionsCenter)}
+            label = { Text(text = context.resources.getString(R.string.function_center)) },
+            selected = currentScreen == Destination.FunctionsCenter,
+            onClick = { onTabSelected(Destination.FunctionsCenter) }
         )
+
+        // 任务中心
         NavigationBarItem(
-            icon={
-                Icon(painter = painterResource(id = R.drawable.baseline_notes_24),
-                    contentDescription =null
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_notes_24),
+                    contentDescription = null
                 )
             },
-            label = {
-                Text(
-                    text = LocalContext.current.resources.getString(R.string.task_center)
-                )
-            },
-            selected= currentScreen==TasksCenter,
-            onClick = {onTabSelected(TasksCenter)}
+            label = { Text(text = context.resources.getString(R.string.task_center)) },
+            selected = currentScreen == Destination.TasksCenter,
+            onClick = { onTabSelected(Destination.TasksCenter) }
         )
+
+        // 文件中心
         NavigationBarItem(
-            icon={
-                Icon(painter = painterResource(id = R.drawable.baseline_folder_24),
-                    contentDescription =null
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_folder_24),
+                    contentDescription = null
                 )
             },
-            label = {
-                Text(
-                    text = LocalContext.current.resources.getString(R.string.file)
-                )
-            },
-            selected= currentScreen==FilesList2,
-            onClick = {onTabSelected(FilesList2)}
+            label = { Text(text = context.resources.getString(R.string.file)) },
+            selected = currentScreen == Destination.FilesList2,
+            onClick = { onTabSelected(Destination.FilesList2) }
         )
-//        NavigationBarItem(
-//            icon={
-//                Icon(painter = painterResource(id = R.drawable.baseline_person_24),
-//                    contentDescription =null
-//                )
-//            },
-//            label = {
-//                Text(
-//                    text = LocalContext.current.resources.getString(R.string.user_center)
-//                )
-//            },
-//            selected= currentScreen==UserCenter,
-//            onClick = {onTabSelected(UserCenter)}
-//        )
+
+        // 设置中心
         NavigationBarItem(
-            icon={
-                Icon(painter = painterResource(id = R.drawable.settings_24px),
-                    contentDescription =null
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.settings_24px),
+                    contentDescription = null
                 )
             },
-            label = {
-                Text(
-                    text = LocalContext.current.resources.getString(R.string.settings)
-                )
-            },
-            selected= currentScreen==Config,
-            onClick = {onTabSelected(Config)}
+            label = { Text(text = context.resources.getString(R.string.settings)) },
+            selected = currentScreen == Destination.Config,
+            onClick = { onTabSelected(Destination.Config) }
         )
     }
 }

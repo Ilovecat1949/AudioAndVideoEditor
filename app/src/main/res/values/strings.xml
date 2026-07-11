@@ -232,4 +232,77 @@
     <string name="recorded_videos">已录制的视频</string>
     <string name="empty">空</string>
     <string name="record">录屏</string>
+
+    <!-- 悬浮窗与辅助功能 (Floating Window & Accessibility) -->
+    <string name="desc_control_button">控制按钮</string>
+    <string name="desc_close_floating_ball">关闭悬浮球</string>
+    <string name="label_floating_window_settings">录屏设置</string>
+    <string name="dialog_title_floating_ball">想要开启录屏悬浮球吗？</string>
+    <string name="dialog_msg_floating_ball">开启悬浮球后，应用退到后台时你可以通过桌面小球更方便地控制录屏</string>
+    <string name="btn_go_to_enable">好的，去开启</string>
+    <string name="label_desktop_floating_ball">桌面快捷悬浮球</string>
+    <string name="desc_desktop_floating_ball">退出应用后可通过悬浮球便捷控制录制</string>
+
+    <string name="log_err_save_record_history">录屏历史落盘失败</string>
+    <string name="toast_record_permission_denied">录屏权限被拒绝，无法启动服务</string>
+
+    <!-- 通用控制操作 (Common Actions) -->
+    <string name="btn_confirm">确定</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_close">关闭</string>
+    <string name="btn_retry">重启</string>
+    <string name="btn_share">分享</string>
+    <string name="btn_copy_path">复制路径</string>
+    <string name="status_completed">完成</string>
+    <string name="status_success">成功</string>
+    <string name="status_failed">失败</string>
+    <string name="status_unknown">未知</string>
+    <string name="status_unknown_state">未知状态</string>
+    <string name="label_default">默认</string>
+
+    <!-- 错误与提示信息 (Errors & Toast Notifications) -->
+    <string name="msg_error_occurred">出错了</string>
+    <string name="msg_error_report_dev">出错了，请复制报错信息发送给开发者</string>
+    <string name="toast_permission_denied">录屏权限被拒绝，无法启动服务</string>
+    <string name="toast_file_not_exist">文件不存在</string>
+    <string name="toast_no_app_to_open_file">没有找到可以打开此文件的应用</string>
+    <string name="toast_invalid_web_link">无效的网页链接</string>
+    <string name="toast_no_browser_app">没有找到浏览器应用</string>
+    <string name="msg_permission_required">需要权限才能使用此功能。</string>
+    <string name="btn_grant_immediately">立即授权</string>
+
+    <!-- 录屏前台通知栏 (Screen Recording Notification) -->
+    <string name="notification_channel_desc">用于屏幕录制服务的前台通知</string>
+    <string name="notification_text_stopped">录屏服务已停止，等待下一次录制</string>
+    <string name="notification_text_paused">录屏服务已暂停，等待继续录屏</string>
+
+    <!-- 各个核心功能模块 UI (Feature Screens UI) -->
+    <string name="ad_recommendation">精彩广告推荐</string>
+    <string name="author_info">作者信息</string>
+    <string name="action_remux">重封装</string>
+    <string name="action_reencode">重编码</string>
+    <string name="action_test">测试</string>
+    <string name="action_record">录屏</string>
+    <string name="label_start_time">开始时间</string>
+    <string name="label_end_time">结束时间</string>
+    <string name="label_video_resolution">选择视频分辨率</string>
+    <string name="label_record_params">录屏参数设置</string>
+    <string name="label_resolution">分辨率</string>
+    <string name="resolution_adaptive">自适应全屏</string>
+    <string name="label_file_list">文件列表</string>
+    <string name="language_simplified_chinese">简体中文</string>
+
+    <!-- 任务中心与日志 (Task Center & Logs) -->
+    <string name="tab_running">运行中</string>
+    <string name="tab_waiting">等待中</string>
+    <string name="tab_history">历史任务</string>
+    <string name="tip_empty_running">暂无运行中任务</string>
+    <string name="tip_empty_waiting">暂无等待中任务</string>
+    <string name="tip_empty_history">暂无历史任务</string>
+    <string name="label_task_log">任务日志</string>
+    <string name="btn_play">播放</string>
+    <string name="btn_log">日志</string>
+    <string name="status_execution_failed">执行失败</string>
+    <string name="msg_log_file_not_exist">日志文件不存在</string>
+    <string name="notification_channel_task">任务通知</string>
 </resources>

@@ -10,22 +10,47 @@ char *AudioAndVideoInfo::getStrInfo() {
     for(int i=0;i<40000;i++){
         info[i]=0;
     }
+
+// 🌟 统一获取容器级别的全局总时长（AV_TIME_BASE 为微秒，转换为秒）
+    int64_t total_duration = 0;
+    if (m_format_ctx && m_format_ctx->duration != AV_NOPTS_VALUE) {
+        total_duration = m_format_ctx->duration / AV_TIME_BASE;
+    }
     if(video_stream_index!=-1){
-//        sprintf(info, "%sMediaType:Video\n", info);
-        sprintf(info, "%swidth:%d\n", info,m_format_ctx->streams[video_stream_index]->codecpar->width);
-        sprintf(info, "%sheight:%d\n", info,m_format_ctx->streams[video_stream_index]->codecpar->height);
+    // 1. 旋转矩阵校正
+        int display_width = m_format_ctx->streams[video_stream_index]->codecpar->width;
+        int display_height = m_format_ctx->streams[video_stream_index]->codecpar->height;
+
+        int rotate = 0;
+        AVDictionaryEntry *tag = av_dict_get(m_format_ctx->streams[video_stream_index]->metadata, "rotate", NULL, 0);
+        if (tag && tag->value) {
+            rotate = atoi(tag->value);
+        }
+        if (rotate == 90 || rotate == 270) {
+            int temp = display_width;
+            display_width = display_height;
+            display_height = temp;
+        }
+
+        sprintf(info, "%swidth:%d\n", info, display_width);
+        sprintf(info, "%sheight:%d\n", info, display_height);
         if(m_format_ctx->streams[video_stream_index]->r_frame_rate.den!=0) {
             sprintf(info, "%sframe_rate:%f\n", info,
                     m_format_ctx->streams[video_stream_index]->r_frame_rate.num * 1.0 /
                     m_format_ctx->streams[video_stream_index]->r_frame_rate.den);
         }
         sprintf(info, "%svideo_bit_rate:%lld\n", info,m_format_ctx->streams[video_stream_index]->codecpar->bit_rate);
-        sprintf(info, "%svideo_duration:%lld\n", info,(int64_t)(m_format_ctx->streams[video_stream_index]->duration*av_q2d(m_format_ctx->streams[video_stream_index]->time_base)));
+        // 2. 🌟 时长安全防御：流时长无效时，用全局容器时长对齐兜底
+        int64_t v_dur = (int64_t)(m_format_ctx->streams[video_stream_index]->duration * av_q2d(m_format_ctx->streams[video_stream_index]->time_base));
+        if (v_dur <= 0)
+        {
+            v_dur = total_duration;
+        }
+        sprintf(info, "%svideo_duration:%lld\n", info, v_dur);
         //LOGE(TAG,"video time_base num %d,den %d ",m_format_ctx->streams[video_stream_index]->time_base.num,m_format_ctx->streams[video_stream_index]->time_base.den)
         //sprintf(info, "%sDuration2:%lld\n", info,m_format_ctx->duration/AV_TIME_BASE);
 
         enum AVCodecID codec_id = m_format_ctx->streams[video_stream_index]->codecpar->codec_id;
-        const char* codec_name = avcodec_get_name(codec_id);
         // 映射到目标类型
         if (codec_id == AV_CODEC_ID_H264) {
             sprintf(info, "%svideo_codec_type:%s\n", info,"H.264(AVC)");
@@ -53,11 +78,22 @@ char *AudioAndVideoInfo::getStrInfo() {
 //        sprintf(info, "%sMediaType:Audio\n", info);
         sprintf(info, "%ssample_rate:%d\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->sample_rate);
         sprintf(info, "%schannels:%d\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->channels);
-        sprintf(info, "%saudio_bit_rate:%lld\n", info,m_format_ctx->streams[audio_stream_index]->codecpar->bit_rate);
-        sprintf(info, "%saudio_duration:%lld\n", info,(int64_t)(m_format_ctx->streams[audio_stream_index]->duration*av_q2d(m_format_ctx->streams[audio_stream_index]->time_base)));
+        // 3. 🌟 音频码率安全兜底：防止动态码率（VBR）下 codecpar->bit_rate 为 0 导致前台不展示
+        int64_t a_bitrate = m_format_ctx->streams[audio_stream_index]->codecpar->bit_rate;
+        if (a_bitrate <= 0 && m_format_ctx->bit_rate > 0) {
+            // 如果全局有总码率，且视频码率已知，可通过估算兜底（总码率 - 视频码率）
+            int64_t v_bitrate = (video_stream_index != -1) ? m_format_ctx->streams[video_stream_index]->codecpar->bit_rate : 0;
+            if (m_format_ctx->bit_rate > v_bitrate) {
+                a_bitrate = m_format_ctx->bit_rate - v_bitrate;
+            }
+        }
+        sprintf(info, "%saudio_bit_rate:%lld\n", info, a_bitrate);
+// 4. 🌟 音频时长安全防御
+        int64_t a_dur = (int64_t)(m_format_ctx->streams[audio_stream_index]->duration * av_q2d(m_format_ctx->streams[audio_stream_index]->time_base));
+        if (a_dur <= 0) a_dur = total_duration;
+        sprintf(info, "%saudio_duration:%lld\n", info, a_dur);
         // 获取编解码器ID
         enum AVCodecID codec_id = m_format_ctx->streams[audio_stream_index]->codecpar->codec_id;
-        const char* codec_name = avcodec_get_name(codec_id);
         // 判断具体格式类型
         if (codec_id == AV_CODEC_ID_AAC) {
             sprintf(info, "%saudio_codec_type:%s\n", info,"AAC");

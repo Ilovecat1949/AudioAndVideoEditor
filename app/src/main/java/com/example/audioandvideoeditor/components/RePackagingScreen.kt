@@ -1,5 +1,6 @@
 package com.example.audioandvideoeditor.components
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,12 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.ui.videoplay.VideoPlayScreen
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.viewmodel.RePackagingViewModel
 import java.io.File
@@ -32,7 +35,7 @@ import java.util.Date
 
 @Composable
 fun RePackagingScreen(
-    activity: MainActivity,
+    activity: Context,
     file: File,
     nextDestination:()->Unit,
     rePackagingViewModel: RePackagingViewModel= viewModel()
@@ -43,7 +46,7 @@ fun RePackagingScreen(
         if(rePackagingViewModel.input_file_name.value.length==0){
             val date= Date(System.currentTimeMillis())
             val formatter= SimpleDateFormat("yyyyMMddHHmmss", context.resources.configuration.locales[0])
-            rePackagingViewModel.input_file_name.value="重封装"+formatter.format(date)
+            rePackagingViewModel.input_file_name.value=context.getString(R.string.action_remux)+formatter.format(date)
         }
     }
     Column(
@@ -52,10 +55,11 @@ fun RePackagingScreen(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        VideosPlayScreen(modifier = Modifier
-            .height(200.dp)
-            .fillMaxWidth(),
-            path_or_uri =file.path
+        VideoPlayScreen(
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth(),
+            path_or_uri = file.path
         )
         RePackagingScreen2(activity, file, nextDestination, rePackagingViewModel)
     }
@@ -63,7 +67,7 @@ fun RePackagingScreen(
 
 @Composable
 fun RePackagingScreen2(
-    activity: MainActivity,
+    activity: Context,
     file: File,
     nextDestination:()->Unit,
     rePackagingViewModel: RePackagingViewModel
@@ -102,7 +106,7 @@ fun RePackagingScreen2(
         Button(onClick = {
             startRePackaging(activity, file, nextDestination, rePackagingViewModel)
         }) {
-            Text(text = "重封装")
+            Text(text = stringResource(R.string.action_remux))
         }
         Spacer(modifier = Modifier.height(10.dp))
         Row(
@@ -117,13 +121,13 @@ fun RePackagingScreen2(
                 onValueChange = {
                     rePackagingViewModel.start_time_text.value = it
                 },
-                label = { Text("开始时间") }
+                label = { Text(stringResource(R.string.label_start_time)) }
             )
             Spacer(modifier = Modifier.width(10.dp))
             Button(onClick = {
                 rePackagingViewModel.start_time=rePackagingViewModel.start_time_text.value.toLong()
             }) {
-                Text(text = "确定")
+                Text(text =stringResource(R.string.ok))
             }
         }
         Spacer(modifier = Modifier.height(20.dp))
@@ -139,20 +143,20 @@ fun RePackagingScreen2(
                 onValueChange = {
                     rePackagingViewModel.end_time_text.value = it
                 },
-                label = { Text("结束时间") }
+                label = { Text(stringResource(R.string.label_end_time)) }
             )
             Spacer(modifier = Modifier.width(10.dp))
             Button(onClick = {
                 rePackagingViewModel.end_time=rePackagingViewModel.end_time_text.value.toLong()
             }) {
-                Text(text = "确定")
+                Text(text = stringResource(R.string.ok))
             }
         }
     }
 }
 
 private  fun startRePackaging(
-    activity: MainActivity,
+    activity: Context,
     file:File,
     nextDestination:()->Unit,
     rePackagingViewModel: RePackagingViewModel
@@ -173,7 +177,7 @@ private  fun startRePackaging(
         str_arr,
         float_arr
     )
-    activity.tasksBinder.startTask(info)
+    AppApplication.INSTANCE.taskRepository.startNewTask(info)
     rePackagingViewModel.input_file_name.value=""
     rePackagingViewModel.start_time_text.value=""
     rePackagingViewModel.end_time_text.value=""

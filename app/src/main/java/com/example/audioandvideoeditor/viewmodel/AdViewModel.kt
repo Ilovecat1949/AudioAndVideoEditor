@@ -2,8 +2,6 @@ package com.example.audioandvideoeditor.viewmodel
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Bundle
-import android.util.Log
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -17,9 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import android.app.Application
+
 // 封装单条广告信息的数据类
 
 

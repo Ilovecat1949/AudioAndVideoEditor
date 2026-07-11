@@ -46,18 +46,18 @@ Java_com_example_audioandvideoeditor_MainActivity_ffmpegInfo(JNIEnv *env, jobjec
 //    m_env->GetStr
 }
 JNIEXPORT jlong JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_initTasksFactory(JNIEnv *env,jobject thiz) {
+Java_com_example_audioandvideoeditor_services_TaskService_initTasksFactory(JNIEnv *env, jobject thiz) {
     TasksFactory *m_taskFactory=new TasksFactory();
     return (jlong)m_taskFactory;
 }
 JNIEXPORT jint JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_createAndStartTask(JNIEnv *env,
-                                                                              jobject thiz,
-                                                                              jlong m_tasks_factory,
-                                                                              jintArray int_arr,
-                                                                              jlongArray long_arr,
-                                                                              jfloatArray float_arr,
-                                                                              jobjectArray str_arr)
+Java_com_example_audioandvideoeditor_services_TaskService_createAndStartTask(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jlong m_tasks_factory,
+                                                                             jintArray int_arr,
+                                                                             jlongArray long_arr,
+                                                                             jfloatArray float_arr,
+                                                                             jobjectArray str_arr)
                                                                               {
     TaskInfo *info=new TaskInfo();
     info->env=env;
@@ -118,33 +118,33 @@ Java_com_example_audioandvideoeditor_services_TasksService_createAndStartTask(JN
 }
 
 JNIEXPORT jint JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_getTaskState(JNIEnv *env, jobject thiz,
-                                                                        jlong m_tasks_factory,
-                                                                        jlong task_id) {
+Java_com_example_audioandvideoeditor_services_TaskService_getTaskState(JNIEnv *env, jobject thiz,
+                                                                       jlong m_tasks_factory,
+                                                                       jlong task_id) {
     TasksFactory *tasks_factory=(TasksFactory *)m_tasks_factory;
     return tasks_factory->getState(task_id);
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_releaseTask(JNIEnv *env, jobject thiz,
-                                                                       jlong m_tasks_factory,
-                                                                       jlong task_id) {
+Java_com_example_audioandvideoeditor_services_TaskService_releaseTask(JNIEnv *env, jobject thiz,
+                                                                      jlong m_tasks_factory,
+                                                                      jlong task_id) {
     TasksFactory *tasks_factory=(TasksFactory *)m_tasks_factory;
     tasks_factory->release(task_id);
 }
 
 JNIEXPORT jfloat JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_getProgress(JNIEnv *env, jobject thiz,
-                                                                       jlong m_tasks_factory,
-                                                                       jlong task_id) {
+Java_com_example_audioandvideoeditor_services_TaskService_getProgress(JNIEnv *env, jobject thiz,
+                                                                      jlong m_tasks_factory,
+                                                                      jlong task_id) {
     TasksFactory *tasks_factory=(TasksFactory *)m_tasks_factory;
     //LOG_INFO("TasksService_getProgress","TasksService_getProgress","getProgress %f",tasks_factory->getProgress(task_id))
     return tasks_factory->getProgress(task_id);
 }
 JNIEXPORT jstring JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_getAudioAndVideoStrInfo(JNIEnv *env,
-                                                                                   jobject thiz,
-                                                                                   jstring path) {
+Java_com_example_audioandvideoeditor_services_TaskService_getAudioAndVideoStrInfo(JNIEnv *env,
+                                                                                  jobject thiz,
+                                                                                  jstring path) {
     const char *path2 = env->GetStringUTFChars(path, NULL);
     AudioAndVideoInfo *av_info=new AudioAndVideoInfo();
     av_info->Init(path2);
@@ -156,16 +156,16 @@ Java_com_example_audioandvideoeditor_services_TasksService_getAudioAndVideoStrIn
     return info_jstr;
 }
 JNIEXPORT void JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_cancelTask(JNIEnv *env, jobject thiz,
-                                                                      jlong m_tasks_factory,
-                                                                      jlong task_id) {
+Java_com_example_audioandvideoeditor_services_TaskService_cancelTask(JNIEnv *env, jobject thiz,
+                                                                     jlong m_tasks_factory,
+                                                                     jlong task_id) {
     TasksFactory *tasks_factory=(TasksFactory *)m_tasks_factory;
     tasks_factory->cancel(task_id);
 }
 JNIEXPORT jstring JNICALL
-Java_com_example_audioandvideoeditor_services_TasksService_getFFmpegStrInfo(JNIEnv *env,
-                                                                                jobject thiz,
-                                                                                jint info_type) {
+Java_com_example_audioandvideoeditor_services_TaskService_getFFmpegStrInfo(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jint info_type) {
     FFmpegInfo info;
     char * info_str=info.getStrFFmpegInfo(info_type);
     jstring info_jstr=env->NewStringUTF(info_str);

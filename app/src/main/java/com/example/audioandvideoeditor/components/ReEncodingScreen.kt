@@ -27,11 +27,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.ui.videoplay.VideoPlayScreen
 import com.example.audioandvideoeditor.viewmodel.ReEncodingViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -40,7 +41,6 @@ import java.util.Date
 
 @Composable
 fun ReEncodingScreen(
-    activity: MainActivity,
     file:File,
     nextDestination:()->Unit,
     reEncodingViewModel:ReEncodingViewModel= viewModel()
@@ -48,7 +48,7 @@ fun ReEncodingScreen(
     val life= rememberLifecycle()
     val context=LocalContext.current
     life.onLifeCreate {
-        reEncodingViewModel.mediaInfo.initInfo(activity.tasksBinder.getAVInfo(file.path))
+        reEncodingViewModel.mediaInfo.initInfo(AppApplication.INSTANCE.taskRepository.getAVInfo(file.path))
         reEncodingViewModel.bit_rate=-1L
         reEncodingViewModel.frame_rate=-1
         val infoMap=reEncodingViewModel.mediaInfo.infoMap
@@ -77,13 +77,14 @@ fun ReEncodingScreen(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        VideosPlayScreen(modifier = Modifier
-            .height(200.dp)
-            .fillMaxWidth(),
-                          path_or_uri =file.path
+        VideoPlayScreen(
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth(),
+            path_or_uri = file.path
         )
         ReEncodingScreen2(
-            activity, file, nextDestination, reEncodingViewModel
+            file, nextDestination, reEncodingViewModel
         )
     }
     showEditBitRateScreen(reEncodingViewModel)
@@ -91,7 +92,6 @@ fun ReEncodingScreen(
 }
 @Composable
 private fun ReEncodingScreen2(
-    activity: MainActivity,
     file:File,
     nextDestination:()->Unit,
     reEncodingViewModel:ReEncodingViewModel
@@ -128,7 +128,7 @@ private fun ReEncodingScreen2(
         }
         Spacer(modifier = Modifier.height(10.dp))
         Button(onClick = {
-            startReEncoding(activity, file, nextDestination, reEncodingViewModel)
+            startReEncoding(file, nextDestination, reEncodingViewModel)
         }) {
             Text(text = LocalContext.current.resources.getString(R.string.reencoding))
         }
@@ -146,7 +146,6 @@ private fun ReEncodingScreen2(
     }
 }
 private  fun startReEncoding(
-    activity: MainActivity,
     file:File,
     nextDestination:()->Unit,
     reEncodingViewModel:ReEncodingViewModel
@@ -169,7 +168,7 @@ private  fun startReEncoding(
         str_arr,
         float_arr
     )
-    activity.tasksBinder.startTask(info)
+    AppApplication.INSTANCE.taskRepository.startNewTask(info)
     reEncodingViewModel.input_file_name.value=""
     nextDestination()
 }

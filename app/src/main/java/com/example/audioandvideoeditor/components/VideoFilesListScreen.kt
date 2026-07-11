@@ -37,6 +37,7 @@ import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.AudioInfo
 import com.example.audioandvideoeditor.entity.VideoInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.viewmodel.VideoFilesListViewModel
 import java.io.File
@@ -250,7 +251,7 @@ private fun ShowVideoFileInfo(
                     .background(color = Color.Black)
                     .clickable {
                         val file=File(info.path)
-                        videoFilesListViewModel.videoPlay(file,VideoPlay.route)
+                        videoFilesListViewModel.videoPlay(file, Destination.VideoPlay.route)
                     }
                     ,
                 contentDescription = null
@@ -294,7 +295,7 @@ private fun ShowAudioFileInfo(
                 .background(color = Color.White)
                 .clickable {
                     val file=File(info.path)
-                    videoFilesListViewModel.videoPlay(file,VideoPlay.route)
+                    videoFilesListViewModel.videoPlay(file, Destination.VideoPlay.route)
                 }
             ,
             contentDescription = null)

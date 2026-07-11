@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.audioandvideoeditor.R
@@ -131,7 +132,7 @@ private fun ShowFile(
                 TextButton(onClick = {
                     FilesUtils.copyStr(file.path, ctx)
                 }) {
-                    Text(text="复制路径")
+                    Text(text= stringResource(R.string.btn_copy_path))
                 }
             }
         }
@@ -166,7 +167,7 @@ private fun ShowFile(
                 TextButton(onClick = {
                     FilesUtils.copyStr(file.path, ctx)
                 }) {
-                    Text(text="复制路径")
+                    Text(text=stringResource(R.string.btn_copy_path))
                 }
             }
         }

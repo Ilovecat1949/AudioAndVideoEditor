@@ -79,6 +79,7 @@ import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.AudioInfo
 import com.example.audioandvideoeditor.entity.VideoInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.utils.TextsUtils
@@ -986,7 +987,7 @@ private fun ShowVideoFileInfo(
                     .background(color = Color.Black, shape = RoundedCornerShape(10.dp))
                     .clickable {
                         val file = File(info.path)
-                        filesViewModel.videoPlay(file, VideoPlay.route)
+                        filesViewModel.videoPlay(file, Destination.VideoPlay.route)
                     }
                 ,
                 contentDescription = null
@@ -1001,7 +1002,7 @@ private fun ShowVideoFileInfo(
                     .background(color = Color.Black, shape = RoundedCornerShape(10.dp))
                     .clickable {
                         val file = File(info.path)
-                        filesViewModel.videoPlay(file, VideoPlay.route)
+                        filesViewModel.videoPlay(file, Destination.VideoPlay.route)
                     }
                 ,
                 contentDescription = null)
@@ -1052,7 +1053,7 @@ private fun ShowAudioFileInfo(
                 .background(color = Color.White, shape = RoundedCornerShape(10.dp))
                 .clickable {
                     val file = File(info.path)
-                    filesViewModel.videoPlay(file, VideoPlay.route)
+                    filesViewModel.videoPlay(file, Destination.VideoPlay.route)
                 }
             ,
             contentDescription = null)
