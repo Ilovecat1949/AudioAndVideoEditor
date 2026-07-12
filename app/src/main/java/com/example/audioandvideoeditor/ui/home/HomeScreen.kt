@@ -373,7 +373,6 @@ fun HomeScreen(
             homeViewModel.showUpdateDialogFlag
         ) {
             UpdateDialog(
-                viewModel = homeViewModel,
                 onDismiss = { homeViewModel.showUpdateDialogFlag = false }
             )
         }

@@ -150,6 +150,7 @@ private fun SpeedChangeScreen2(
             }
             Spacer(modifier = Modifier.height(40.dp))
             var sliderPosition by remember { mutableFloatStateOf(1.5f) }
+            viewModel.speed_rate=sliderPosition
             Text(text = sliderPosition.toString())
             Slider(
                     value = sliderPosition,

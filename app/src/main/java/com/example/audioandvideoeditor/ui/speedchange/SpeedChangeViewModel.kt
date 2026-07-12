@@ -42,7 +42,7 @@ class SpeedChangeViewModel: ViewModel()  {
         return exoPlayer?.duration?: 0L
     }
 
-    var speed_rate=1f
+    var speed_rate=1.5f
     var editFileNameFlag = mutableStateOf(false)
     var target_name=""
 

@@ -489,20 +489,20 @@ private fun UpdateDialog(
                                     }
                                 )
                             }
-                            Spacer(modifier = Modifier.height(20.dp))
-                            SelectionContainer {
-                                Text(
-                                    text = stringResource(id = R.string.lanzout_link),
-                                    textDecoration = TextDecoration.Underline,
-                                    color = Color.Blue,
-                                    modifier = Modifier.clickable {
-                                        FilesUtils.openWebLink(
-                                            context,
-                                            context.getString(R.string.lanzout_link)
-                                        )
-                                    }
-                                )
-                            }
+//                            Spacer(modifier = Modifier.height(20.dp))
+//                            SelectionContainer {
+//                                Text(
+//                                    text = stringResource(id = R.string.lanzout_link),
+//                                    textDecoration = TextDecoration.Underline,
+//                                    color = Color.Blue,
+//                                    modifier = Modifier.clickable {
+//                                        FilesUtils.openWebLink(
+//                                            context,
+//                                            context.getString(R.string.lanzout_link)
+//                                        )
+//                                    }
+//                                )
+//                            }
                         }
 
                     }

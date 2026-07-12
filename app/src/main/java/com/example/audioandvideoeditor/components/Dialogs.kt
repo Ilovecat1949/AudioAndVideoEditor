@@ -107,7 +107,7 @@ fun CrashMessageDialog(viewModel: HomeViewModel, onDismiss: () -> Unit) {
  * 版本更新弹窗
  */
 @Composable
-fun UpdateDialog(viewModel: HomeViewModel, onDismiss: () -> Unit) {
+fun UpdateDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
 
     AlertDialog(
@@ -132,20 +132,20 @@ fun UpdateDialog(viewModel: HomeViewModel, onDismiss: () -> Unit) {
                     Spacer(modifier = Modifier.height(20.dp))
 
                     ContactItem(
-                        labelRes = R.string.releases_link,
+                        labelRes = R.string.label_url,
                         valueRes = R.string.releases_link,
                         isClickable = true,
                         onClick = { FilesUtils.openWebLink(context, context.getString(R.string.releases_link)) }
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    ContactItem(
-                        labelRes = R.string.lanzout_link,
-                        valueRes = R.string.lanzout_link,
-                        isClickable = true,
-                        onClick = { FilesUtils.openWebLink(context, context.getString(R.string.lanzout_link)) }
-                    )
+//                    Spacer(modifier = Modifier.height(20.dp))
+//
+//                    ContactItem(
+//                        labelRes = R.string.lanzout_link,
+//                        valueRes = R.string.lanzout_link,
+//                        isClickable = true,
+//                        onClick = { FilesUtils.openWebLink(context, context.getString(R.string.lanzout_link)) }
+//                    )
                 }
             }
         },

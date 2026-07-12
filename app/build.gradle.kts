@@ -20,7 +20,7 @@ android {
         applicationId = "com.example.audioandvideoeditor"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
+        versionCode = 5
         versionName = "1.0.5"
         ndkVersion="25.1.8937393"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
