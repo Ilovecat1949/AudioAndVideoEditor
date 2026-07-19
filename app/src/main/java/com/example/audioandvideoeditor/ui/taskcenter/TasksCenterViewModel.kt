@@ -1,6 +1,7 @@
 package com.example.audioandvideoeditor.ui.taskcenter
 
 import TaskRepository
+import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileReader
+import androidx.core.net.toUri
 
 class TasksCenterViewModel : ViewModel() {
 
@@ -36,6 +38,65 @@ class TasksCenterViewModel : ViewModel() {
     // ==================== 自动刷新任务 ====================
     private var autoRefreshJob: Job? = null
 
+    //  ==================== 删除任务 ====================
+    var taskToDelete:Task?=null
+    val showDeleteDialog= mutableStateOf(false)
+
+    fun deleteTask(deleteFile: Boolean) {
+        if(taskToDelete!=null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                if (deleteFile) {
+                    val context = AppApplication.INSTANCE.applicationContext
+                    // 1. 优先通过 uri 删除（官方标准方式）
+                    taskToDelete!!.uri.takeIf { it.isNotEmpty() }?.let { uriString ->
+                        try {
+                            val uri = uriString.toUri()
+                            when (uri.scheme) {
+                                "content" -> {
+                                    // ✅ 谷歌官方标准 API：直接删除 content:// 资源
+                                    context.contentResolver.delete(uri, null, null)
+                                }
+
+                                "file" -> {
+                                    // file:// 协议走文件系统删除
+                                    uri.path?.let { path ->
+                                        File(path).takeIf { it.exists() }?.delete()
+                                    }
+                                }
+                            }
+                        } catch (e: SecurityException) {
+                            // 可能没有该 Uri 的写入权限，忽略（仅删除记录）
+                        } catch (e: Exception) {
+                            // 其他异常忽略
+                        }
+                    }
+
+                    // 2. 如果 uri 为空或删除失败，再尝试通过 path 删除（兜底）
+                    //    注意：部分旧数据可能只有 path 没有 uri
+                    taskToDelete!!.path.takeIf { it.isNotEmpty() }?.let { path ->
+                        try {
+                            File(path).takeIf { it.exists() }?.delete()
+                        } catch (e: Exception) {
+                            // 忽略
+                        }
+                    }
+                    taskToDelete!!.log_path .takeIf { it.isNotEmpty() }?.let { path ->
+                        try {
+                            File(path).takeIf { it.exists() }?.delete()
+                        } catch (e: Exception) {
+                            // 忽略
+                        }
+                    }
+                }
+                // 3. 无论文件是否删除成功，都删除数据库记录
+                repository?.deleteTaskById(taskToDelete!!.task_id)
+
+                // 4. 刷新列表
+                refreshAllTaskData()
+                taskToDelete = null
+            }
+        }
+    }
     // ==================== 初始化：启动自动刷新 ====================
     init {
         startTaskAutoRefresh()

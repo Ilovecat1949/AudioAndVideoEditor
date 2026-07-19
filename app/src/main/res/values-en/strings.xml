@@ -315,4 +315,10 @@ Email: running_in_storm@qq.com\n
     <string name="msg_log_file_not_exist">Log file does not exist</string>
     <string name="notification_channel_task">Task Notification</string>
 
+    <!-- 删除任务相关 -->
+    <string name="delete">Delete</string>
+    <string name="delete_task_title">Delete Task</string>
+    <string name="delete_task_confirm_message">Are you sure you want to delete task ?</string>
+    <string name="delete_record_only">Delete Record Only</string>
+    <string name="delete_with_file">Delete Record &amp; File</string>
 </resources>

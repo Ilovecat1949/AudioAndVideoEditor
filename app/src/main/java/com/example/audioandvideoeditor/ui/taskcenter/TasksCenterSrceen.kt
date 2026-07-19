@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,13 +31,18 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -138,6 +145,7 @@ private fun RunningTaskList(
                 showProgress = true,
                 showCancel = true,
                 showPlay = false,
+                showDelete = false,
                 onCancelClick = { viewModel.cancelTask(task.task_id) },
                 onLogClick = {
 //                    viewModel.readTaskLog(task.log_path)
@@ -152,7 +160,8 @@ private fun RunningTaskList(
                         Destination.FileRead.route,
                         true)
                              },
-                onPlayClick = {}
+                onPlayClick = {},
+                onDeleteClick = {}
             )
         }
     }
@@ -181,10 +190,12 @@ private fun WaitingTaskList(
                 showProgress = false,
                 showCancel = true,
                 showPlay = false,
+                showDelete = false,
                 onCancelClick = { viewModel.cancelTask(task.task_id) },
                 onLogClick = {
                 },
-                onPlayClick = {}
+                onPlayClick = {},
+                onDeleteClick = {}
             )
         }
     }
@@ -221,6 +232,7 @@ private fun HistoryTaskList(
                         true
                     }
                 ,
+                showDelete = true,
                 onCancelClick = {},
                 onLogClick = {
 //                    viewModel.readTaskLog(
@@ -255,9 +267,109 @@ private fun HistoryTaskList(
                         )
                     }
 
+                },
+                onDeleteClick = {
+                    viewModel.taskToDelete=task
+                    viewModel.showDeleteDialog.value=true
                 }
             )
         }
+    }
+
+    if (viewModel.showDeleteDialog.value && viewModel.taskToDelete !=null) {
+        // 0 = 仅删除记录, 1 = 删除记录及文件
+        var deleteOption by remember { mutableStateOf(1) }
+        AlertDialog(
+            onDismissRequest = { viewModel.showDeleteDialog.value = false },
+            title = { Text(stringResource(R.string.delete_task_title)) },
+            text = {
+                Column {
+                    // 提示文本
+                    Text(
+                        stringResource(
+                            R.string.delete_task_confirm_message,
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    //类型2 ffmpege命令行 仅支持删除任务
+                    if(viewModel.taskToDelete!!.type!=2){
+                    // 选项1：仅删除记录
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { deleteOption = 0 }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        RadioButton(
+                            selected = deleteOption == 0,
+                            onClick = { deleteOption = 0 }
+                        )
+                        Text(
+                            text = stringResource(R.string.delete_record_only),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    // 选项2：删除记录及文件
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { deleteOption = 1 }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        RadioButton(
+                            selected = deleteOption == 1,
+                            onClick = { deleteOption = 1 }
+                        )
+                        Text(
+                            text = stringResource(R.string.delete_with_file),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (deleteOption == 1) MaterialTheme.colorScheme.error else Color.Unspecified
+                        )
+                    }
+                    }
+                    else{
+                        deleteOption = 0
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { deleteOption = 0 }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            RadioButton(
+                                selected = deleteOption == 0,
+                                onClick = {  }
+                            )
+                            Text(
+                                text = stringResource(R.string.delete_record_only),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // 根据选中的选项执行删除
+                        viewModel.deleteTask(
+                            deleteFile = (deleteOption == 1)  // 只有选项2才删文件
+                        )
+                        viewModel.showDeleteDialog.value = false
+                    }
+                ) {
+                    Text(stringResource(R.string.ok))  // 复用已有的 "确定" 字符串
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.showDeleteDialog.value= false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 
@@ -269,9 +381,11 @@ private fun TaskItem(
     showProgress: Boolean,
     showCancel: Boolean,
     showPlay: Boolean,
+    showDelete: Boolean,
     onCancelClick: () -> Unit,
     onLogClick: () -> Unit,
-    onPlayClick: () -> Unit
+    onPlayClick: () -> Unit,
+    onDeleteClick:()-> Unit
 ) {
     Card(
         modifier = Modifier
@@ -353,6 +467,11 @@ private fun TaskItem(
                 if (showCancel) {
                     TextButton(onClick = onCancelClick) {
                         Text(stringResource(R.string.cancel), color = Color.Red)
+                    }
+                }
+                if (showDelete) {
+                    TextButton(onClick = onDeleteClick) {
+                        Text(stringResource(R.string.delete), color = Color.Red)
                     }
                 }
             }

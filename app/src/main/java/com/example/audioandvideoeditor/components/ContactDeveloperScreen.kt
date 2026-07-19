@@ -19,6 +19,6 @@ fun ContactDeveloperScreen(){
             .verticalScroll(scrollState) // 关键的滚动修饰符
             .fillMaxWidth()
     ) {
-
+        ContactInfoSection()
     }
 }

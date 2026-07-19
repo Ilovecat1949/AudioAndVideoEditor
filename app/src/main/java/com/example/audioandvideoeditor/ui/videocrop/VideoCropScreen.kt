@@ -4,11 +4,11 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -183,38 +182,39 @@ fun VideoCropScreen(
             }
 //            Spacer(modifier = Modifier.height(10.dp))
             LazyColumn(
+                contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp),
             ){
                 item {
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                        // TODO: Implement export functionality
-                        viewModel.editFileNameFlag.value=true
-                    }
+                            // TODO: Implement export functionality
+                            viewModel.editFileNameFlag.value=true
+                        }
                     )
                     {
                         Text(stringResource(id = R.string.export))
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ){
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.distance_from_the_left_side)}:")
+                        Text(text = "${stringResource(id = R.string.distance_from_the_left_side)}:${"%.2f".format(viewModel.crop_start*100)}%")
                     }
 
                     Slider(
                         value = viewModel.crop_start,
                         onValueChange = {
-                    val new_rect=viewModel.crop_rect.copy(
-                        start = viewModel.video_rect.start + viewModel.video_rect.width * it
-                    )
-                    if(
-                        new_rect.start+new_rect.width<=viewModel.video_rect.start+viewModel.video_rect.width
-                    ){
-                            viewModel.crop_start = it
-                            viewModel.crop_rect =new_rect
-                    }
-                    },
+                            val new_rect=viewModel.crop_rect.copy(
+                                start = viewModel.video_rect.start + viewModel.video_rect.width * it
+                            )
+                            if(
+                                new_rect.start+new_rect.width<=viewModel.video_rect.start+viewModel.video_rect.width
+                                ){
+                                viewModel.crop_start = it
+                                viewModel.crop_rect =new_rect
+                            } },
                         thumb = {
                             SliderDefaults.Thumb(
                                 interactionSource = remember { MutableInteractionSource() },
@@ -242,7 +242,7 @@ fun VideoCropScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ){
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.distance_from_the_top)}:")
+                        Text(text = "${stringResource(id = R.string.distance_from_the_top)}:${"%.2f".format(viewModel.crop_top*100)}%")
                     }
 
                     Slider(
@@ -285,7 +285,7 @@ fun VideoCropScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ){
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.width)}:")
+                        Text(text = "${stringResource(id = R.string.width)}:${"%.2f".format(viewModel.crop_width*100)}%")
                     }
 
                     Slider(
@@ -326,7 +326,7 @@ fun VideoCropScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ){
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.height)}:")
+                        Text(text = "${stringResource(id = R.string.height)}:${"%.2f".format(viewModel.crop_height*100)}%")
                     }
                     Slider(
                         value = viewModel.crop_height,

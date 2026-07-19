@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import java.io.File
@@ -192,6 +193,7 @@ private fun startVideoMute(
         float_arr
     )
 //    activity.tasksBinder.startTask(info)
+    AppApplication.INSTANCE.taskRepository.startNewTask(info)
     viewModel.setVideoUri(null)
     nextDestination()
 }

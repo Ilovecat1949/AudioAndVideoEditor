@@ -30,7 +30,7 @@ class ConfigViewModel: ViewModel()  {
     private val _downloadPath = mutableStateOf("")
     val downloadPath: State<String> = _downloadPath
 
-    fun initConfig(activity: Context){
+    fun initConfig(context: Context){
         when(ConfigsUtils.sizeForVideoEncodingTask){
             ConfigsUtils.AV_10MB->{sizeForVideoEncodingTaskText.value="10MB"
                 checkSizeForVideoEncodingTaskFlag.value=0
@@ -81,11 +81,11 @@ class ConfigViewModel: ViewModel()  {
         checkSizeForMaxTasksNumFlag.value=ConfigsUtils.MAX_TASKS_NUM-2
         when(ConfigsUtils.language){
             ConfigsUtils.English->{
-                LanguageText.value=activity.resources.getString(R.string.english)
+                LanguageText.value=context.resources.getString(R.string.english)
                 checkLanguageFlag.value=1
             }
             else->{
-                LanguageText.value=activity.resources.getString(R.string.simplified_chinese)
+                LanguageText.value=context.resources.getString(R.string.simplified_chinese)
                 checkLanguageFlag.value=0
             }
         }
@@ -97,7 +97,7 @@ class ConfigViewModel: ViewModel()  {
     fun clearErrorMessage() {
         _errorMessage.value = null
     }
-    fun updateDownloadPath(newPath: String,activity:Activity) {
+    fun updateDownloadPath(newPath: String,context: Context) {
         viewModelScope.launch {
             try {
                 val file = File(newPath)
@@ -106,13 +106,13 @@ class ConfigViewModel: ViewModel()  {
                 }
                 _downloadPath.value = newPath
 
-                ConfigsUtils.setTargetDir(newPath,activity)
+                ConfigsUtils.setTargetDir(newPath,context)
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Unknown error"
             }
         }
     }
-    fun setSizeForVideoEncodingTask(activity: MainActivity){
+    fun setSizeForVideoEncodingTask(context: Context){
         var size=0L
         when(checkSizeForVideoEncodingTaskFlag.value){
             0->{size=ConfigsUtils.AV_10MB
@@ -137,9 +137,9 @@ class ConfigViewModel: ViewModel()  {
                 sizeForVideoEncodingTaskText.value="3GB"
             }
         }
-        ConfigsUtils.setSizeForVideoEncodingTask(size,activity)
+        ConfigsUtils.setSizeForVideoEncodingTask(size,context)
     }
-    fun setSizeForAudioEncodingTask(activity: Activity){
+    fun setSizeForAudioEncodingTask(context: Context){
         var size=0L
         when(checkSizeForAudioEncodingTaskFlag.value){
             0->{size=ConfigsUtils.AV_10MB
@@ -164,24 +164,24 @@ class ConfigViewModel: ViewModel()  {
                 sizeForAudioEncodingTaskText.value="3GB"
             }
         }
-        ConfigsUtils.setSizeForAudioEncodingTask(size,activity)
+        ConfigsUtils.setSizeForAudioEncodingTask(size,context)
     }
-    fun setMaxTasksNum(activity: Activity){
+    fun setMaxTasksNum(context: Context){
         sizeForMaxTasksNumText.value=(checkSizeForMaxTasksNumFlag.value+2).toString()
-        ConfigsUtils.setMaxTasksNum(checkSizeForMaxTasksNumFlag.value+2,activity)
+        ConfigsUtils.setMaxTasksNum(checkSizeForMaxTasksNumFlag.value+2,context)
     }
-    fun setLanguage(activity: MainActivity){
+    fun setLanguage(context: Context){
         when(checkLanguageFlag.value){
             1->{
-                ConfigsUtils.setLanguage(ConfigsUtils.English,activity)
-                LanguageText.value=activity.resources.getString(R.string.english)
+                ConfigsUtils.setLanguage(ConfigsUtils.English,context)
+                LanguageText.value=context.resources.getString(R.string.english)
             }
             else->{
-                ConfigsUtils.setLanguage(ConfigsUtils.Simplified_Chinese,activity)
-                LanguageText.value=activity.resources.getString(R.string.simplified_chinese)
+                ConfigsUtils.setLanguage(ConfigsUtils.Simplified_Chinese,context)
+                LanguageText.value=context.resources.getString(R.string.simplified_chinese)
             }
         }
-        activity.setCurrLanguageMode()
+//        activity.setCurrLanguageMode()
     }
     var showClearFFmpegLogFilesDialogFlag = mutableStateOf(false)
     var showUpdateDialogFlag = mutableStateOf(false)

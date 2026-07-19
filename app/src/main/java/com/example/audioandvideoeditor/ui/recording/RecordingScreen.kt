@@ -12,7 +12,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,9 +27,11 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -40,6 +44,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -249,6 +254,7 @@ private fun RecordedVideoListScreen(
     } else {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 128.dp),
+            contentPadding= PaddingValues(24.dp)
         ) {
 // 🌟 明确指定 key = { it.task_id }，让 Compose 拥有像素级的组件复用感知力
             items(
@@ -257,6 +263,101 @@ private fun RecordedVideoListScreen(
             ) { task ->
                 ShowVideoFileInfo(task, videoPlay, viewModel)
             }
+        }
+        if (viewModel.showDeleteDialog.value && viewModel.taskToDelete !=null) {
+            // 0 = 仅删除记录, 1 = 删除记录及文件
+            var deleteOption by remember { mutableStateOf(1) }
+            AlertDialog(
+                onDismissRequest = { viewModel.showDeleteDialog.value = false },
+                title = { Text(stringResource(R.string.delete_task_title)) },
+                text = {
+                    Column {
+                        // 提示文本
+                        Text(
+                            stringResource(
+                                R.string.delete_task_confirm_message,
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        //类型2 ffmpege命令行 仅支持删除任务
+                        if(viewModel.taskToDelete!!.type!=2){
+                            // 选项1：仅删除记录
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { deleteOption = 0 }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                RadioButton(
+                                    selected = deleteOption == 0,
+                                    onClick = { deleteOption = 0 }
+                                )
+                                Text(
+                                    text = stringResource(R.string.delete_record_only),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            // 选项2：删除记录及文件
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { deleteOption = 1 }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                RadioButton(
+                                    selected = deleteOption == 1,
+                                    onClick = { deleteOption = 1 }
+                                )
+                                Text(
+                                    text = stringResource(R.string.delete_with_file),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (deleteOption == 1) MaterialTheme.colorScheme.error else Color.Unspecified
+                                )
+                            }
+                        }
+                        else{
+                            deleteOption = 0
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { deleteOption = 0 }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                RadioButton(
+                                    selected = deleteOption == 0,
+                                    onClick = {  }
+                                )
+                                Text(
+                                    text = stringResource(R.string.delete_record_only),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            // 根据选中的选项执行删除
+                            viewModel.deleteTask(
+                                deleteFile = (deleteOption == 1)  // 只有选项2才删文件
+                            )
+                            viewModel.showDeleteDialog.value = false
+                        }
+                    ) {
+                        Text(stringResource(R.string.ok))  // 复用已有的 "确定" 字符串
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.showDeleteDialog.value= false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
         }
     }
 }
@@ -301,38 +402,57 @@ private fun ShowVideoFileInfo(
         verticalArrangement= Arrangement.Center,
     ){
         Spacer(modifier = Modifier.height(5.dp))
-        if(thumbnailBitmap!=null) {
-            Image(
-                bitmap = thumbnailBitmap!!.asImageBitmap(),
+        Box(
+            modifier = Modifier
+                .width(128.dp)
+                .height(128.dp)
+                .background(color = Color.Black)
+        ) {
+            // 原有的缩略图或占位图标
+            if (thumbnailBitmap != null) {
+                Image(
+                    bitmap = thumbnailBitmap!!.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_video_file_24),
+                    tint = Color.Yellow,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            // 删除按钮（右下角）
+            IconButton(
+                onClick = {
+                    viewModel.showDeleteDialog.value = true
+                    viewModel.taskToDelete=task
+                          },
                 modifier = Modifier
-                    .width(128.dp)
-                    .height(128.dp)
-                    .background(color = Color.Black)
-                    .clickable {
-                        videoPlay(task.uri, Destination.VideoPlay.route)
-                    }
-                ,
-                contentDescription = null
-            )
-        }
-        else{
-            Icon(painter = painterResource(id = R.drawable.baseline_video_file_24),
-                tint = Color.Yellow,
-                modifier = Modifier
-                    .width(128.dp)
-                    .height(128.dp)
-                    .background(color = Color.Black)
-                ,
-                contentDescription = null)
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp)  // 与边缘保持距离
+                    .size(36.dp)
+                    .background(
+                        color = Color.White.copy(alpha = 0.9f),  // 👈 白色半透明底
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    Icons.Default.Delete, // 需要导入 material.icons.filled.Delete
+                    contentDescription = stringResource(R.string.delete),
+                    tint = MaterialTheme.colorScheme.error,  // 👈 红色图标（或直接用 Color.Red）
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
         Spacer(modifier = Modifier.height(5.dp))
-        val file_name=FilesUtils.getFileNameUsingDocumentFile(context,Uri.parse(task.uri))
-        file_name?.apply {
-            if(file_name.length<25) {
-                Text(text = file_name)
-            }
-            else{
-                Text(text =file_name.substring(0,19)+"..."+file_name.substring(file_name.length-5))
+        task.file_name.apply {
+            if(task.file_name.length<25) {
+                Text(text = task.file_name)
+            } else{
+                Text(text =task.file_name.substring(0,19)+"..."+task.file_name.substring(task.file_name.length-5))
             }
         }
     }

@@ -152,6 +152,9 @@ class TaskRepository(
             tasksDao.getAllTasks() ?: emptyList()
         }
     }
+    suspend fun deleteTaskById(task_id: Long){
+        tasksDao.deleteTaskById(task_id)
+    }
 
     // ==================== 6. 统一代理 Service 方法 ====================
     fun cancelTask(taskId: Long) {

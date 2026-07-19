@@ -23,7 +23,7 @@ class FFmpegCommandsViewModel: ViewModel()  {
     val parameterTemplateContext=
         listOf(
             "-c:v libx264 -q:v 5 -c:a aac -ab 128k -ar 44100",
-            "-vn -c:a aac -ab 128k -ar 44100",
+            "-c:v copy -c:a aac -ab 128k -ar 44100",
             "-vf scale=1280:720",
             "-b:v 500k",
             "-b:a 128k",

@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import androidx.core.net.toUri
+import kotlinx.coroutines.Dispatchers
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -211,4 +213,60 @@ class RecordingViewModel() : ViewModel() {
     val thumbnailsMaxNum=100
     val thumbnailBitmapArray=ArrayList<Pair<String, Bitmap>>()
 
+    //  ==================== 删除任务 ====================
+    var taskToDelete:Task?=null
+    val showDeleteDialog= mutableStateOf(false)
+
+    fun deleteTask(deleteFile: Boolean) {
+        if(taskToDelete!=null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                if (deleteFile) {
+                    val context = AppApplication.INSTANCE.applicationContext
+                    // 1. 优先通过 uri 删除（官方标准方式）
+                    taskToDelete!!.uri.takeIf { it.isNotEmpty() }?.let { uriString ->
+                        try {
+                            val uri = uriString.toUri()
+                            when (uri.scheme) {
+                                "content" -> {
+                                    // ✅ 谷歌官方标准 API：直接删除 content:// 资源
+                                    context.contentResolver.delete(uri, null, null)
+                                }
+
+                                "file" -> {
+                                    // file:// 协议走文件系统删除
+                                    uri.path?.let { path ->
+                                        File(path).takeIf { it.exists() }?.delete()
+                                    }
+                                }
+                            }
+                        } catch (e: SecurityException) {
+                            // 可能没有该 Uri 的写入权限，忽略（仅删除记录）
+                        } catch (e: Exception) {
+                            // 其他异常忽略
+                        }
+                    }
+
+                    // 2. 如果 uri 为空或删除失败，再尝试通过 path 删除（兜底）
+                    //    注意：部分旧数据可能只有 path 没有 uri
+                    taskToDelete!!.path.takeIf { it.isNotEmpty() }?.let { path ->
+                        try {
+                            File(path).takeIf { it.exists() }?.delete()
+                        } catch (e: Exception) {
+                            // 忽略
+                        }
+                    }
+                    taskToDelete!!.log_path .takeIf { it.isNotEmpty() }?.let { path ->
+                        try {
+                            File(path).takeIf { it.exists() }?.delete()
+                        } catch (e: Exception) {
+                            // 忽略
+                        }
+                    }
+                }
+                // 3. 无论文件是否删除成功，都删除数据库记录
+                AppApplication.INSTANCE.taskRepository.deleteTaskById(taskToDelete!!.task_id)
+                taskToDelete = null
+            }
+        }
+    }
 }

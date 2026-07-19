@@ -57,23 +57,23 @@ import com.example.audioandvideoeditor.viewmodel.ConfigViewModel
 
 @Composable
 fun ConfigScreen(
-    activity: MainActivity,
     nextDestination: (route: String) -> Unit,
     configViewModel: ConfigViewModel= viewModel()
 ){
     val life= rememberLifecycle()
+    val context=LocalContext.current
     life.onLifeCreate {
-        configViewModel.initConfig(activity)
+        configViewModel.initConfig(context)
     }
-    ConfigScreen2_2(activity,nextDestination, configViewModel)
+    ConfigScreen2_2(nextDestination, configViewModel)
 }
 
 
 @Composable
 private fun showEditLanguageScreen(
-    activity: MainActivity,
     configViewModel: ConfigViewModel
 ){
+    val context=LocalContext.current
     if(configViewModel.editLanguageFlag.value) {
         AlertDialog(
             onDismissRequest = { configViewModel.editLanguageFlag.value = false },
@@ -130,8 +130,13 @@ private fun showEditLanguageScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        configViewModel.setLanguage(activity)
+                        configViewModel.setLanguage(context)
                         configViewModel.editLanguageFlag.value = false
+                        // 寻找当前的 Activity 并安全重启
+                        val currentActivity = context as? Activity
+                        currentActivity?.let {
+                            ConfigsUtils.restartAppWithNewLanguage(it)
+                        }
                     }
                 ) {
                     Text(LocalContext.current.getString(R.string.ok))
@@ -154,7 +159,6 @@ private fun showEditLanguageScreen(
 
 @Composable
 private fun ConfigScreen2_2(
-    activity: MainActivity,
     nextDestination: (route: String) -> Unit,
     configViewModel: ConfigViewModel
 ){
@@ -383,8 +387,8 @@ private fun ConfigScreen2_2(
             Divider(color = Color.LightGray, thickness = 1.dp)
         }
     }
-    showEditLanguageScreen(activity, configViewModel)
-    showEditPathScreen(activity, configViewModel)
+    showEditLanguageScreen( configViewModel)
+    showEditPathScreen(configViewModel)
     ClearFFmpegLogFilesDialog(configViewModel)
     UpdateDialog(configViewModel)
     configViewModel.errorMessage.value?.let { ErrorDialog(it) { configViewModel.clearErrorMessage() } }
@@ -555,9 +559,9 @@ private fun UpdateDialog(
 
 @Composable
 fun showEditPathScreen(
-    activity: Activity,
     configViewModel: ConfigViewModel
 ){
+    val context=LocalContext.current
     if (configViewModel.showPathDialog.value) {
         var newDownloadPath by remember { mutableStateOf(configViewModel.downloadPath.value) }
         AlertDialog(
@@ -572,7 +576,7 @@ fun showEditPathScreen(
             },
             confirmButton = {
                 Button(onClick = {
-                    configViewModel.updateDownloadPath(newDownloadPath,activity)
+                    configViewModel.updateDownloadPath(newDownloadPath,context)
                     if (configViewModel.errorMessage.value == null) {
                         configViewModel.showPathDialog.value = false
                     }
@@ -690,16 +694,16 @@ private fun ConfigScreen2(
         Spacer(modifier = Modifier.height(10.dp))
         Text(text="${LocalContext.current.resources.getString(R.string.target_dir)}:${ConfigsUtils.target_dir}")
     }
-    showEditSizeForVideoEncodingTaskScreen(activity,configViewModel)
-    showEditSizeForAudioEncodingTaskScreen(activity,configViewModel)
-    showEditSizeForMaxTasksNumScreen(activity,configViewModel)
-    showEditLanguageScreen(activity, configViewModel)
+    showEditSizeForVideoEncodingTaskScreen(configViewModel)
+    showEditSizeForAudioEncodingTaskScreen(configViewModel)
+    showEditSizeForMaxTasksNumScreen(configViewModel)
+    showEditLanguageScreen( configViewModel)
 }
 @Composable
 private fun showEditSizeForVideoEncodingTaskScreen(
-    activity: MainActivity,
     configViewModel: ConfigViewModel
 ){
+    val context=LocalContext.current
     if(configViewModel.editSizeForVideoEncodingTaskFlag.value) {
         AlertDialog(
             onDismissRequest = { configViewModel.editSizeForVideoEncodingTaskFlag.value = false },
@@ -830,7 +834,7 @@ private fun showEditSizeForVideoEncodingTaskScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        configViewModel.setSizeForVideoEncodingTask(activity)
+                        configViewModel.setSizeForVideoEncodingTask(context)
                         configViewModel.editSizeForVideoEncodingTaskFlag.value = false
                     }
                 ) {
@@ -852,9 +856,9 @@ private fun showEditSizeForVideoEncodingTaskScreen(
 
 @Composable
 private fun showEditSizeForAudioEncodingTaskScreen(
-    activity: MainActivity,
     configViewModel: ConfigViewModel
 ){
+    val context=LocalContext.current
     if(configViewModel.editSizeForAudioEncodingTaskFlag.value) {
         AlertDialog(
             onDismissRequest = { configViewModel.editSizeForAudioEncodingTaskFlag.value = false },
@@ -985,7 +989,7 @@ private fun showEditSizeForAudioEncodingTaskScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        configViewModel.setSizeForAudioEncodingTask(activity)
+                        configViewModel.setSizeForAudioEncodingTask( context)
                         configViewModel.editSizeForAudioEncodingTaskFlag.value = false
                     }
                 ) {
@@ -1007,9 +1011,9 @@ private fun showEditSizeForAudioEncodingTaskScreen(
 
 @Composable
 private fun showEditSizeForMaxTasksNumScreen(
-    activity: Activity,
     configViewModel: ConfigViewModel
 ){
+    val context=LocalContext.current
     if(configViewModel.editSizeForMaxTasksNumFlag.value) {
         AlertDialog(
             onDismissRequest = { configViewModel.editSizeForMaxTasksNumFlag.value = false },
@@ -1140,7 +1144,7 @@ private fun showEditSizeForMaxTasksNumScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        configViewModel.setMaxTasksNum(activity)
+                        configViewModel.setMaxTasksNum( context)
                         configViewModel.editSizeForMaxTasksNumFlag.value = false
                     }
                 ) {

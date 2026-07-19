@@ -2,11 +2,13 @@ package com.example.audioandvideoeditor.utils
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Environment
 import android.os.Parcelable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
@@ -144,35 +146,35 @@ object ConfigsUtils {
         recordAudioType=type
         editor.apply()
     }
-    fun setSizeForVideoEncodingTask(size:Long,activity: Activity){
-        val editor = activity.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
-        sizeForVideoEncodingTask=size
-        editor.putLong("sizeForVideoEncodingTask",size)
-        editor.apply()
+    fun setSizeForVideoEncodingTask(size:Long,context: Context){
+        context.getSharedPreferences("data", Context.MODE_PRIVATE).edit {
+            sizeForVideoEncodingTask = size
+            putLong("sizeForVideoEncodingTask", size)
+        }
     }
-    fun setSizeForAudioEncodingTask(size:Long,activity: Activity){
-        val editor = activity.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
-        sizeForAudioEncodingTask=size
-        editor.putLong("sizeForAudioEncodingTask",size)
-        editor.apply()
+    fun setSizeForAudioEncodingTask(size:Long,context: Context){
+        context.getSharedPreferences("data", Context.MODE_PRIVATE).edit {
+            sizeForAudioEncodingTask = size
+            putLong("sizeForAudioEncodingTask", size)
+        }
     }
-    fun setMaxTasksNum(size:Int,activity: Activity){
-        val editor = activity.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
-        MAX_TASKS_NUM=size
-        editor.putInt("MAX_TASKS_NUM",MAX_TASKS_NUM)
-        editor.apply()
+    fun setMaxTasksNum(size:Int,context: Context){
+        context.getSharedPreferences("data", Context.MODE_PRIVATE).edit {
+            MAX_TASKS_NUM = size
+            putInt("MAX_TASKS_NUM", MAX_TASKS_NUM)
+        }
     }
-    fun setLanguage(new_language:String,activity: Activity){
-        val editor = activity.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
-        language=new_language
-        editor.putString("language",new_language)
-        editor.apply()
+    fun setLanguage(new_language:String,context: Context){
+        context.getSharedPreferences("data", Context.MODE_PRIVATE).edit {
+            language = new_language
+            putString("language", new_language)
+        }
     }
-    fun setTargetDir(new_target_dir_name:String,activity: Activity){
-        val editor = activity.getSharedPreferences("data", Context.MODE_PRIVATE).edit()
-        target_dir=new_target_dir_name
-        editor.putString("target_dir",target_dir)
-        editor.apply()
+    fun setTargetDir(new_target_dir_name:String,context: Context){
+        context.getSharedPreferences("data", Context.MODE_PRIVATE).edit {
+            target_dir = new_target_dir_name
+            putString("target_dir", target_dir)
+        }
     }
     private fun getLocaleLanguage():Locale{
         return when(language){
@@ -238,6 +240,29 @@ object ConfigsUtils {
             frameRate = prefs.getInt("record_frame_rate", 30),         // 默认 30 帧
         )
     }
+
+
+    /**
+     * 安全地重启应用并应用语言设置
+     * @param activity 必须传入当前前台的 Activity 实例
+     */
+    fun restartAppWithNewLanguage(activity: Activity) {
+        // 1. 停止你的后台服务（这里可以通过传进来的 activity 或全局 INSTANCE 停止）
+        // var intent = Intent(activity, TasksService::class.java)
+        // activity.stopService(intent)
+
+        // 2. 构建重启主界面的 Intent（必须明确指定目标 Activity 的 Class，不能用 Context::class.java）
+        // 假设你的主界面叫 MainActivity
+        val restartIntent = activity.packageManager.getLaunchIntentForPackage(activity.packageName)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        if (restartIntent != null) {
+            activity.startActivity(restartIntent)
+            // 3. 干净利落地销毁当前界面
+            activity.finish()
+        }
+    }
+
 
 
 //    fun setPermissionRemind(context: Context,remindFlag:Boolean,permission:Int){

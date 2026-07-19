@@ -1,6 +1,5 @@
 package com.example.audioandvideoeditor.components
 
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,7 +34,6 @@ import java.util.Date
 
 @Composable
 fun RePackagingScreen(
-    activity: Context,
     file: File,
     nextDestination:()->Unit,
     rePackagingViewModel: RePackagingViewModel= viewModel()
@@ -61,13 +59,12 @@ fun RePackagingScreen(
                 .fillMaxWidth(),
             path_or_uri = file.path
         )
-        RePackagingScreen2(activity, file, nextDestination, rePackagingViewModel)
+        RePackagingScreen2(file, nextDestination, rePackagingViewModel)
     }
 }
 
 @Composable
 fun RePackagingScreen2(
-    activity: Context,
     file: File,
     nextDestination:()->Unit,
     rePackagingViewModel: RePackagingViewModel
@@ -104,7 +101,7 @@ fun RePackagingScreen2(
         }
         Spacer(modifier = Modifier.height(10.dp))
         Button(onClick = {
-            startRePackaging(activity, file, nextDestination, rePackagingViewModel)
+            startRePackaging(file, nextDestination, rePackagingViewModel)
         }) {
             Text(text = stringResource(R.string.action_remux))
         }
@@ -156,7 +153,6 @@ fun RePackagingScreen2(
 }
 
 private  fun startRePackaging(
-    activity: Context,
     file:File,
     nextDestination:()->Unit,
     rePackagingViewModel: RePackagingViewModel

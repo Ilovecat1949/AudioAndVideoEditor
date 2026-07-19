@@ -27,7 +27,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState // 补充缺失的导入
 import androidx.navigation.compose.rememberNavController
-import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.navigation.navigateSingleTopTo
@@ -60,7 +59,6 @@ fun HomeScreen(
     // 🌟 接收外部传入的通知跳转信号
     initialRoute: String? = null,
     onRouteConsumed: () -> Unit = {},
-    activity: MainActivity,
     homeViewModel: HomeViewModel = viewModel()
 ) {
     val homeNavController = rememberNavController()
@@ -179,7 +177,6 @@ fun HomeScreen(
 
             composable(Destination.Config.route) {
                 ConfigScreen(
-                    activity = activity,
                     nextDestination = { homeNavController.navigateSingleTopTo(it) }
                 )
             }
@@ -193,7 +190,6 @@ fun HomeScreen(
 
             composable(Destination.RePackaging.route) {
                 RePackagingScreen(
-                    activity = activity,
                     file = File(homeViewModel.path_or_uri),
                     nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
                 )

@@ -41,13 +41,13 @@ fun ContactInfoSection() {
     Spacer(modifier = Modifier.height(20.dp))
     ContactItem(labelRes = R.string.group_name, valueRes = R.string.group_number)
 
-    Spacer(modifier = Modifier.height(20.dp))
-    ContactItem(
-        labelRes = R.string.form1_name,
-        valueRes = R.string.form1_link,
-        isClickable = true,
-        onClick = { FilesUtils.openWebLink(context, context.getString(R.string.form1_link)) }
-    )
+//    Spacer(modifier = Modifier.height(20.dp))
+//    ContactItem(
+//        labelRes = R.string.form1_name,
+//        valueRes = R.string.form1_link,
+//        isClickable = true,
+//        onClick = { FilesUtils.openWebLink(context, context.getString(R.string.form1_link)) }
+//    )
 
     Spacer(modifier = Modifier.height(20.dp))
     ContactItem(

@@ -306,4 +306,12 @@
     <string name="msg_log_file_not_exist">日志文件不存在</string>
     <string name="notification_channel_task">任务通知</string>
     <string name="label_default">默认</string>
+
+
+    <!-- 删除任务相关 -->
+    <string name="delete">删除</string>
+    <string name="delete_task_title">删除任务</string>
+    <string name="delete_task_confirm_message">确定要删除任务吗？</string>
+    <string name="delete_record_only">仅删除记录</string>
+    <string name="delete_with_file">删除记录及文件</string>
 </resources>
