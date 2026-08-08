@@ -175,6 +175,9 @@ class TaskRepository(
     fun getFFmpegInfo(info_type:Int):String{
         return tasksBinder?.getFFmpegInfo(info_type)?:""
     }
+    fun applyFastEdit(input_path: String,output_path: String,edit_commands: String):Int{
+        return tasksBinder?.applyFastEdit(input_path,output_path,edit_commands)?:-1
+    }
 
     fun loadTasksByType(type:Int): Flow<List<Task>>{
         return tasksDao.loadTasksByType(type)

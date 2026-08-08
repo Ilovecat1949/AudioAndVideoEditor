@@ -250,8 +250,18 @@ private fun startSpeedChange(
 ){
     val target_path="${ConfigsUtils.target_dir}/${viewModel.target_name}.${viewModel.targetFormatText.value.lowercase()}"
     //val cmd_str="ffmpeg -i ${file.path}  -vf \"setpts=PTS/${viewModel.speed_rate}\" -af atempo=${viewModel.speed_rate} ${target_path}"
-    val cmd_str="ffmpeg -i input_file -vcodec libx264 -preset ultrafast -q:v 5 -filter_complex [0:v]setpts=PTS/${viewModel.speed_rate}[v];[0:a]atempo=${viewModel.speed_rate}[a] -map [v] -map [a] output_file"
-    Log.d(TAG,"cmd_str:${cmd_str}")
+    var cmd_str=""
+    if(viewModel.info.video_bit_rate!=-1L && viewModel.info.audio_bit_rate!=-1L){
+        cmd_str="ffmpeg -i input_file -vcodec libx264 -preset ultrafast -q:v 5 -filter_complex [0:v]setpts=PTS/${viewModel.speed_rate}[v];[0:a]${viewModel.buildAudioAtempoFilter(viewModel.speed_rate)}[a] -map [v] -map [a] output_file"
+    }
+    else if(viewModel.info.video_bit_rate!=-1L){
+        cmd_str="ffmpeg -i input_file -vcodec libx264 -preset ultrafast -q:v 5 -filter_complex [0:v]setpts=PTS/${viewModel.speed_rate}[v] -map [v] output_file"
+    }
+    else if(viewModel.info.audio_bit_rate!=-1L){
+        cmd_str="ffmpeg -i input_file -filter_complex [0:a]${viewModel.buildAudioAtempoFilter(viewModel.speed_rate)}[a] -map [a] output_file"
+    }
+
+//    Log.d(TAG,"cmd_str:${cmd_str}")
     val command_arg_list=cmd_str.trim().split("[\\s\\n]+".toRegex())
         .map {
             when(it){

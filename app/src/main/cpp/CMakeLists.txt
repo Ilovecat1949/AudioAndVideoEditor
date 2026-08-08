@@ -127,6 +127,7 @@ add_library( # Sets the name of the library.
         ${CMAKE_SOURCE_DIR}/task/RePackagingTask.cpp
         ${CMAKE_SOURCE_DIR}/task/FFmpegCommandsTask.cpp
         ${CMAKE_SOURCE_DIR}/task/FFmpegServiceTask.cpp
+        ${CMAKE_SOURCE_DIR}/task/MediaModifier.cpp
         )
 
 # 指定编译目标库时，cmake要链接的库

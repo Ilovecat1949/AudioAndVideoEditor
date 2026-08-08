@@ -4,6 +4,7 @@
 #include "task/TasksFactory.h"
 #include "task/AudioAndVideoInfo.h"
 #include "task/FFmpegInfo.h"
+#include "task/MediaModifier.h"
 
 
 extern "C" {
@@ -145,12 +146,21 @@ JNIEXPORT jstring JNICALL
 Java_com_example_audioandvideoeditor_services_TaskService_getAudioAndVideoStrInfo(JNIEnv *env,
                                                                                   jobject thiz,
                                                                                   jstring path) {
+
     const char *path2 = env->GetStringUTFChars(path, NULL);
-    AudioAndVideoInfo *av_info=new AudioAndVideoInfo();
+
+    AudioAndVideoInfo *av_info = new AudioAndVideoInfo();
     av_info->Init(path2);
-    char * info_str=av_info->getStrInfo();
-    jstring info_jstr=env->NewStringUTF(info_str);
-    delete [] info_str;
+
+    // 1. 此时拿到的是一个标准的 C++ std::string 对象
+    std::string info_res = av_info->getStrInfo();
+
+    // 2. 通过 .c_str() 把它翻译成临时的 char* 传给 JNI，生成 Java 的 jstring
+    jstring info_jstr = env->NewStringUTF(info_res.c_str());
+
+    // 3. 🛑 重点：彻底删掉原来的 delete [] info_str;
+    // 因为 info_res 是个局部变量，这行函数结束时，C++ 会自动把它体内的堆内存冲刷掉！
+
     delete av_info;
     env->ReleaseStringUTFChars(path, path2);
     return info_jstr;
@@ -280,4 +290,25 @@ Java_com_example_audioandvideoeditor_services_FFmpegService_getProgress(JNIEnv *
     TasksFactory *tasks_factory=(TasksFactory *)m_tasks_factory;
     return tasks_factory->getProgress(task_id);
 }
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_example_audioandvideoeditor_services_TaskService_nativeApplyFastEdit(JNIEnv *env,
+                                                                              jobject thiz,
+                                                                              jstring input_path,
+                                                                              jstring output_path,
+                                                                              jstring edit_commands) {
+    const char *in_path = env->GetStringUTFChars(input_path, nullptr);
+    const char *out_path = env->GetStringUTFChars(output_path, nullptr);
+    const char *cmds = edit_commands ? env->GetStringUTFChars(edit_commands, nullptr) : nullptr;
+
+    MediaModifier modifier;
+    int result = modifier.applyFastEdit(in_path, out_path, cmds);
+
+    env->ReleaseStringUTFChars(input_path, in_path);
+    env->ReleaseStringUTFChars(output_path, out_path);
+    if (cmds) env->ReleaseStringUTFChars(edit_commands, cmds);
+
+    return result;
 }

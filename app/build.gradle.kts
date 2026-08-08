@@ -20,8 +20,8 @@ android {
         applicationId = "com.example.audioandvideoeditor"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.0.7"
+        versionCode = 8
+        versionName = "1.0.8"
         ndkVersion="25.1.8937393"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

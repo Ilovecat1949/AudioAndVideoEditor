@@ -321,4 +321,73 @@ Email: running_in_storm@qq.com\n
     <string name="delete_task_confirm_message">Are you sure you want to delete task ?</string>
     <string name="delete_record_only">Delete Record Only</string>
     <string name="delete_with_file">Delete Record &amp; File</string>
+
+
+    <!-- Basic File Attributes -->
+    <string name="container_format">Format</string>
+    <string name="total_duration">Total Duration</string>
+    <string name="creation_time">Creation Time</string>
+    <string name="media_title">Media Title</string>
+
+    <!-- Video Attributes -->
+    <string name="video_rotation">Rotation</string>
+    <string name="video_profile">Video Profile</string>
+    <string name="pixel_format">Pixel Format</string>
+    <string name="color_space">Color Space</string>
+    <string name="color_transfer">Transfer Characteristics (HDR)</string>
+    <string name="sample_aspect_ratio">Sample Aspect Ratio (SAR)</string>
+
+    <!-- Audio Attributes -->
+    <string name="audio_profile">Audio Profile</string>
+    <string name="sample_format">Sample Format</string>
+
+    <!-- Subtitle Attributes -->
+    <string name="has_subtitle">Embedded Subtitle</string>
+    <string name="subtitle_language">Subtitle Language</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <string name="artist">Artist/Author</string>
+    <string name="description">Description</string>
+    <string name="copyright">Copyright</string>
+    <string name="encoder">Encoder</string>
+
+    <!-- Media Info Edit Actions -->
+    <string name="edit">Edit</string>
+    <string name="save">Save</string>
+    <string name="edit_media_info">Edit Media Info</string>
+    <string name="click_to_rotate">Click to rotate</string>
+
+    <string name="processing_please_do_not_leave">Processing, please do not leave this page...</string>
+
+    <!-- Heavy edit / Save As Dialog strings -->
+    <string name="save_as_new_file">Save as new file</string>
+    <string name="heavy_edit_notice">The current edit requires re-encoding and will be saved as a new file without affecting the original file.</string>
+    <string name="new_file_name">New File Name</string>
+    <string name="start_task">Start Task</string>
+    <string name="task_started_toast">Background edit task started</string>
+
+
+    <string name="album">Album</string>
+    <string name="genre">Genre</string>
+
+    <string name="not_set">Not Set</string>
+
+    <!-- Time Picker Dialog Strings -->
+    <string name="btn_next">Next</string>
+    <string name="btn_previous">Back</string>
+    <string name="title_select_time">Select Time (24-Hour)</string>
+
+    <string name="title_select_resolution">Select Video Resolution</string>
+    <string name="label_presets">Presets</string>
+    <string name="label_custom">Custom Dimension</string>
+    <string name="label_width">Width (px)</string>
+    <string name="label_height">Height (px)</string>
+    <string name="hint_even_number_warning">Width and height must be even numbers and will auto-adjust.</string>
+    <string name="preset_1080p_vertical">1080 x 1920 (Portrait 1080p)</string>
+    <string name="preset_1080p_horizontal">1920 x 1080 (Landscape 1080p)</string>
+    <string name="preset_720p_vertical">720 x 1280 (Portrait 720p)</string>
+    <string name="preset_720p_horizontal">1280 x 720 (Landscape 720p)</string>
+    <string name="preset_480p_vertical">480 x 854 (Portrait 480p)</string>
+    <string name="preset_480p_horizontal">854 x 480 (Landscape 480p)</string>
 </resources>

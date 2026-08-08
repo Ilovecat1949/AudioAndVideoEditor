@@ -17,6 +17,9 @@ class TasksBinder (service: TaskService) : Binder(){
     fun getAVInfo(path:String):String{
        return service.getAVStrInfo(path)
     }
+    fun applyFastEdit(input_path: String,output_path: String,edit_commands: String):Int{
+        return service.applyFastEdit(input_path,output_path,edit_commands)
+    }
     fun getRemainingTasksNum():Int{
         return service.getRemainingTasksNum()
     }

@@ -314,4 +314,70 @@
     <string name="delete_task_confirm_message">确定要删除任务吗？</string>
     <string name="delete_record_only">仅删除记录</string>
     <string name="delete_with_file">删除记录及文件</string>
+    <!-- 基础文件属性 -->
+    <string name="container_format">封装格式</string>
+    <string name="total_duration">总时长</string>
+    <string name="creation_time">创建时间</string>
+    <string name="media_title">媒体标题</string>
+
+    <!-- 视频属性 -->
+    <string name="video_rotation">旋转角度</string>
+    <string name="video_profile">视频 Profile</string>
+    <string name="pixel_format">像素格式</string>
+    <string name="color_space">色彩空间</string>
+    <string name="color_transfer">传递特性(HDR)</string>
+    <string name="sample_aspect_ratio">采样宽高比(SAR)</string>
+
+    <!-- 音频属性 -->
+    <string name="audio_profile">音频 Profile</string>
+    <string name="sample_format">采样格式</string>
+
+    <!-- 字幕属性 -->
+    <string name="has_subtitle">内嵌字幕</string>
+    <string name="subtitle_language">字幕语言</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+
+    <string name="artist">作者/创作者</string>
+    <string name="description">描述信息</string>
+    <string name="copyright">版权信息</string>
+    <string name="encoder">编码工具</string>
+
+    <!-- 媒体信息编辑操作 -->
+    <string name="edit">编辑</string>
+    <string name="save">保存</string>
+    <string name="edit_media_info">编辑媒体信息</string>
+    <string name="click_to_rotate">点击旋转</string>
+
+
+    <string name="processing_please_do_not_leave">正在处理，请勿离开此页面...</string>
+
+    <!-- 耗时/重度编辑另存为对话框相关文案 -->
+    <string name="save_as_new_file">另存为新文件</string>
+    <string name="heavy_edit_notice">当前编辑包含音视频重编码，需要另存为新文件，不会影响原始文件。</string>
+    <string name="new_file_name">新文件名</string>
+    <string name="start_task">开始任务</string>
+    <string name="task_started_toast">已启动后台编辑任务</string>
+
+    <string name="album">专辑</string>
+    <string name="genre">流派</string>
+
+    <string name="not_set">未设置</string>
+
+    <string name="btn_next">下一步</string>
+    <string name="btn_previous">上一步</string>
+    <string name="title_select_time">选择时间 (24小时制)</string>
+
+    <string name="title_select_resolution">修改视频分辨率</string>
+    <string name="label_presets">常用预设</string>
+    <string name="label_custom">自定义尺寸</string>
+    <string name="label_width">宽度 (px)</string>
+    <string name="label_height">高度 (px)</string>
+    <string name="hint_even_number_warning">分辨率宽高必须为偶数，将自动调整</string>
+    <string name="preset_1080p_vertical">1080 x 1920 (竖屏 1080p)</string>
+    <string name="preset_1080p_horizontal">1920 x 1080 (横屏 1080p)</string>
+    <string name="preset_720p_vertical">720 x 1280 (竖屏 720p)</string>
+    <string name="preset_720p_horizontal">1280 x 720 (横屏 720p)</string>
+    <string name="preset_480p_vertical">480 x 854 (竖屏 480p)</string>
+    <string name="preset_480p_horizontal">854 x 480 (横屏 480p)</string>
 </resources>

@@ -883,6 +883,8 @@ class TaskService : Service() {
 
     // ==================== 对外提供的辅助方法 ====================
     fun getAVStrInfo(path: String): String = getAudioAndVideoStrInfo(path)
+    fun applyFastEdit(input_path: String,output_path: String,edit_commands: String):Int=nativeApplyFastEdit(input_path,output_path,edit_commands)
+
     fun getTasksQueue(): List<TaskInfo> = allTasksQueue
     fun getWaitingTasksQueue(): List<TaskInfo> = waitingTasksQueue
     fun getRunningTasksQueue(): List<TaskInfo> = runningTasksQueue
@@ -902,6 +904,8 @@ class TaskService : Service() {
     private external fun cancelTask(tasksFactory: Long, taskID: Long)
     private external fun getProgress(tasksFactory: Long, taskID: Long): Float
     private external fun getAudioAndVideoStrInfo(path: String): String
+
+    private external fun nativeApplyFastEdit(input_path: String,output_path: String,edit_commands: String):Int
     private external fun getFFmpegStrInfo(infoType: Int): String
 
 

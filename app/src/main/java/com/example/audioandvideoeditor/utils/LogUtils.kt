@@ -1,5 +1,8 @@
 package com.example.audioandvideoeditor.utils
 import android.content.Context
+import android.view.Gravity
+import android.widget.Toast
+import androidx.annotation.StringRes
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
@@ -70,5 +73,21 @@ object LogUtils {
         if (logFile.exists()) {
             logFile.delete()
         }
+    }
+
+    /**
+     * 带有居中样式的短 Toast
+     */
+    fun Context.showToast(message: String, isShort: Boolean = true) {
+        val duration = if (isShort) Toast.LENGTH_SHORT else Toast.LENGTH_LONG
+        // 直接 makeText 并 show，无需且不要设置 setGravity
+        Toast.makeText(this, message, duration).show()
+    }
+
+    /**
+     * 接受 StringRes 的重载
+     */
+    fun Context.showToast(@StringRes resId: Int, isShort: Boolean = true) {
+        showToast(getString(resId), isShort)
     }
 }

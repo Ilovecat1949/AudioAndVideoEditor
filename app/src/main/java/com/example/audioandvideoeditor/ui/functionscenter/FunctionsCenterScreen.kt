@@ -96,6 +96,25 @@ private fun FunctionsListScreen2(
                 Text(text=stringResource(R.string.record))
             }
         }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        setNextToNextDestination(Destination.AudioAndVideoInfo.route)
+                        nextDestination(Destination.FileSelection.route)
+                    }
+            ){
+                Text(
+                    text=LocalContext.current.resources.getString(R.string.av_info),
+                    modifier = Modifier.padding(10.dp)
+                )
+
+            }
+        }
 
         item {
             Column(
@@ -220,25 +239,6 @@ private fun FunctionsListScreen2(
             ){
                 Text(text= LocalContext.current.getString(R.string.video_muting),
                     modifier = Modifier.padding(10.dp))
-            }
-        }
-        item {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.height(150.dp)
-                    .width(200.dp)
-                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-                    .clickable {
-                        setNextToNextDestination(Destination.AudioAndVideoInfo.route)
-                        nextDestination(Destination.FileSelection.route)
-                    }
-            ){
-                Text(
-                    text=LocalContext.current.resources.getString(R.string.av_info),
-                    modifier = Modifier.padding(10.dp)
-                )
-
             }
         }
 

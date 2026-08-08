@@ -219,7 +219,7 @@ private fun startExtractAudio(
 //        "ffmpeg -i ${file.path} -vn ${target_path}"
 //    }
     val cmd_str="ffmpeg -i input_file -vn output_file"
-    Log.d(TAG,"cmd_str:${cmd_str}")
+//    Log.d(TAG,"cmd_str:${cmd_str}")
     val command_arg_list=cmd_str.trim().split("[\\s\\n]+".toRegex())
         .map {
             when(it){

@@ -159,7 +159,13 @@ fun HomeScreen(
             }
 
             composable(Destination.AudioAndVideoInfo.route) {
-                AVInfoScreen(File(homeViewModel.path_or_uri).path)
+                AVInfoScreen(
+                    File(homeViewModel.path_or_uri).path,
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        homeViewModel.show_interstistial_ad = true
+                    }
+                    )
             }
 
             composable(Destination.VideoFilesList.route) {
