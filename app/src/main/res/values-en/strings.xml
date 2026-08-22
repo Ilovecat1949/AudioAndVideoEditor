@@ -390,4 +390,27 @@ Email: running_in_storm@qq.com\n
     <string name="preset_720p_horizontal">1280 x 720 (Landscape 720p)</string>
     <string name="preset_480p_vertical">480 x 854 (Portrait 480p)</string>
     <string name="preset_480p_horizontal">854 x 480 (Landscape 480p)</string>
+
+    <string name="action_direct_record">No need, record directly</string>
+
+    <!-- 模式预设 -->
+    <string name="mode_daily_power_saving">Daily / Power Saving</string>
+    <string name="mode_gaming_high_refresh">Gaming / High Refresh Rate</string>
+
+    <!-- 画质 / 清晰度 -->
+    <string name="quality_sd">SD</string>
+    <string name="quality_standard">Standard</string>
+    <string name="quality_uhd">Ultra HD</string>
+
+    <string name="pause">pause</string>
+    <string name="resume">resume</string>
+
+    <string name="paused">paused</string>
+
+    <!-- Audio Source Settings -->
+    <string name="label_audio_source">Audio Source</string>
+    <string name="audio_source_none">Mute (No Audio)</string>
+    <string name="audio_source_mic">Microphone Only</string>
+    <string name="audio_source_internal">Internal Audio (Games/Media)</string>
+    <string name="audio_source_mic_and_internal">Microphone + Internal Audio</string>
 </resources>

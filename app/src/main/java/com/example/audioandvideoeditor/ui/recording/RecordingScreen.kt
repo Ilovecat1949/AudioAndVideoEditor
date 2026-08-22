@@ -67,6 +67,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -74,10 +75,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.findActivity
+import com.example.audioandvideoeditor.model.AudioSourceOption
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.utils.FilesUtils
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
@@ -143,58 +144,118 @@ fun TopBar(onSettingsClick: () -> Unit) { // 🌟 接收一个纯粹的动作回
 fun RecordingControls(
     viewModel: RecordingViewModel
 ) {
-    val context= LocalContext.current
-    // 1. 定义 ActivityResultLauncher
-    //    它接收一个 Intent 作为输入，并返回一个 ActivityResult 对象
+    val context = LocalContext.current
+
     val screenCaptureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val activity=context.findActivity()
+        val activity = context.findActivity()
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            // 用户同意录屏，启动录屏服务
-            viewModel.startRecordingService(activity,result.resultCode, result.data!!)
+            viewModel.startRecordingService(activity, result.resultCode, result.data!!)
             Toast.makeText(activity, activity.getString(R.string.start), Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(activity, activity.getString(R.string.rejected), Toast.LENGTH_SHORT).show()
         }
     }
 
-    // 2. 启动录屏请求的函数
     val startScreenCaptureRequest = remember<(Context) -> Unit> {
         { ctx ->
-            // 获取 MediaProjectionManager
             val projectionManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            // 创建屏幕捕获意图
             val intent = projectionManager.createScreenCaptureIntent()
-            // 使用 Compose 启动器启动意图
             screenCaptureLauncher.launch(intent)
         }
     }
     val myUiState by viewModel.uiState.collectAsState()
-    if (myUiState.isRecording) {
-        FloatingActionButton(
-            onClick = { viewModel.onStopRecording(context) },
-            containerColor= Color.Red,
-            modifier = Modifier.size(100.dp)
-        ) {
-            Icon(Icons.Default.Close, contentDescription = stringResource(id = R.string.stop), modifier = Modifier.size(50.dp))
+// 2. 🌟 【新增】麦克风权限请求 Launcher
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startScreenCaptureRequest(context)
+        } else {
+            Toast.makeText(context, "未授予麦克风权限，无法录制音频", Toast.LENGTH_SHORT).show()
+            // 权限拒绝时，可降级为静音录制，或直接拦截
         }
-        Text(stringResource(id = R.string.recording), style = MaterialTheme.typography.displayMedium, modifier = Modifier.padding(top = 16.dp))
+    }
+
+    // 3. 🌟 【新增】启动录制的安全校验入口
+    val checkAndStartRecording = {
+        val needsMicPermission = myUiState.selectedConfig.audioOption == AudioSourceOption.MIC || myUiState.selectedConfig.audioOption == AudioSourceOption.MIXED
+        val hasMicPermission = ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (needsMicPermission && !hasMicPermission) {
+            audioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+        } else {
+            startScreenCaptureRequest(context)
+        }
+    }
+
+
+    // 🌟 状态分流：录制中（或已暂停）展示双控制按钮组
+    if (myUiState.isSessionActive) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 暂停 / 恢复 切换按钮
+                FloatingActionButton(
+                    onClick = {
+                        if (myUiState.isPaused) {
+                            viewModel.onResumeRecording(context)
+                        } else {
+                            viewModel.onPauseRecording(context)
+                        }
+                    },
+                    containerColor = if (myUiState.isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (myUiState.isPaused) R.drawable.play_circle_24px else R.drawable.pause_circle_24px
+                        ),
+                        contentDescription = if (myUiState.isPaused) stringResource(R.string.resume) else stringResource(R.string.pause),
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                // 停止按钮
+                FloatingActionButton(
+                    onClick = { viewModel.onStopRecording(context) },
+                    containerColor = Color.Red,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(id = R.string.stop),
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = if (myUiState.isPaused) stringResource(id = R.string.paused) else stringResource(id = R.string.recording),
+                style = MaterialTheme.typography.displayMedium,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
     } else {
         FloatingActionButton(
             onClick = {
-                // 🌟 核心综合判定：
-                // 1. 如果用户在配置里【没有开启】悬浮球
-                // 2. 并且当前手机【确实没有】悬浮窗权限
                 if (!android.provider.Settings.canDrawOverlays(context)) {
-                   // 🌟 规范修复：不越权操作 _uiState，而是给 ViewModel 发送标准指令
-                   viewModel.showOverlayRecommendDialog(true)
+                    viewModel.showOverlayRecommendDialog(true)
                 } else {
-                    // 如果用户已经开启了、或者系统有权限了，完全不打扰，直接走原有录屏流程
-                    startScreenCaptureRequest(context)
+                    checkAndStartRecording() // 👈 替换为带有音频权限检查的方法
                 }
             },
-            containerColor = MaterialTheme.colorScheme .primary,
+            containerColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(100.dp)
         ) {
             Icon(Icons.Default.PlayArrow, contentDescription = stringResource(id = R.string.start), modifier = Modifier.size(50.dp))
@@ -202,25 +263,22 @@ fun RecordingControls(
         Text(stringResource(id = R.string.start), style = MaterialTheme.typography.displayMedium, modifier = Modifier.padding(top = 16.dp))
     }
 
-// 🌟 精准挂载：开始录屏时的“可选悬浮球”即时推荐弹窗
     if (myUiState.showOverlayRecommendDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onDismissRecommendDialog() },
             title = { Text(stringResource(R.string.dialog_title_floating_ball), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.dialog_msg_floating_ball)) },
-            // 🌟 完美的 Fallback 退级设计：用户说不需要，直接帮他发起录屏，绝不拦截！
             dismissButton = {
                 TextButton(
                     onClick = {
-                        viewModel.onDismissRecommendDialog() // 关弹窗
+                        viewModel.onDismissRecommendDialog()
                         viewModel.showOverlayRecommendDialog(false)
-                        startScreenCaptureRequest(context)   // 毫无阻碍地直接发起原有录屏流程！
+                        checkAndStartRecording() // 👈 替换为带有音频权限检查的方法
                     }
                 ) {
-                    Text("不需要,直接录屏", color = MaterialTheme.colorScheme.outline)
+                    Text(stringResource(R.string.action_direct_record), color = MaterialTheme.colorScheme.outline)
                 }
             },
-            // 用户说要，就带他去开启配置并授权
             confirmButton = {
                 Button(
                     onClick = {
@@ -232,7 +290,6 @@ fun RecordingControls(
             }
         )
     }
-
 }
 
 
@@ -374,25 +431,35 @@ private fun ShowVideoFileInfo(
     var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(task.uri) {
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
+            // 1. 优先快查缓存（LruCache 内部同步，无需加锁，性能最高）
+            val cachedBitmap = viewModel.thumbnailCache.get(task.uri)
+            if (cachedBitmap != null) {
+                thumbnailBitmap = cachedBitmap
+                return@withContext
+            }
+
+            // 2. 未命中缓存时，使用 Mutex 避免同 URI 并发重复加载
             viewModel.mutex.withLock {
-                if(thumbnailBitmap==null){
-                    val bitmap=viewModel.thumbnailBitmapArray.find { it.first==task.uri }?.second
-                    if(bitmap!=null){
-                        thumbnailBitmap=bitmap
+                // 双重检查：防止排队期间其他协程已完成加载
+                val doubleCheckBitmap = viewModel.thumbnailCache.get(task.uri)
+                if (doubleCheckBitmap != null) {
+                    thumbnailBitmap = doubleCheckBitmap
+                } else {
+                    // 3. IO 线程解图
+                    val loadedBitmap = FilesUtils.getThumbnail(
+                        context.contentResolver,
+                        Uri.parse(task.uri)
+                    )
+
+                    loadedBitmap?.let { bitmap ->
+                        // 在 IO 线程提前完成纹理准备，避免 UI 主线程卡顿
+                        bitmap.prepareToDraw()
+
+                        // 写入 LruCache（若超过 maxNum，LruCache 会自动剔除最久未使用的项，交由 GC 回收）
+                        viewModel.thumbnailCache.put(task.uri, bitmap)
+                        thumbnailBitmap = bitmap
                     }
-                    else{
-                        thumbnailBitmap = FilesUtils.getThumbnail(context.contentResolver, Uri.parse(task.uri))
-                        if(thumbnailBitmap!=null){
-                            if(viewModel.thumbnailBitmapArray.size>viewModel.thumbnailsMaxNum){
-                                val pair=viewModel.thumbnailBitmapArray.first()
-                                viewModel.thumbnailBitmapArray.removeAt(0)
-                                pair.second.recycle()
-                            }
-                            viewModel.thumbnailBitmapArray.add(Pair(task.uri,thumbnailBitmap!!))
-                        }
-                    }
-                    thumbnailBitmap?.prepareToDraw()
                 }
             }
         }
@@ -413,7 +480,11 @@ private fun ShowVideoFileInfo(
                 Image(
                     bitmap = thumbnailBitmap!!.asImageBitmap(),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable{
+                            videoPlay(task.uri,Destination.VideoPlay.route)
+                        }
                 )
             } else {
                 Icon(
@@ -558,11 +629,11 @@ fun RecordingSettingsMenu(
                     modifier = Modifier.padding(vertical = 6.dp)
                 )
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (tmpConfig.frameRate == 30) "✓ 30 FPS (日常/省电)" else "30 FPS (日常/省电)") },
+                    text = { Text(if (tmpConfig.frameRate == 30) "✓ 30 FPS (${stringResource(R.string.mode_daily_power_saving)})" else "30 FPS (${stringResource(R.string.mode_daily_power_saving)})") },
                     onClick = { tmpConfig = tmpConfig.copy(frameRate = 30) }
                 )
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (tmpConfig.frameRate == 60) "✓ 60 FPS (游戏/高刷)" else "60 FPS (游戏/高刷)") },
+                    text = { Text(if (tmpConfig.frameRate == 60) "✓ 60 FPS (${stringResource(R.string.mode_gaming_high_refresh)})" else "60 FPS (${stringResource(R.string.mode_gaming_high_refresh)})") },
                     onClick = { tmpConfig = tmpConfig.copy(frameRate = 60) }
                 )
 
@@ -579,16 +650,16 @@ fun RecordingSettingsMenu(
                 val mbps5 = 5 * 1024 * 1024
                 val mbps10 = 10 * 1024 * 1024
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (tmpConfig.bitRate == mbps4) "✓ 4 Mbps (标清)" else "4 Mbps (标清)") },
-                    onClick = { tmpConfig = tmpConfig.copy(bitRate = mbps4) }
+                    text = { Text(if (tmpConfig.videoBitrate == mbps4) "✓ 4 Mbps (${stringResource(R.string.quality_sd)})" else "4 Mbps (${stringResource(R.string.quality_sd)})") },
+                    onClick = { tmpConfig = tmpConfig.copy(videoBitrate = mbps4) }
                 )
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (tmpConfig.bitRate == mbps5) "✓ 5 Mbps (标准)" else "5 Mbps (标准)") },
-                    onClick = { tmpConfig = tmpConfig.copy(bitRate = mbps5) }
+                    text = { Text(if (tmpConfig.videoBitrate == mbps5) "✓ 5 Mbps (${stringResource(R.string.quality_standard)})" else "5 Mbps (${stringResource(R.string.quality_standard)})") },
+                    onClick = { tmpConfig = tmpConfig.copy(videoBitrate = mbps5) }
                 )
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (tmpConfig.bitRate == mbps10) "✓ 10 Mbps (超清)" else "10 Mbps (超清)") },
-                    onClick = { tmpConfig = tmpConfig.copy(bitRate = mbps10) }
+                    text = { Text(if (tmpConfig.videoBitrate == mbps10) "✓ 10 Mbps (${stringResource(R.string.quality_uhd)})" else "10 Mbps (${stringResource(R.string.quality_uhd)})") },
+                    onClick = { tmpConfig = tmpConfig.copy(videoBitrate = mbps10) }
                 )
 // 在 RecordingSettingsMenu 的最后一个 Divider 下方追加：
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
@@ -622,6 +693,39 @@ fun RecordingSettingsMenu(
                         }
                     )
                 }
+// ==================== 4. 音频来源设置组 ====================
+                Text(
+                    text = stringResource(R.string.label_audio_source), // 或 "音频来源"
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+
+// 0: 静音 / 无音频
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(if (tmpConfig.audioOption == AudioSourceOption.NONE) "✓ ${stringResource(R.string.audio_source_none)}" else stringResource(R.string.audio_source_none)) },
+                    onClick = { tmpConfig = tmpConfig.copy(audioOption = AudioSourceOption.NONE) }
+                )
+
+// 1: 麦克风
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(if (tmpConfig.audioOption == AudioSourceOption.MIC) "✓ ${stringResource(R.string.audio_source_mic)}" else stringResource(R.string.audio_source_mic)) },
+                    onClick = { tmpConfig = tmpConfig.copy(audioOption = AudioSourceOption.MIC) }
+                )
+
+// 2: 系统/应用内部声音 (Android 10+)
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(if (tmpConfig.audioOption == AudioSourceOption.INTERNAL) "✓ ${stringResource(R.string.audio_source_internal)}" else stringResource(R.string.audio_source_internal)) },
+                    onClick = { tmpConfig = tmpConfig.copy(audioOption = AudioSourceOption.INTERNAL) }
+                )
+
+// 3: 麦克风 + 系统内录
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(if (tmpConfig.audioOption == AudioSourceOption.MIXED) "✓ ${stringResource(R.string.audio_source_mic_and_internal)}" else stringResource(R.string.audio_source_mic_and_internal)) },
+                    onClick = { tmpConfig = tmpConfig.copy(audioOption = AudioSourceOption.MIXED) }
+                )
+
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
             }
         }
     )

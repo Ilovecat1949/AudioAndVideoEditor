@@ -1,30 +1,31 @@
 package com.example.audioandvideoeditor.ui.recording
 
-import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.os.IBinder
 import android.provider.MediaStore
+import android.util.LruCache
 import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.Task
+import com.example.audioandvideoeditor.model.RecordingConfig
+import com.example.audioandvideoeditor.model.RecordingStatus
 import com.example.audioandvideoeditor.services.RecordingBinder
 import com.example.audioandvideoeditor.services.RecordingService
 import com.example.audioandvideoeditor.utils.ConfigsUtils
-import com.example.audioandvideoeditor.utils.RecordingConfig
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,18 +34,18 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import androidx.core.net.toUri
-import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
 data class RecordingState(
-    val isRecording: Boolean = false,
+    val isSessionActive: Boolean = false,// 🌟 标记录制会话是否开启（录制中或暂停中）
+    val isPaused: Boolean = false, // 🌟 新增：标记当前是否处于暂停状态
+    val isRecording: Boolean = false,     // 仅当真正处于录制状态时为 true
     val isPermissionsGranted: Boolean = false,
     val showPermissionsDialog: Boolean = false,
-    val videoSettings: RecordingVideoSettings = RecordingVideoSettings(),
-    val audioSettings: RecordingAudioSettings = RecordingAudioSettings(),
+//    val videoSettings: RecordingVideoSettings = RecordingVideoSettings(),
+//    val audioSettings: RecordingAudioSettings = RecordingAudioSettings(),
     val recordedVideos: List<String> = emptyList(),
     val currentError: String? = null,
     // 🌟 精准补充：让 UI 状态树能够持有这个录屏配置，给一个完全默认的实例即可
@@ -53,17 +54,17 @@ data class RecordingState(
     val showOverlayRecommendDialog: Boolean = false
 )
 
-data class RecordingVideoSettings(
-    val resolution: String = "1080p",
-    val bitRate: String = "4 Mbps",
-    val fps: String = "30"
-)
-
-data class RecordingAudioSettings(
-    val bitRate: String = "128 kbps",
-    val sampleRate: String = "44.1 kHz",
-    val channels: String = "Mono"
-)
+//data class RecordingVideoSettings(
+//    val resolution: String = "1080p",
+//    val bitRate: String = "4 Mbps",
+//    val fps: String = "30"
+//)
+//
+//data class RecordingAudioSettings(
+//    val bitRate: String = "128 kbps",
+//    val sampleRate: String = "44.1 kHz",
+//    val channels: String = "Mono"
+//)
 
 class RecordingViewModel() : ViewModel() {
     private val _uiState = MutableStateFlow(RecordingState())
@@ -79,10 +80,30 @@ class RecordingViewModel() : ViewModel() {
         viewModelScope.launch {
             AppApplication.INSTANCE.taskRepository.recordingState.collect { globalState ->
                 _uiState.update {
-                    it.copy(isRecording = (globalState == ScreenRecordingState.RECORDING))
+                    it.copy(
+                        isSessionActive = globalState == RecordingStatus.RECORDING || globalState == RecordingStatus.PAUSED,
+                        isRecording = globalState == RecordingStatus.RECORDING,
+                        isPaused = globalState == RecordingStatus.PAUSED
+                    )
                 }
             }
         }
+    }
+
+    // 2. 新增：发送暂停录屏指令
+    fun onPauseRecording(context: Context) {
+        val serviceIntent = Intent(context, RecordingService::class.java).apply {
+            action = "ACTION_PAUSE_RECORDING"
+        }
+        context.startService(serviceIntent)
+    }
+
+    // 3. 新增：发送继续录屏指令
+    fun onResumeRecording(context: Context) {
+        val serviceIntent = Intent(context, RecordingService::class.java).apply {
+            action = "ACTION_RESUME_RECORDING"
+        }
+        context.startService(serviceIntent)
     }
 
     // 🌟 关闭即时推荐弹窗
@@ -126,8 +147,29 @@ class RecordingViewModel() : ViewModel() {
             putExtra("resultCode", resultCode)
             putExtra("data", data)
             // 🌟 将原本依赖 Binder 赋值的参数，改由 Intent 快递打包带走
-// 🌟 核心改变：删掉原本零散的 EXTRA_AUDIO_TYPE，改成一发入魂的配置对象快递
-            putExtra("EXTRA_RECORDING_CONFIG", currentConfig)
+            val metrics = context.resources.displayMetrics
+            val isLandscape = metrics.widthPixels > metrics.heightPixels
+
+            var targetWidth = if (currentConfig.videoWidth > 0) currentConfig.videoWidth else metrics.widthPixels
+            var targetHeight = if (currentConfig.videoHeight > 0) currentConfig.videoHeight else metrics.heightPixels
+            // 🌟 防御：如果当前屏幕是横屏，但设置的分辨率是竖屏，自动反转长短边避免画面拉伸
+            if (isLandscape && targetWidth < targetHeight) {
+                val temp = targetWidth
+                targetWidth = targetHeight
+                targetHeight = temp
+            } else if (!isLandscape && targetWidth > targetHeight) {
+                val temp = targetWidth
+                targetWidth = targetHeight
+                targetHeight = temp
+            }
+            // 确保偶数对齐
+            val finalWidth = targetWidth and -2
+            val finalHeight = targetHeight and -2
+            // 🌟 核心改变：删掉原本零散的 EXTRA_AUDIO_TYPE，改成一发入魂的配置对象快递
+            putExtra("EXTRA_RECORDING_CONFIG", currentConfig.copy(
+                videoWidth = finalWidth,
+                videoHeight = finalHeight
+            ))
             putExtra("EXTRA_MEDIA_URI", newVideoUri)
             putExtra("EXTRA_MEDIA_NAME", videoFileName)
         }
@@ -211,7 +253,8 @@ class RecordingViewModel() : ViewModel() {
 
     val mutex = Mutex()
     val thumbnailsMaxNum=100
-    val thumbnailBitmapArray=ArrayList<Pair<String, Bitmap>>()
+    // LruCache 内部已实现多线程同步，无需手动管理 List 顺序与移除逻辑
+    val thumbnailCache = LruCache<String, Bitmap>(thumbnailsMaxNum)
 
     //  ==================== 删除任务 ====================
     var taskToDelete:Task?=null

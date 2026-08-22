@@ -380,4 +380,27 @@
     <string name="preset_720p_horizontal">1280 x 720 (横屏 720p)</string>
     <string name="preset_480p_vertical">480 x 854 (竖屏 480p)</string>
     <string name="preset_480p_horizontal">854 x 480 (横屏 480p)</string>
+
+    <string name="action_direct_record">不需要，直接录屏</string>
+
+    <!-- 模式预设 -->
+    <string name="mode_daily_power_saving">日常/省电</string>
+    <string name="mode_gaming_high_refresh">游戏/高刷</string>
+
+    <!-- 画质 / 清晰度 -->
+    <string name="quality_sd">标清</string>
+    <string name="quality_standard">标准</string>
+    <string name="quality_uhd">超清</string>
+
+    <string name="pause">暂停</string>
+    <string name="paused">已暂停</string>
+    resume
+    <string name="resume">继续</string>
+
+    <!-- 音频来源设置选项 -->
+    <string name="label_audio_source">音频来源</string>
+    <string name="audio_source_none">静音 (无音频)</string>
+    <string name="audio_source_mic">仅麦克风</string>
+    <string name="audio_source_internal">系统内录 (游戏/媒体音)</string>
+    <string name="audio_source_mic_and_internal">麦克风 + 系统内录</string>
 </resources>

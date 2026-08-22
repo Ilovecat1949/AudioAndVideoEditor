@@ -1,6 +1,5 @@
 package com.example.audioandvideoeditor.services
 
-import ScreenRecordingState
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Notification
@@ -11,6 +10,7 @@ import android.app.Service
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -38,14 +38,20 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.toColorInt
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.application.AppApplication
+import com.example.audioandvideoeditor.model.RecordingConfig
+import com.example.audioandvideoeditor.model.RecordingStatus
 import com.example.audioandvideoeditor.navigation.Destination
-import com.example.audioandvideoeditor.utils.RecordingConfig
+import com.example.audioandvideoeditor.recorder.engine.IRecorderEngine
+import com.example.audioandvideoeditor.recorder.engine.RecorderEngineFactory
+import com.example.audioandvideoeditor.utils.ConfigsUtils.loadRecordConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import java.io.File
 import java.io.IOException
 
 class RecordingService : Service() {
@@ -86,12 +92,7 @@ class RecordingService : Service() {
     private var recordingConfig: RecordingConfig = RecordingConfig()
 
     // 在 RecordingService.kt 中添加状态枚举定义
-    enum class RecordingStatus {
-        IDLE,       // 空闲状态（服务启动了，但没有进行任何录制）
-        RECORDING,  // 正在录制中
-        PAUSED,     // 录制已暂停（为后续功能预留）
-        SAVING      // 正在保存数据到数据库（对应刚才的安全退出状态）
-    }
+
     // 1. 引入核心状态机变量，默认为空闲状态
     var currentStatus = RecordingStatus.IDLE
         private set // 限制只能在 Service 内部修改状态，保证状态安全
@@ -99,7 +100,7 @@ class RecordingService : Service() {
 
     // 1. 创建一个绑定自定义 Job 和 IO 线程的协程作用域
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var pfd: ParcelFileDescriptor?=null
+    private var m_pfd: ParcelFileDescriptor?=null
 
     // 🌟 悬浮窗核心管理三大件
     private var windowManager: WindowManager? = null
@@ -164,18 +165,49 @@ class RecordingService : Service() {
     }
 
     // 🌟 核心函数 2：根据 Service 内部最高真理状态，刷新小球自己的图标状态
-    private fun updateFloatingWindowUI() {
+    private fun updateFloatingWindowUI(status: RecordingStatus = currentStatus) {
         val view = floatingView ?: return
         val btnControl = view.findViewById<ImageView>(R.id.btnControl) ?: return
-        // Service 内部状态：如果是录屏中，按钮显示 [⏹️ 停止] 图标，否则显示 [▶️ 开始] 图标
-        if (currentStatus== RecordingStatus.RECORDING) {
-            btnControl.setImageResource(R.drawable.stop_circle_24px)
-// 🌟 增量微调：动态注入录制中“警示红”色彩（不污染图片本身，直接利用系统 Tint 滤镜）
-            btnControl.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF4D4F"))
-        } else {
-            btnControl.setImageResource(R.drawable.play_circle_24px)
-// 🌟 增量微调：待机时恢复成温润优雅的“高级白”
-            btnControl.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FFFFFF"))
+        // 【新增】获取停止按钮引用
+        val btnStop = view.findViewById<ImageView>(R.id.btnStop) ?: return
+        btnStop.imageTintList = ColorStateList.valueOf("#FF4D4F".toColorInt()) // 警示红
+        when (status) {
+            RecordingStatus.RECORDING -> {
+                btnControl.isEnabled = true
+                btnControl.setImageResource(R.drawable.pause_circle_24px) // 录制中显示“暂停”图标
+                btnControl.imageTintList = ColorStateList.valueOf("#FF4D4F".toColorInt()) // 警示红
+
+                // 【新增】录制中显示停止按钮
+                btnStop.visibility = View.VISIBLE
+                btnStop.isEnabled = true
+            }
+            RecordingStatus.PAUSED -> {
+                btnControl.isEnabled = true
+                btnControl.setImageResource(R.drawable.play_circle_24px) // 暂停中显示“继续”图标
+                btnControl.imageTintList = ColorStateList.valueOf("#FFA940".toColorInt()) // 暖阳橙
+
+                // 【新增】暂停中保持显示停止按钮
+                btnStop.visibility = View.VISIBLE
+                btnStop.isEnabled = true
+            }
+            RecordingStatus.SAVING -> {
+                btnControl.isEnabled = false // 保存中禁用点击，防止重复触方向
+                btnControl.imageTintList = ColorStateList.valueOf("#8C8C8C".toColorInt()) // 锁定灰
+
+                // 【新增】保存中禁用停止按钮
+                btnStop.isEnabled = false
+            }
+            RecordingStatus.IDLE, RecordingStatus.STOPPED -> {
+                btnControl.isEnabled = true
+                btnControl.setImageResource(R.drawable.play_circle_24px) // 待机显示“开始”图标
+                btnControl.imageTintList = ColorStateList.valueOf("#FFFFFF".toColorInt()) // 高级白
+
+                // 【新增】待机状态隐藏停止按钮
+                btnStop.visibility = View.GONE
+            }
+            else -> {
+
+            }
         }
     }
 
@@ -198,6 +230,8 @@ class RecordingService : Service() {
         val view = floatingView ?: return
         val cardContainer = view.findViewById<View>(R.id.cardContainer) ?: return
         val btnControl = view.findViewById<View>(R.id.btnControl) ?: return
+        // 🌟 【新增】获取布局中独立的 btnStop 停止按钮
+        val btnStop = view.findViewById<View>(R.id.btnStop) ?: return
         val btnClose = view.findViewById<View>(R.id.btnClose) ?: return
 
         // 🌟 用于平滑吸附的属性动画器（声明在监听外层，方便随时取消）
@@ -288,15 +322,32 @@ class RecordingService : Service() {
             return@setOnTouchListener true
         }
 
-        // 🌟 子View点击事件：由于手势和点击已通过 isMoving 解耦，此处响应非常精确、可信
+        // 🌟 【改动】子View点击事件：控制按钮由“开始/停止”重构为“开始/暂停/继续”
         btnControl.setOnClickListener {
             val intent = Intent(this, RecordingService::class.java)
-            if (currentStatus== RecordingStatus.RECORDING) {
-                intent.action = "ACTION_STOP_RECORDING"
-            } else {
-                intent.action = "ACTION_START_RECORDING"
+            when (currentStatus) {
+                RecordingStatus.RECORDING -> {
+                    intent.action = "ACTION_PAUSE_RECORDING" // 录制中 -> 暂停
+                }
+                RecordingStatus.PAUSED -> {
+                    intent.action = "ACTION_RESUME_RECORDING" // 暂停中 -> 继续
+                }
+                RecordingStatus.IDLE, RecordingStatus.STOPPED -> {
+                    intent.action = "ACTION_START_RECORDING" // 待机中 -> 开始
+                }
+                else -> return@setOnClickListener
             }
             startService(intent)
+        }
+
+        // 🌟 【新增】停止按钮：专门负责 停止录制并保存视频
+        btnStop.setOnClickListener {
+            if (currentStatus == RecordingStatus.RECORDING || currentStatus == RecordingStatus.PAUSED) {
+                val intent = Intent(this, RecordingService::class.java).apply {
+                    action = "ACTION_STOP_RECORDING"
+                }
+                startService(intent)
+            }
         }
 
         btnClose.setOnClickListener {
@@ -304,6 +355,9 @@ class RecordingService : Service() {
             removeFloatingWindow()
         }
     }
+
+    // RecordingService.kt 核心调度变动部分：
+    private var recorderEngine: IRecorderEngine? = null
 
 
     override fun onCreate() {
@@ -365,22 +419,17 @@ class RecordingService : Service() {
                    // 防御：若已经在录制中，直接拦截
                     if (currentStatus == RecordingStatus.RECORDING || currentStatus == RecordingStatus.PAUSED) return START_NOT_STICKY
                     // 🌟 增加：向唯一信任源报备：启动中，正在拉起系统投影权限弹窗
-                    AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.PENDING)
+                    AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.PENDING)
                     // 🌟 核心改变：从 Intent 中安全提取配置对象并保存
-                    val config = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    recordingConfig = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         intent.getParcelableExtra("EXTRA_RECORDING_CONFIG", RecordingConfig::class.java)
                     } else {
                         @Suppress("DEPRECATION")
                         intent.getParcelableExtra("EXTRA_RECORDING_CONFIG")
-                    }
-
-                    // 如果拿到新配置就用新的，拿不到就用默认兜底
-                    if (config != null) {
-                        recordingConfig = config
-                    }
+                    }) ?: loadRecordConfig(this)
 
                     // 🌟 顺手把音频类型从配置类里剥离出来（完美承接你现有的音频逻辑）
-                    recordAudioType = recordingConfig.audioType
+//                    recordAudioType = recordingConfig.audioType
 
                     filePath = intent.getStringExtra("EXTRA_FILE_PATH") ?: ""
                     fileName= intent.getStringExtra("EXTRA_MEDIA_NAME") ?: ""
@@ -426,8 +475,29 @@ class RecordingService : Service() {
                     mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
                     mediaProjection?.registerCallback(recordingCallback, null)
 
+                    if(mediaUri!=null){
+                            m_pfd=contentResolver.openFileDescriptor(mediaUri!!, "w")
+                    }
+                    else{
+                        val file = File(filePath)
+                        // 读写模式（若文件不存在则自动创建）
+                        m_pfd= ParcelFileDescriptor.open(
+                            file,
+                            ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE
+                        )
+                    }
+
                     // 🌟 2. 核心架构改变：不再等待 UI 的 Binder 连通！前台通道拉起后，直接同步触发实质录制
-                    startRecording()
+                    //   startRecording()
+                    // 1. 通过工厂创建具体引擎策略
+                    recorderEngine = RecorderEngineFactory.createEngine(this, recordingConfig)
+                    // 2. 统一驱动引擎启动
+                    recorderEngine?.start(recordingConfig, mediaProjection!!, m_pfd!!)
+                    Log.d("RecordingService", "Recording started!")
+                    // 🌟 状态平滑流转：成功启动后，将状态切为 RECORDING
+                    currentStatus = RecordingStatus.RECORDING
+                    // 🌟 增加：硬件真正就绪，向全局广播：正在录制中
+                    AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.RECORDING)
                     // 🌟 增量：只要用户满足配置需要，就尽力而为把小球挂上去
                     showFloatingWindow()
                     // 🌟 增量：让小球图标瞬间同步变为 [⏹️ 停止]
@@ -436,7 +506,8 @@ class RecordingService : Service() {
                 "ACTION_STOP_RECORDING" -> {
                        // 只要是在“录屏中”或者“暂停中”，都可以收尾保存
                     if (currentStatus == RecordingStatus.RECORDING || currentStatus == RecordingStatus.PAUSED) {
-
+                        recorderEngine?.stop()
+                        recorderEngine = null
                         stopRecording() // 停止编码，释放本轮 VirtualDisplay，执行 IO 写入
 
                         // 刷新前台通知，明确告诉用户大管家还活着，处于就绪待命状态
@@ -445,7 +516,7 @@ class RecordingService : Service() {
                             createRecordingNotification(this,intent.action)
                         )
                         // 状态安全回归待机，主页面按钮全自动变回绿色
-                        AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.IDLE)
+                        AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.IDLE)
                         updateFloatingWindowUI()
                         // TODO: 未来在这里触发：悬浮球 UI 切换回静态的 [▶️开始] 待机样式
                     }
@@ -457,9 +528,10 @@ class RecordingService : Service() {
 
                         // 🛠️ 后期实现核心：
                         // mediaRecorder.pause() 或者 AeroFFmpegSDK.markPauseTime()
-
+//                        pauseRecording()
                         // 同步更新全局状态契约
-                        AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.PAUSED)
+                        recorderEngine?.pause()
+                        AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.PAUSED)
 
                         // 刷新通知栏文本为“录屏已暂停”
                         val manager = getSystemService(NotificationManager::class.java)
@@ -479,8 +551,9 @@ class RecordingService : Service() {
 
                         // 🛠️ 后期实现核心：
                         // mediaRecorder.resume() 或者 AeroFFmpegSDK.adjustTimeDelta()
-
-                        AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.RECORDING)
+//                        resumeRecording()
+                        recorderEngine?.resume()
+                        AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.RECORDING)
 
                         val manager = getSystemService(NotificationManager::class.java)
                         manager?.notify(notificationId, createRecordingNotification(this,intent.action))
@@ -534,11 +607,11 @@ class RecordingService : Service() {
         }
         // 🌟 在末尾增加 PFD 的安全关闭
         try {
-            pfd?.close()
+            m_pfd?.close()
         } catch (e: Exception) {
             Log.e(TAG, "释放：ParcelFileDescriptor close 失败", e)
         } finally {
-            pfd = null
+            m_pfd = null
         }
     }
 
@@ -584,9 +657,9 @@ class RecordingService : Service() {
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
 
                 if(mediaUri!=null){
-                    pfd = contentResolver.openFileDescriptor(mediaUri!!, "w")
-                    if (pfd != null) {
-                        setOutputFile(pfd!!.fileDescriptor)
+                    m_pfd = contentResolver.openFileDescriptor(mediaUri!!, "w")
+                    if (m_pfd != null) {
+                        setOutputFile(m_pfd!!.fileDescriptor)
                     }
                 }
                 else{
@@ -598,7 +671,7 @@ class RecordingService : Service() {
                 // 视频配置
                 setVideoSize(screenWidth, screenHeight) // 示例分辨率
                 setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-                setVideoEncodingBitRate(recordingConfig.bitRate) // 5 Mbps
+                setVideoEncodingBitRate(recordingConfig.videoBitrate) // 5 Mbps
                 setVideoFrameRate(recordingConfig.frameRate)
                 prepare()
             }
@@ -621,12 +694,12 @@ class RecordingService : Service() {
             // 🌟 状态平滑流转：成功启动后，将状态切为 RECORDING
             currentStatus = RecordingStatus.RECORDING
             // 🌟 增加：硬件真正就绪，向全局广播：正在录制中
-            AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.RECORDING)
+            AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.RECORDING)
         } catch (e: IOException) {
             Log.e("RecordingService", "startRecording failed", e)
             stopRecording()
             currentStatus = RecordingStatus.IDLE // 发生异常退回 IDLE
-            AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.IDLE)
+            AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.IDLE)
         }
     }
 
@@ -637,12 +710,12 @@ class RecordingService : Service() {
         }
 
 // 🌟 1. 替换原本的零散释放，引入严密的逆序安全销毁
-        releaseMediaResources()
+//        releaseMediaResources()
 
         currentStatus = RecordingStatus.IDLE
 
         // 🌟 2. 契约落位：正常录制结束，立即更新全局状态
-        AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.IDLE)
+        AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.IDLE)
 
 // 3. 🌟 外科手术式修改：彻底抛弃旧的 saveInfo() 协程，直接甩锅给 Repository
         // 把当前录好的 Uri 和 路径 扔过去，Service 就算彻底交差了！
@@ -659,56 +732,102 @@ class RecordingService : Service() {
         }
         filePath=""
         mediaUri=null
+        try {
+            mediaProjection?.stop()
+        } catch (e: Exception) {
+            Log.e("RecordingService", "释放：mediaProjection stop 失败", e)
+        } finally {
+            mediaProjection = null
+        }
+
         // 🌟 在末尾增加 PFD 的安全关闭
         try {
-            pfd?.close()
+            m_pfd?.close()
         } catch (e: Exception) {
             Log.e(TAG, "释放：ParcelFileDescriptor close 失败", e)
         } finally {
-            pfd = null
+            m_pfd = null
         }
         // 4. 清爽地自毁，没有任何丢数据的包袱
 //        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
 //        stopSelf()
     }
 
+    private fun pauseRecording() {
+        if (currentStatus == RecordingStatus.RECORDING && mediaRecorder != null) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    mediaRecorder?.pause()
+                    currentStatus = RecordingStatus.PAUSED
+                    AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.PAUSED)
+                    updateFloatingWindowUI(RecordingStatus.PAUSED)
+                }
+            } catch (e: IllegalStateException) {
+                e.printStackTrace()
+            }
+        }
+    }
 
+    private fun resumeRecording() {
+        if (currentStatus == RecordingStatus.PAUSED && mediaRecorder != null) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    mediaRecorder?.resume()
+                    currentStatus = RecordingStatus.RECORDING
+                    AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.RECORDING)
+                    updateFloatingWindowUI(RecordingStatus.RECORDING)
+                }
+            } catch (e: IllegalStateException) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     // 🌟 优化点 3：规范前台通知构建，移除了内部重复手写的 NotificationChannel 创建硬编码，保持纯粹性
+// 🌟 优化点 3：规范前台通知构建，引入完整的 暂停 / 继续 / 停止 控制 Action
     private fun createRecordingNotification(context: Context, action_value: String?): Notification {
         val intent = Intent(this, Class.forName("com.example.audioandvideoeditor.MainActivity")).apply {
-            // 让 Activity 复用，防止重复创建多个 MainActivity 实例
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            // 🌟 核心：塞入你想让 Compose 识别的路由或动作标记
             putExtra("TARGET_ROUTE", Destination.Recording.route)
             putExtra("TASK_ID", -1L)
         }
 
-        // 2. 包装成 PendingIntent
-        // 注意：Android 12+ (API 31+) 必须显式指定 PendingIntent.FLAG_IMMUTABLE 或 FLAG_UPDATE_CURRENT
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         } else {
             PendingIntent.FLAG_UPDATE_CURRENT
         }
         val pendingIntent = PendingIntent.getActivity(this, -1, intent, flags)
-        val stopIntent = Intent(context, RecordingService::class.java).apply {
-            action = "ACTION_STOP_RECORDING"
-        }
-        val stopPendingIntent = PendingIntent.getService(
-            context,
-            0,
-            stopIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+
+        // 1. 【新增】定义三个独立的 PendingIntent 指令
+        val stopIntent = Intent(context, RecordingService::class.java).apply { action = "ACTION_STOP_RECORDING" }
+        val stopPendingIntent = PendingIntent.getService(context, 0, stopIntent, flags)
+
+        val pauseIntent = Intent(context, RecordingService::class.java).apply { action = "ACTION_PAUSE_RECORDING" }
+        val pausePendingIntent = PendingIntent.getService(context, 1, pauseIntent, flags)
+
+        val resumeIntent = Intent(context, RecordingService::class.java).apply { action = "ACTION_RESUME_RECORDING" }
+        val resumePendingIntent = PendingIntent.getService(context, 2, resumeIntent, flags)
+
         val builder = NotificationCompat.Builder(this, channelId)
-        when(action_value){
-            "ACTION_START_RECORDING" -> {
+            .setSmallIcon(R.drawable.movie_edit_24px)
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+
+        // 2. 【改动】依据动作与当前状态动态配置通知内容及 Action 按钮
+        when (action_value) {
+            "ACTION_START_RECORDING", "ACTION_RESUME_RECORDING" -> {
                 builder
                     .setContentTitle(this.getString(R.string.app_name))
                     .setContentText(this.getString(R.string.recording))
-                    .setSmallIcon(R.drawable.movie_edit_24px)
-                    .setOngoing(true)
+                    .addAction(
+                        NotificationCompat.Action(
+                            IconCompat.createWithResource(context, R.drawable.pause_circle_24px),
+                            context.getString(R.string.pause),
+                            pausePendingIntent
+                        )
+                    )
                     .addAction(
                         NotificationCompat.Action(
                             IconCompat.createWithResource(context, R.drawable.stop_circle_24px),
@@ -716,42 +835,30 @@ class RecordingService : Service() {
                             stopPendingIntent
                         )
                     )
-                    .setContentIntent(pendingIntent) // 🌟 核心：设置点击动作
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
             }
-            "ACTION_STOP_RECORDING"->{
+            "ACTION_PAUSE_RECORDING" -> {
+                builder
+                    .setContentTitle(this.getString(R.string.app_name))
+                    .setContentText(this.getString(R.string.notification_text_paused))
+                    .addAction(
+                        NotificationCompat.Action(
+                            IconCompat.createWithResource(context, R.drawable.play_circle_24px),
+                            context.getString(R.string.resume),
+                            resumePendingIntent
+                        )
+                    )
+                    .addAction(
+                        NotificationCompat.Action(
+                            IconCompat.createWithResource(context, R.drawable.stop_circle_24px),
+                            context.getString(R.string.stop),
+                            stopPendingIntent
+                        )
+                    )
+            }
+            "ACTION_STOP_RECORDING" -> {
                 builder
                     .setContentTitle(this.getString(R.string.app_name))
                     .setContentText(this.getString(R.string.notification_text_stopped))
-                    .setSmallIcon(R.drawable.movie_edit_24px)
-                    .setOngoing(true)
-                    .setContentIntent(pendingIntent) // 🌟 核心：设置点击动作
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-            }
-            "ACTION_PAUSE_RECORDING"->{
-                builder
-                .setContentTitle(this.getString(R.string.app_name))
-                    .setContentText(this.getString(R.string.notification_text_paused))
-                    .setSmallIcon(R.drawable.movie_edit_24px)
-                    .setOngoing(true)
-                    .setContentIntent(pendingIntent) // 🌟 核心：设置点击动作
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-            }
-            "ACTION_RESUME_RECORDING" ->{
-                builder
-                    .setContentTitle(this.getString(R.string.app_name))
-                    .setContentText(this.getString(R.string.recording))
-                    .setSmallIcon(R.drawable.movie_edit_24px)
-                    .setOngoing(true)
-                    .addAction(
-                        NotificationCompat.Action(
-                            IconCompat.createWithResource(context, R.drawable.stop_circle_24px),
-                            context.getString(R.string.stop),
-                            stopPendingIntent
-                        )
-                    )
-                    .setContentIntent(pendingIntent) // 🌟 核心：设置点击动作
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
             }
         }
         return builder.build()
@@ -781,10 +888,10 @@ class RecordingService : Service() {
         super.onDestroy()
 
 // 🌟 核心修改：用安全释放链进行最终资源兜底
-        releaseMediaResources()
-
+//        releaseMediaResources()
+        recorderEngine?.release()
         // 🌟 契约落位：确保无论何种原因服务销毁，全局状态必定安全复位回归 IDLE，不锁死前台 UI
-        AppApplication.INSTANCE.taskRepository.updateRecordingState(ScreenRecordingState.IDLE)
+        AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.IDLE)
 
         // 🌟 核心修改：前台通知安全移除销毁
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)

@@ -1,5 +1,8 @@
+import android.media.MediaScannerConnection
 import android.os.Build
+import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.dao.TasksDao
+import com.example.audioandvideoeditor.model.RecordingStatus
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.services.TasksBinder
@@ -31,16 +34,8 @@ import java.util.concurrent.atomic.AtomicLong
  * 3. 自动完成 TaskInfo(IPC) ↔ Task(业务) 转换
  * 4. 对外只提供业务数据，屏蔽底层IPC/数据库细节
  */
-/**
- * 屏幕录制业务的全局生命周期状态
- * 属于领域层（Repository）的统一业务语言，彻底与 Service 的底层实现解耦
- */
-enum class ScreenRecordingState {
-    IDLE,          // 闲置状态 / 未开始录制
-    PENDING,       // 启动中：用户刚点了开始，前台正在等待系统权限弹窗允许（此时UI可展示转圈，防重复点击）
-    RECORDING,     // 正在录制中
-    PAUSED         // 已暂停
-}
+
+
 class TaskRepository(
     private var tasksBinder: TasksBinder?,
     private val tasksDao: TasksDao
@@ -48,7 +43,7 @@ class TaskRepository(
 // ==================== 🌟 录屏架构重构：全局唯一状态信任源 ====================
 
     // 内部可变的状态流，由 Repository 牢牢把控修改权，保证数据单向流动 (UDF)
-    private val _recordingState = kotlinx.coroutines.flow.MutableStateFlow(ScreenRecordingState.IDLE)
+    private val _recordingState = kotlinx.coroutines.flow.MutableStateFlow(RecordingStatus.IDLE)
 
     // 对外暴露的只读状态流，供所有前台 ViewModel 安全订阅，永不丢失状态
     val recordingState = _recordingState.asStateFlow()
@@ -57,7 +52,7 @@ class TaskRepository(
      * 更新全局录屏状态的唯一安全出口
      * 后台 RecordingService 触发关键生命周期、或者发生异常时，只需调用此方法向全网广播状态
      */
-    fun updateRecordingState(state: ScreenRecordingState) {
+    fun updateRecordingState(state: RecordingStatus) {
         _recordingState.value = state
     }
 
@@ -87,6 +82,18 @@ class TaskRepository(
     suspend fun saveTaskComplete(taskInfo: TaskInfo, taskId: Long, taskState: Int) {
         withContext(Dispatchers.IO) {
             val task = convertToTask(taskInfo, taskId, taskState)
+            /**
+             * 导出完成后刷新媒体库，使新视频立即在系统相册/视频中心显示
+             */
+            if(
+                task.type!=2
+            ){
+                MediaScannerConnection.scanFile(
+                    AppApplication.INSTANCE,
+                    arrayOf(task.path),
+                    null // 也可以传 null，系统会自动根据文件后缀推断 MIME
+                ){path, uri ->}
+            }
             tasksDao.insertTask(task)
         }
     }

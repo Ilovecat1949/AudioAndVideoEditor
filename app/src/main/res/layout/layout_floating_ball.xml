@@ -23,6 +23,19 @@
             android:contentDescription="@string/desc_control_button"
             android:background="?android:attr/selectableItemBackgroundBorderless" />
 
+        <!-- 2. 停止录制并保存 按钮（默认在待机时隐藏 GONE） -->
+        <ImageView
+            android:id="@+id/btnStop"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/stop"
+            android:padding="6dp"
+            android:src="@drawable/stop_circle_24px"
+            android:visibility="gone" />
+
+
         <View
             android:layout_width="1dp"
             android:layout_height="18dp"
