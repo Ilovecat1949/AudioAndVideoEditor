@@ -7,6 +7,7 @@ import android.media.AudioFormat
 import android.media.AudioPlaybackCaptureConfiguration
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.util.Log
@@ -36,6 +37,8 @@ class AudioMixer(
     private val isRecording = AtomicBoolean(false)
     private var workerJob: Job? = null
 
+    // 在 AudioMixer 中保存对象引用
+    private var echoCanceler: AcousticEchoCanceler? = null
     private val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioEncoding)
 
     @SuppressLint("MissingPermission")
@@ -46,13 +49,33 @@ class AudioMixer(
 
         // 1. 初始化麦克风 AudioRecord
         if (audioOption == AudioSourceOption.MIC || audioOption == AudioSourceOption.MIXED) {
+            // 🌟 动态选源：混合模式下使用 VOICE_COMMUNICATION 开启硬件 AEC 回声消除，仅麦克风模式使用 MIC 保持高保真音质
+            val audioSource = if (audioOption == AudioSourceOption.MIXED) {
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION
+            } else {
+                MediaRecorder.AudioSource.MIC
+            }
             micAudioRecord = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
+                audioSource,
                 sampleRate,
                 channelConfig,
                 audioEncoding,
                 minBufferSize * 2
             )
+//            这段代码的作用是显式向你的 AudioRecord 实例挂载 Android 系统原生的 AEC（Acoustic Echo Canceler，回声消除）数字信号处理器。
+//            即使你将 AudioSource 设置为了 MIC（而非 VOICE_COMMUNICATION），只要设备硬件支持，这段代码也能强制开启硬件级的回声消除。
+            // 开启时
+// 🌟 1. 优化 AEC 初始化：安全链式调用，避免 !! 强转
+            if (AcousticEchoCanceler.isAvailable() && audioOption == AudioSourceOption.MIXED) {
+                micAudioRecord?.let { record ->
+                    val sessionId = record.audioSessionId
+                    if (sessionId != AudioRecord.ERROR_BAD_VALUE) {
+                        echoCanceler = AcousticEchoCanceler.create(sessionId)?.apply {
+                            enabled = true
+                        }
+                    }
+                }
+            }
         }
 
         // 2. 初始化系统内录 AudioRecord (仅支持 API 29+)
@@ -77,6 +100,13 @@ class AudioMixer(
             val mixedBuffer = ShortArray(bufferSizeShorts)
             val byteBuffer = ByteBuffer.allocateDirect(minBufferSize).order(ByteOrder.nativeOrder())
 
+// 🌟 1. 根据模式动态确定权重系数
+            val (micVolume, internalVolume) = when (audioOption) {
+                AudioSourceOption.MIXED -> 1.0f to 0.5f   // 混合模式：压低内录，突出人声
+                AudioSourceOption.MIC -> 1.0f to 0.0f     // 纯麦克风：原声输出
+                AudioSourceOption.INTERNAL -> 0.0f to 1.0f // 纯内录：无损无衰减输出
+                AudioSourceOption.NONE -> 0.0f to 0.0f
+            }
             while (isActive && isRecording.get()) {
                 val micRecord = micAudioRecord
                 val internalRecord = internalAudioRecord
@@ -97,10 +127,9 @@ class AudioMixer(
                 val maxRead = maxOf(validMic, validInternal)
 
                 if (maxRead > 0) {
-                    // 带增益系数的抗爆音混音算法 (各取 0.75 增益平滑叠加)
                     for (i in 0 until maxRead) {
-                        val micSample = if (i < validMic) micBuffer[i] * 0.75f else 0f
-                        val internalSample = if (i < validInternal) internalBuffer[i] * 0.75f else 0f
+                        val micSample = if (i < validMic) micBuffer[i] * micVolume else 0f
+                        val internalSample = if (i < validInternal) internalBuffer[i] * internalVolume else 0f
 
                         val mixed = (micSample + internalSample).toInt()
                         mixedBuffer[i] = mixed.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
@@ -138,23 +167,36 @@ class AudioMixer(
             .build()
     }
 
+    // 🌟 2. 优化后的 stop() 方法：先切断协程，后安全释放硬件
     fun stop() {
         if (!isRecording.getAndSet(false)) return
 
+        // 第一步：必须先取消 Job，让 read() 循环能够顺利 break 退出
         workerJob?.cancel()
         workerJob = null
 
+        echoCanceler?.apply {
+            runCatching { enabled = false }
+            runCatching { release() }
+        }
+        echoCanceler = null
+
+        // 第二步：判断状态后安全 release
         try {
             micAudioRecord?.apply {
-                if (state == AudioRecord.STATE_INITIALIZED) stop()
-                release()
+                if (recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                    runCatching { stop() }
+                }
+                runCatching { release() }
             }
             internalAudioRecord?.apply {
-                if (state == AudioRecord.STATE_INITIALIZED) stop()
-                release()
+                if (recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                    runCatching { stop() }
+                }
+                runCatching { release() }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("AudioMixer", "停止 AudioRecord 时捕获异常: ${e.message}")
         } finally {
             micAudioRecord = null
             internalAudioRecord = null

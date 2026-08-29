@@ -98,7 +98,8 @@ class MainActivity : ComponentActivity() {
 
         // 🌟 2. 拦截冷启动（App进程已死，点击通知唤醒）
         handleNotificationIntent(intent)
-
+        // 🌟 在主界面创建时触发广告/Star 弹窗网页的后台预加载
+        INSTANCE.adManager.preloadAd()
         setContent {
             AudioAndVideoEditorTheme {
                 // A surface container using the 'background' color from the theme

@@ -7,6 +7,7 @@ import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import android.view.Surface
 import com.example.audioandvideoeditor.model.AudioSourceOption
 import com.example.audioandvideoeditor.model.RecordingConfig
@@ -81,7 +82,11 @@ class MediaRecorderEngine(private val context: Context) : IRecorderEngine {
     }
 
     override fun stop() {
-        runCatching { mediaRecorder?.stop() }
+        // 录屏太短（如未满 1 秒）时 stop() 可能抛出 RuntimeException，做降级处理
+        val success = runCatching { mediaRecorder?.stop() }.isSuccess
+        if (!success) {
+            Log.w("MediaRecorderEngine", "MediaRecorder stop 失败（可能录制时间过短）")
+        }
         release()
     }
 

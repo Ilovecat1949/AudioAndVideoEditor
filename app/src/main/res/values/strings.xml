@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">音视频编辑器</string>
-<!--    <string name="app_version">1.0.1</string>-->
+    <!--    <string name="app_version">1.0.1</string>-->
     <string name="size_for_video_encoding_task_text">每个任务编码视频的缓存空间</string>
     <string name="size_for_audio_encoding_task_text">每个任务编码音频的缓存空间</string>
     <string name="size_for_max_tasks_num_text">最大的并发任务数量</string>
@@ -403,4 +403,13 @@
     <string name="audio_source_mic">仅麦克风</string>
     <string name="audio_source_internal">系统内录 (游戏/媒体音)</string>
     <string name="audio_source_mic_and_internal">麦克风 + 系统内录</string>
+    <string name="title_activity_ad_result">AdResultActivity</string>
+
+    <string name="github_star_dialog_message">如果本项目帮到了您，希望您能去 GitHub 为本项目点个 Star ⭐️ 支持一下！</string>
+
+    <string name="task_completed_message">你完成了个新任务</string>
+
+    <string name="visit_github_repo">浏览器访问本项目</string>
+
+    <string name="start_recording_in_app_hint">请点击应用内录屏界面的开始按钮</string>
 </resources>

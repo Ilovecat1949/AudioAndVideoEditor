@@ -171,14 +171,21 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
         }
     }
 
+    // 🌟 1. 优化后的视频排水协程：引入状态机异常防御
     private fun startDrainingVideo() {
         videoDrainJob = engineScope?.launch {
             val codec = videoCodec ?: return@launch
             val bufferInfo = MediaCodec.BufferInfo()
-            var firstVideoPtsUs = -1L // 🌟 1. 声明首帧视频时间戳基准
+            var firstVideoPtsUs = -1L
 
             while (isActive && isRecording.get()) {
-                val outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 10_000L)
+                // 捕获 dequeue 阶段的 IllegalStateException（当外部触发 codec.stop() 时）
+                val outputBufferIndex = try {
+                    codec.dequeueOutputBuffer(bufferInfo, 10_000L)
+                } catch (e: IllegalStateException) {
+                    break // Codec 已不在 Executing 状态，安全退出协程
+                }
+
                 when (outputBufferIndex) {
                     MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
                         synchronized(this@MediaCodecEngine) {
@@ -191,20 +198,23 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
                     MediaCodec.INFO_TRY_AGAIN_LATER -> continue
                     else -> {
                         if (outputBufferIndex >= 0) {
-                            val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
-                            if (outputBuffer != null && bufferInfo.size > 0 && isMuxerStarted) {
-                                if (!isPaused.get() && (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0) {
-
-                                    // 🌟 2. 扣除开机时间偏移，强制让视频时间戳从 0 开始
-                                    if (firstVideoPtsUs == -1L) {
-                                        firstVideoPtsUs = bufferInfo.presentationTimeUs
+                            try {
+                                val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
+                                if (outputBuffer != null && bufferInfo.size > 0 && isMuxerStarted) {
+                                    if (!isPaused.get() && (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0) {
+                                        if (firstVideoPtsUs == -1L) {
+                                            firstVideoPtsUs = bufferInfo.presentationTimeUs
+                                        }
+                                        bufferInfo.presentationTimeUs = (bufferInfo.presentationTimeUs - firstVideoPtsUs).coerceAtLeast(0L)
+                                        mediaMuxer?.writeSampleData(videoTrackIndex, outputBuffer, bufferInfo)
                                     }
-                                    bufferInfo.presentationTimeUs = (bufferInfo.presentationTimeUs - firstVideoPtsUs).coerceAtLeast(0L)
-
-                                    mediaMuxer?.writeSampleData(videoTrackIndex, outputBuffer, bufferInfo)
                                 }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            } finally {
+                                // 🌟 核心点：用 runCatching 保护 releaseOutputBuffer，彻底解决你遇到的报错
+                                runCatching { codec.releaseOutputBuffer(outputBufferIndex, false) }
                             }
-                            codec.releaseOutputBuffer(outputBufferIndex, false)
                         }
                     }
                 }
@@ -212,13 +222,19 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
         }
     }
 
+    // 🌟 2. 优化后的音频排水协程：同样引入安全防御
     private fun startDrainingAudio() {
         audioDrainJob = engineScope?.launch {
             val codec = audioCodec ?: return@launch
             val bufferInfo = MediaCodec.BufferInfo()
 
             while (isActive && isRecording.get()) {
-                val outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 10_000L)
+                val outputBufferIndex = try {
+                    codec.dequeueOutputBuffer(bufferInfo, 10_000L)
+                } catch (e: IllegalStateException) {
+                    break
+                }
+
                 when (outputBufferIndex) {
                     MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
                         synchronized(this@MediaCodecEngine) {
@@ -231,13 +247,18 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
                     MediaCodec.INFO_TRY_AGAIN_LATER -> continue
                     else -> {
                         if (outputBufferIndex >= 0) {
-                            val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
-                            if (outputBuffer != null && bufferInfo.size > 0 && isMuxerStarted) {
-                                if (!isPaused.get() && (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0) {
-                                    mediaMuxer?.writeSampleData(audioTrackIndex, outputBuffer, bufferInfo)
+                            try {
+                                val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
+                                if (outputBuffer != null && bufferInfo.size > 0 && isMuxerStarted) {
+                                    if (!isPaused.get() && (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0) {
+                                        mediaMuxer?.writeSampleData(audioTrackIndex, outputBuffer, bufferInfo)
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            } finally {
+                                runCatching { codec.releaseOutputBuffer(outputBufferIndex, false) }
                             }
-                            codec.releaseOutputBuffer(outputBufferIndex, false)
                         }
                     }
                 }
@@ -278,20 +299,21 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
         release()
     }
 
+    // 🌟 3. 优化后的 release() 方法：安全平滑释放各项资源
     override fun release() {
         try {
             virtualDisplay?.release()
             virtualDisplay = null
 
             videoCodec?.apply {
-                stop()
-                release()
+                runCatching { stop() }
+                runCatching { release() }
             }
             videoCodec = null
 
             audioCodec?.apply {
-                stop()
-                release()
+                runCatching { stop() }
+                runCatching { release() }
             }
             audioCodec = null
 
@@ -300,8 +322,9 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
 
             if (isMuxerStarted) {
                 mediaMuxer?.apply {
-                    stop()
-                    release()
+                    // 防御未写入数据帧就 stop 导致 Native 层抛出 IllegalStateException
+                    runCatching { stop() }
+                    runCatching { release() }
                 }
             }
             mediaMuxer = null
@@ -309,7 +332,7 @@ class MediaCodecEngine(private val context: Context) : IRecorderEngine {
             videoTrackIndex = -1
             audioTrackIndex = -1
             audioTotalSamplesRead = 0L
-            // API 24/25 兼容处理：将 cache 目录的临时文件写入目标 MediaStore FileDescriptor
+
             tempAudioVideoFile?.let { tempFile ->
                 if (tempFile.exists()) {
                     try {

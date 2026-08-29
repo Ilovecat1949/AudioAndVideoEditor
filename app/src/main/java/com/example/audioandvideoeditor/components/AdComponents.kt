@@ -1,9 +1,6 @@
 package com.example.audioandvideoeditor.components
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -11,6 +8,9 @@ import android.webkit.WebViewClient
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,18 +22,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,16 +50,16 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat.startActivity
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.application.AppApplication
 
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.utils.ImageState
 import com.example.audioandvideoeditor.utils.observeIgnoringBatteryPermissionStatus
 import com.example.audioandvideoeditor.viewmodel.AdViewModel
-import com.example.audioandvideoeditor.viewmodel.HomeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -208,7 +216,6 @@ fun AdItem(ad: com.example.audioandvideoeditor.utils.AdContent, adIndex: Int) {
  */
 @Composable
 fun InterstitialAdDialog(
-    viewModel: HomeViewModel,
     adViewModel: AdViewModel,
     onDismiss: () -> Unit
 ) {
@@ -222,9 +229,12 @@ fun InterstitialAdDialog(
 
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(id = R.string.task_tip)) },
+        title = { Text(
+            text=stringResource(id = R.string.task_tip),
+            style = MaterialTheme.typography.headlineMedium
+        ) },
         text = {
-            androidx.compose.foundation.layout.Column(
+            Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isIgnoringBatteryGranted) {
@@ -235,11 +245,9 @@ fun InterstitialAdDialog(
 
                 webViewInstance?.let { webView ->
                     Text(
-                        text = stringResource(id = R.string.ad),
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = stringResource(id = R.string.github_star_dialog_message),
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .fillMaxWidth(0.9f)
@@ -273,4 +281,146 @@ fun InterstitialAdDialog(
         },
         dismissButton = {}
     )
+}
+
+
+
+/**
+ * 插屏广告/Star 祈求弹窗组件
+ */
+@Composable
+fun InterstitialAdDialog2(
+    type:Int,
+    onDismiss: () -> Unit
+) {
+    //已经展示了，变更标志
+    //    AppApplication.INSTANCE.adManager.showADFlag=false
+    val context = LocalContext.current
+    // 安全获取预加载的 WebView
+    val webView = remember {
+        AppApplication.INSTANCE.adManager.getWebViewInstance()
+    }
+
+    // 🌟 1. 铺满物理屏幕的全局遮罩 (包含状态栏与导航栏区域)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Transparent) // 商业级 透明
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onDismiss() }, // 点击空白处销毁
+        contentAlignment = Alignment.Center
+    ) {
+        // 🌟 2. 对标商业卡片的黄金比例：宽 85%，高 68%
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .fillMaxHeight(0.68f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* 拦截点击冒泡 */ },
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // 彻底无阴影
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header：标题 + 右上角关闭 X
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text =
+                            if(type==0){
+                                stringResource(id = R.string.task_tip)
+                            }
+                        else{
+                                stringResource(id = R.string.task_completed_message)
+                            }
+                            ,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                // 🌟 2. 引导说明文字（位于 Header 下方、WebView 上方）
+                Text(
+                    text = stringResource(id = R.string.github_star_dialog_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                // Content：WebView 保持内部滚动能力
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (webView != null) {
+                        AndroidView(
+                            modifier = Modifier.fillMaxSize(),
+                            factory = { webView }
+                        )
+                    } else {
+                        // 网络异常或未预加载完成时的提示
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                // Footer：底部 CTA (Call To Action) 按钮
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            FilesUtils.openWebLink(context, context.getString(R.string.link))
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.visit_github_repo),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

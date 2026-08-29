@@ -1,6 +1,8 @@
 package com.example.audioandvideoeditor.components
 
 import PermissionsScreen
+import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,14 +24,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState // 补充缺失的导入
 import androidx.navigation.compose.rememberNavController
+import com.example.audioandvideoeditor.AdResultActivity
 import com.example.audioandvideoeditor.R
+import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.navigation.navigateSingleTopTo
+import com.example.audioandvideoeditor.showAdResultActivity
 import com.example.audioandvideoeditor.ui.avinfo.AVInfoScreen
 import com.example.audioandvideoeditor.ui.extractaudio.ExtractAudioScreen
 import com.example.audioandvideoeditor.ui.ffmpegcommand.FFmpegCommandsScreen
@@ -163,7 +169,8 @@ fun HomeScreen(
                     File(homeViewModel.path_or_uri).path,
                     nextDestination = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
-                        homeViewModel.show_interstistial_ad = true
+//                        homeViewModel.show_interstistial_ad = true
+                        showAdResultActivity(context,0)
                     }
                     )
             }
@@ -205,7 +212,8 @@ fun HomeScreen(
                 FFmpegCommandsScreen(
                     nextDestination = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
-                        homeViewModel.show_interstistial_ad = true
+//                        homeViewModel.show_interstistial_ad = true
+                        showAdResultActivity(context,0)
                     },
                     goDestination = { homeNavController.navigateSingleTopTo(it) },
                     setNextToNextDestination = {
@@ -232,7 +240,10 @@ fun HomeScreen(
             composable(Destination.VideoSegmenter.route) {
                 VideoSegmenterScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    }
                 )
             }
 
@@ -277,7 +288,8 @@ fun HomeScreen(
                     file = File(homeViewModel.path_or_uri),
                     nextDestination = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
-                        homeViewModel.show_interstistial_ad = true
+//                        homeViewModel.show_interstistial_ad = true
+                        showAdResultActivity(context,0)
                     }
                 )
             }
@@ -285,35 +297,51 @@ fun HomeScreen(
             composable(Destination.SpeedChange.route) {
                 SpeedChangeScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    }
                 )
             }
 
             composable(Destination.ExtractAudio.route) {
                 ExtractAudioScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    }
+
                 )
             }
 
             composable(Destination.VideoMute.route) {
                 VideoMuteScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    }
                 )
             }
 
             composable(Destination.VideoAspectRatio.route) {
                 VideoAspectRatioScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    }
                 )
             }
 
             composable(Destination.VideoCrop.route) {
                 VideoCropScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = { homeNavController.navigateSingleTopTo(Destination.TasksCenter.route) }
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    }
                 )
             }
 
@@ -338,7 +366,8 @@ fun HomeScreen(
                     file = File(homeViewModel.path_or_uri),
                     nextDestination = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
-                        homeViewModel.show_interstistial_ad = true
+//                        homeViewModel.show_interstistial_ad = true
+                        showAdResultActivity(context,0)
                     }
                 )
             }
@@ -387,12 +416,15 @@ fun HomeScreen(
             )
         }
         // 插屏广告弹窗
-        else if (homeViewModel.show_interstistial_ad) {
-            InterstitialAdDialog(
-                viewModel = homeViewModel,
-                adViewModel = adViewModel,
-                onDismiss = { homeViewModel.show_interstistial_ad = false }
-            )
-        }
+//        else if (homeViewModel.show_interstistial_ad) {
+//            InterstitialAdDialog(
+//                adViewModel = adViewModel,
+//                onDismiss = { homeViewModel.show_interstistial_ad = false }
+//            )
+//        }
+//        else if(AppApplication.INSTANCE.adManager.showADFlag){
+//            showAdResultActivity(context,1)
+//        }
     }
 }
+

@@ -3,11 +3,16 @@ package com.example.audioandvideoeditor.application
 import TaskRepository
 import android.app.Application
 import com.example.audioandvideoeditor.dao.AppDatabase
+import com.example.audioandvideoeditor.manager.AdManager
 
 class AppApplication : Application() {
 
     // 全局单例 Repository（唯一实例）
     lateinit var taskRepository: TaskRepository
+
+    // 🌟 全局单例 AdManager（唯一实例）
+    lateinit var adManager: AdManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -22,6 +27,9 @@ class AppApplication : Application() {
             tasksDao = tasksDao,
             tasksBinder = null
         )
+
+// 🌟 3. 初始化全局 AdManager (传入 ApplicationContext 彻底杜绝内存泄漏)
+        adManager = AdManager(this)
     }
 
     companion object {

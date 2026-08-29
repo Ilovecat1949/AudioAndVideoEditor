@@ -217,9 +217,9 @@ object ConfigsUtils {
 
     fun loadRecordConfig(context: Context): RecordingConfig {
         val prefs = context.getSharedPreferences("record_config_prefs", Context.MODE_PRIVATE)
-        val audioOptionName = prefs.getString("audio_option", AudioSourceOption.NONE .name)
+        val audioOptionName = prefs.getString("audio_option", AudioSourceOption.INTERNAL .name)
         val audioOption = runCatching { AudioSourceOption.valueOf(audioOptionName!!) }
-            .getOrDefault(AudioSourceOption.NONE )
+            .getOrDefault(AudioSourceOption.INTERNAL )
 
         return RecordingConfig(
             videoWidth = prefs.getInt("video_width", 0),

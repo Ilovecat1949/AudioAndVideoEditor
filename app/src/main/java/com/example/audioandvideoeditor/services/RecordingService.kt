@@ -7,6 +7,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -16,8 +17,6 @@ import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.AudioAttributes
 import android.media.AudioPlaybackCaptureConfiguration
-import android.media.MediaCodec
-import android.media.MediaMuxer
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -37,15 +36,20 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.graphics.toColorInt
+import com.example.audioandvideoeditor.MainActivity
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.application.AppApplication
+import com.example.audioandvideoeditor.model.AudioSourceOption
 import com.example.audioandvideoeditor.model.RecordingConfig
 import com.example.audioandvideoeditor.model.RecordingStatus
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.recorder.engine.IRecorderEngine
 import com.example.audioandvideoeditor.recorder.engine.RecorderEngineFactory
+import com.example.audioandvideoeditor.showAdResultActivity
 import com.example.audioandvideoeditor.utils.ConfigsUtils.loadRecordConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,20 +63,13 @@ class RecordingService : Service() {
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var mediaRecorder: MediaRecorder? = null
-    // 视频编码器和混合器
-    private var videoEncoder: MediaCodec? = null
-    private var mediaMuxer: MediaMuxer? = null
-    private var videoTrackIndex = -1
+
     private val TAG="RecordingService"
     private val notificationId = 1
     private val channelId = "screen_record_channel"
     private var channelName ="record"
 
-    private val VIDEO_MIME_TYPE = "video/avc"
-//    private val VIDEO_WIDTH = 720
-//    private val VIDEO_HEIGHT = 1280
-//    private val VIDEO_BIT_RATE = 5 * 1024 * 1024 // 5 Mbps
-//    private val VIDEO_FRAME_RATE = 30
+
 
     private val mBinder = RecordingBinder(this)
     private var recordAudioType=0
@@ -80,13 +77,7 @@ class RecordingService : Service() {
         recordAudioType=type
     }
     private var filePath=""
-    fun setFilePath(path :String){
-        filePath=path
-    }
     private var mediaUri: Uri?=null
-    fun setMediaUri(uri :Uri?){
-        mediaUri=uri
-    }
     private var fileName=""
     // 在 RecordingService 类内部成员变量区添加：
     private var recordingConfig: RecordingConfig = RecordingConfig()
@@ -237,7 +228,7 @@ class RecordingService : Service() {
         // 🌟 用于平滑吸附的属性动画器（声明在监听外层，方便随时取消）
         var edgeAnimator: android.animation.ValueAnimator? = null
 
-        cardContainer.setOnTouchListener { _, event ->
+        view.setOnTouchListener { _, event ->
             val params = layoutParams ?: return@setOnTouchListener false
 
             when (event.action) {
@@ -333,7 +324,14 @@ class RecordingService : Service() {
                     intent.action = "ACTION_RESUME_RECORDING" // 暂停中 -> 继续
                 }
                 RecordingStatus.IDLE, RecordingStatus.STOPPED -> {
-                    intent.action = "ACTION_START_RECORDING" // 待机中 -> 开始
+//                    intent.action = "ACTION_START_RECORDING" // 待机中 -> 开始
+                    val intent = Intent(this, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        putExtra("TARGET_ROUTE", Destination.Recording.route)
+                        putExtra("TASK_ID", -1L)
+                    }
+                    startActivity(this, intent, null)
+                    Toast.makeText(this, this.getString(R.string.start_recording_in_app_hint), Toast.LENGTH_SHORT).show()
                 }
                 else -> return@setOnClickListener
             }
@@ -460,7 +458,14 @@ class RecordingService : Service() {
                         startForeground(
                             notificationId,
                             notification,
-                            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                            if(recordingConfig.audioOption== AudioSourceOption.MIC
+                                || recordingConfig.audioOption== AudioSourceOption.MIXED) {
+                                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
+                                        android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                            }
+                            else{
+                                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                            }
                         )
                     } else {
                         startForeground(notificationId, notification)
@@ -470,6 +475,14 @@ class RecordingService : Service() {
                         override fun onStop() {
                             super.onStop()
                             mediaProjection?.unregisterCallback(this)
+                            // 🌟 核心修复：用户从系统级弹窗/状态栏主动停止录屏时，自动触发应用内的停止与落盘流程
+                            if (currentStatus == RecordingStatus.RECORDING || currentStatus == RecordingStatus.PAUSED) {
+                                Log.i("RecordingService", "感知到系统级 MediaProjection 已停止，正在同步停止录屏...")
+                                val stopIntent = Intent(this@RecordingService, RecordingService::class.java).apply {
+                                    action = "ACTION_STOP_RECORDING"
+                                }
+                                startService(stopIntent)
+                            }
                         }
                     }
                     mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
@@ -502,6 +515,7 @@ class RecordingService : Service() {
                     showFloatingWindow()
                     // 🌟 增量：让小球图标瞬间同步变为 [⏹️ 停止]
                     updateFloatingWindowUI()
+//                    AppApplication.INSTANCE.adManager.showADFlag=true
                 }
                 "ACTION_STOP_RECORDING" -> {
                        // 只要是在“录屏中”或者“暂停中”，都可以收尾保存
@@ -509,7 +523,6 @@ class RecordingService : Service() {
                         recorderEngine?.stop()
                         recorderEngine = null
                         stopRecording() // 停止编码，释放本轮 VirtualDisplay，执行 IO 写入
-
                         // 刷新前台通知，明确告诉用户大管家还活着，处于就绪待命状态
                         val manager = getSystemService(NotificationManager::class.java)
                         manager?.notify(notificationId,
@@ -518,7 +531,15 @@ class RecordingService : Service() {
                         // 状态安全回归待机，主页面按钮全自动变回绿色
                         AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.IDLE)
                         updateFloatingWindowUI()
-                        // TODO: 未来在这里触发：悬浮球 UI 切换回静态的 [▶️开始] 待机样式
+                        try {
+                            showAdResultActivity(this,1)
+                        } catch (e: ActivityNotFoundException) {
+                            e.printStackTrace()
+                            // 兜底日志：未在 Manifest 中注册 Activity
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // 兜底防护：防止后台启动拦截（BAL Restriction）导致 Service 崩溃
+                        }
                     }
                 }
                 // 🌟 3. 预留可扩展桩：暂停录制
@@ -751,36 +772,6 @@ class RecordingService : Service() {
         // 4. 清爽地自毁，没有任何丢数据的包袱
 //        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
 //        stopSelf()
-    }
-
-    private fun pauseRecording() {
-        if (currentStatus == RecordingStatus.RECORDING && mediaRecorder != null) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    mediaRecorder?.pause()
-                    currentStatus = RecordingStatus.PAUSED
-                    AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.PAUSED)
-                    updateFloatingWindowUI(RecordingStatus.PAUSED)
-                }
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun resumeRecording() {
-        if (currentStatus == RecordingStatus.PAUSED && mediaRecorder != null) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    mediaRecorder?.resume()
-                    currentStatus = RecordingStatus.RECORDING
-                    AppApplication.INSTANCE.taskRepository.updateRecordingState(RecordingStatus.RECORDING)
-                    updateFloatingWindowUI(RecordingStatus.RECORDING)
-                }
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            }
-        }
     }
 
     // 🌟 优化点 3：规范前台通知构建，移除了内部重复手写的 NotificationChannel 创建硬编码，保持纯粹性
