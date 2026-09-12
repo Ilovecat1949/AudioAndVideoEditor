@@ -20,9 +20,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -51,7 +55,9 @@ import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
+import com.example.audioandvideoeditor.model.TaskType
 import com.example.audioandvideoeditor.utils.ConfigsUtils
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -131,7 +137,31 @@ fun VideoCompressScreen(
                     Text("...")
                 }
             }
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            // 🌟 新增：硬件加速开关选项
+            // 2. 右侧紧凑型硬件加速 Checkbox
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.isHardwareAcceleration = !viewModel.isHardwareAcceleration }
+                    .padding(vertical = 4.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.enable_hardware_acceleration),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Checkbox(
+                    checked = viewModel.isHardwareAcceleration,
+                    onCheckedChange = { viewModel.isHardwareAcceleration = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             var selectedOption by remember { mutableStateOf<Triple<Double,Pair<Int,Int>,String>?>(null) }
             Button(
                 onClick = {
@@ -279,39 +309,88 @@ private fun start(
     nextDestination:()->Unit,
     viewModel: VideoCompressViewModel
 ){
-    var cmd_str="ffmpeg -i input_file "//ffmpeg -i ${file.path}
-    cmd_str=cmd_str+"-vcodec libx264 -preset ultrafast -q:v 5 "
-    cmd_str=cmd_str+"-vf scale=${viewModel.option.second.first}x${viewModel.option.second.second} "
-    if(viewModel.info.video_bit_rate!=-1L){
-        cmd_str=cmd_str+"-b:v ${(viewModel.info.video_bit_rate*viewModel.option.first).toLong()} "
-    }
-    if(viewModel.info.audio_bit_rate!=-1L){
-        cmd_str=cmd_str+"-b:a ${(viewModel.info.audio_bit_rate*viewModel.option.first).toLong()} "
-    }
-    val target_path="${ConfigsUtils.target_dir}/${viewModel.target_name}.mp4"
-    cmd_str += "output_file "
-//    Log.d(TAG,"ffmpeg cmd:${cmd_str}")
-    val command_arg_list=cmd_str.trim().split("[\\s\\n]+".toRegex())
-        .map {
-            when(it){
-                "input_file"->file.path
-                "output_file"->target_path
-                else -> it
-            }
-        }
+
     val int_arr=ArrayList<Int>()
-    int_arr.add(3)
-    int_arr.add(command_arg_list.size)
     val long_arr=ArrayList<Long>()
-    long_arr.add(viewModel.info.video_duration*1000)//ms as unit
     val str_arr=ArrayList<String>()
+    val float_arr=ArrayList<Float>()
+    val target_path="${ConfigsUtils.target_dir}/${viewModel.target_name}.mp4"
     val date= Date(System.currentTimeMillis())
     val formatter= SimpleDateFormat("yyyyMMddHHmmss", context.resources.configuration.locales[0])
     val task_log_path= context.filesDir.absolutePath+"/ffmpeg"+formatter.format(date)+".log"
-    str_arr.add(target_path)
-    str_arr.add(task_log_path)
-    str_arr.addAll(command_arg_list)
-    val float_arr=ArrayList<Float>()
+
+    // 判断是否存在音视频轨
+    val hasVideo = viewModel.info.video_bit_rate != -1L || viewModel.info.video_duration > 0
+    val hasAudio = viewModel.info.audio_bit_rate != -1L
+    if(viewModel.isHardwareAcceleration){
+        int_arr.add(TaskType.HARDWARETRANSCODE_TASK.code)
+        long_arr.add(viewModel.info.video_duration * 1000)
+        // 构建 video 配置字符串（纯音频时可为 null 或跳过）
+        val videoJson = if (hasVideo) {
+            val targetVideoBitrate = if (viewModel.info.video_bit_rate != -1L) {
+                (viewModel.info.video_bit_rate * viewModel.option.first).toLong()
+            } else {
+                4_000_000L // 兜底码率
+            }
+            """
+            "video": {
+               "width": ${viewModel.option.second.first},
+               "height": ${viewModel.option.second.second},
+               "bitrate": $targetVideoBitrate
+            }
+            """.trimIndent()
+        } else null
+
+        // 构建 audio 配置字符串（纯视频时为 null，避免 Native 初始化音频解码器失败）
+        val audioJson = if (hasAudio) {
+            val targetAudioBitrate = (viewModel.info.audio_bit_rate * viewModel.option.first).toLong()
+            """
+            "audio": {
+               "isPassthrough": false,
+               "bitrate": $targetAudioBitrate
+            }
+            """.trimIndent()
+        } else null
+
+        // 拼接完整的 configJson
+        val jsonComponents = listOfNotNull(videoJson, audioJson).joinToString(",\n")
+        val configJson = "{\n$jsonComponents\n}"
+
+        str_arr.add(target_path)
+        str_arr.add(file.path)
+        str_arr.add(configJson)
+    }
+    else{
+        var cmd_str="ffmpeg -i input_file "//ffmpeg -i ${file.path}
+        cmd_str=cmd_str+"-vcodec libx264 -preset ultrafast -q:v 5 "
+        cmd_str=cmd_str+"-vf scale=${viewModel.option.second.first}x${viewModel.option.second.second} "
+        if(hasVideo){
+            cmd_str=cmd_str+"-b:v ${(viewModel.info.video_bit_rate*viewModel.option.first).toLong()} "
+        }
+        if(hasAudio){
+            cmd_str=cmd_str+"-b:a ${(viewModel.info.audio_bit_rate*viewModel.option.first).toLong()} "
+        }
+
+        cmd_str += "output_file "
+//    Log.d(TAG,"ffmpeg cmd:${cmd_str}")
+        val command_arg_list=cmd_str.trim().split("[\\s\\n]+".toRegex())
+            .map {
+                when(it){
+                    "input_file"->file.path
+                    "output_file"->target_path
+                    else -> it
+                }
+            }
+
+        int_arr.add(TaskType.FFMPEGSERVICE_TASK.code)
+        int_arr.add(command_arg_list.size)
+
+        long_arr.add(viewModel.info.video_duration*1000)//ms as unit
+
+        str_arr.add(target_path)
+        str_arr.add(task_log_path)
+        str_arr.addAll(command_arg_list)
+    }
     val info= TaskInfo(
         int_arr,
         long_arr,

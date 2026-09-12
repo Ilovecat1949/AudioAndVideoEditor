@@ -10,7 +10,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.MediaInfo
-import com.example.audioandvideoeditor.services.TasksBinder
 import com.example.audioandvideoeditor.utils.TextsUtils
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -18,7 +17,8 @@ import kotlin.math.sqrt
 class VideoCompressViewModel: ViewModel() {
     val info= MediaInfo()
     var videoSize=0L
-    lateinit var tasksBinder: TasksBinder
+    // 🌟 新增：硬件加速开关状态（默认开启）
+    var isHardwareAcceleration by mutableStateOf(true)
     var currentVideoUri by mutableStateOf<Uri?>(null)
         private set
     private var exoPlayer: ExoPlayer? = null

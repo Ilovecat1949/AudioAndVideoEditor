@@ -16,12 +16,17 @@ import com.example.audioandvideoeditor.IFFmpegService
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.TaskInfo
+import com.example.audioandvideoeditor.model.TaskState
+import com.example.audioandvideoeditor.model.TaskType
 import com.example.audioandvideoeditor.navigation.Destination
+import com.example.audioandvideoeditor.transcoder.HardwareTranscodeTask
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.utils.TextsUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.lang.Thread.sleep
 import java.util.LinkedList
@@ -60,6 +65,13 @@ class TaskService : Service() {
 
     // FFmpeg服务AIDL接口
     private var ffmpegService: IFFmpegService? = null
+
+    //硬编码任务
+    private val hardwareTranscodeTaskMap= HashMap<Long, HardwareTranscodeTask>()
+
+    // 1. 声明与 Service 生命周期绑定的全局作用域
+    // 使用 SupervisorJob 确保某个协程抛出异常时，不会导致其他协程被打断
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     // 新增：服务绑定超时时间（ms）
     private val SERVICE_BIND_TIMEOUT = 3000L
@@ -240,6 +252,9 @@ class TaskService : Service() {
 
             // 解绑FFmpeg服务
             unbindFFmpegService()
+
+            // 2. 服务销毁时，一键取消所有后台异步任务，彻底杜绝内存泄漏
+            serviceScope.cancel()
         } catch (e: Exception) {
             Log.e(TAG, "TasksService 销毁异常", e)
         }
@@ -322,7 +337,7 @@ class TaskService : Service() {
      * @return 状态码：0-运行中 1-完成 2-取消 -1-失败 -2-不存在
      */
     fun getTaskState(taskId: Long): Int {
-        return taskStateCache[taskId] ?: -2
+        return taskStateCache[taskId] ?: TaskState.UNKNOWN.code
     }
 
     /**
@@ -386,7 +401,7 @@ class TaskService : Service() {
 
         val taskPath = taskInfo.str_arr[0]
         val taskName = FilesUtils.getNameFromPath(taskPath)
-        val notificationBuilder = if (taskInfo.int_arr[0] != 2) {
+        val notificationBuilder = if (taskInfo.int_arr[0] != TaskType.FFMPEGCOMMANDS_TASK.code) {
             // 普通任务通知
             NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(taskName)
@@ -520,12 +535,26 @@ class TaskService : Service() {
      * 安全获取任务状态（区分JNI/FFmpeg任务）
      */
     private fun getTaskStateSafely(taskInfo: TaskInfo, taskId: Long): Int {
-        return if (taskInfo.int_arr[0] < 2) {
+        return if (
+            taskInfo.int_arr[0] ==TaskType.REPACKAGING_TASK .code
+            ||  taskInfo.int_arr[0] ==TaskType.REENCODING_TASK.code
+            ) {
             // JNI任务：调用JNI接口
             getTaskState(tasksFactoryHandle, taskId)
-        } else {
+        } else if(
+            taskInfo.int_arr[0] ==TaskType.FFMPEGSERVICE_TASK.code
+            ||  taskInfo.int_arr[0] ==TaskType.FFMPEGCOMMANDS_TASK.code
+        ) {
             // FFmpeg任务：调用AIDL接口（判空防护）
-            ffmpegService?.getTaskState(taskId) ?: -1
+            ffmpegService?.getTaskState(taskId) ?: TaskState.FAILED.code
+        }
+        else if(
+            taskInfo.int_arr[0] ==TaskType.HARDWARETRANSCODE_TASK  .code
+        ){
+            hardwareTranscodeTaskMap[taskId]?.getState() ?:TaskState.FAILED.code
+        }
+        else{
+            TaskState.UNKNOWN.code
         }
     }
 
@@ -534,14 +563,28 @@ class TaskService : Service() {
      */
     private fun updateTaskProgressAndNotification(taskInfo: TaskInfo, taskId: Long) {
         // 获取进度（区分JNI/FFmpeg任务）
-        val progress = if (taskInfo.int_arr[0] < 2) {
+        val progress = if (
+            taskInfo.int_arr[0] == TaskType.REPACKAGING_TASK.code
+            ||  taskInfo.int_arr[0] == TaskType.REENCODING_TASK.code
+            ) {
             getProgress(tasksFactoryHandle, taskId)
-        } else {
+        } else if(
+            taskInfo.int_arr[0]== TaskType.FFMPEGCOMMANDS_TASK.code
+            || taskInfo.int_arr[0]== TaskType.FFMPEGSERVICE_TASK .code
+        ) {
             ffmpegService?.getProgress(taskId) ?: 0f
         }
+        else if(
+            taskInfo.int_arr[0]== TaskType.HARDWARETRANSCODE_TASK.code
+        ){
+            hardwareTranscodeTaskMap[taskId]?.getProgress() ?: 0f
+        }
+        else{
+            0f
+        }
         taskProgressCache[taskId] = when {
-            (progress < 0) &&  taskInfo.int_arr[0] !=2 -> 0f
-            (progress > 1 ) &&  taskInfo.int_arr[0] !=2 -> 0.99f
+            (progress < 0) &&  taskInfo.int_arr[0] !=TaskType.FFMPEGCOMMANDS_TASK.code -> 0f
+            (progress > 1 ) &&  taskInfo.int_arr[0] !=TaskType.FFMPEGSERVICE_TASK.code -> 0.99f
             else -> progress
         }
         // 更新通知（有权限时）
@@ -550,7 +593,7 @@ class TaskService : Service() {
             taskNotificationCache.containsKey(taskId)) {
             val progressPercent =
                 if(
-                    taskInfo.int_arr[0] !=2
+                    taskInfo.int_arr[0] !=TaskType.FFMPEGCOMMANDS_TASK.code
                 )
                 {
                     ((taskProgressCache[taskId]?:0f) * 100).toInt()
@@ -559,7 +602,7 @@ class TaskService : Service() {
                      0
                 }
             val notificationBuilder = taskNotificationCache[taskId]!!
-            if(taskInfo.int_arr[0] !=2){
+            if(taskInfo.int_arr[0] !=TaskType.FFMPEGCOMMANDS_TASK.code){
                 notificationBuilder
                     .setProgress(100, progressPercent, false)
                     .setContentText("$progressPercent%")
@@ -589,7 +632,7 @@ class TaskService : Service() {
             // 获取全局 Repository
             val repository = AppApplication.INSTANCE.taskRepository
             // 协程执行（因为 saveTaskComplete 是 suspend 挂起函数）
-            CoroutineScope(Dispatchers.IO).launch {
+            serviceScope.launch {
                 repository.saveTaskComplete(taskInfo, taskId, state)
             }
 
@@ -610,9 +653,9 @@ class TaskService : Service() {
             val notificationBuilder = taskNotificationCache[taskId]!!
             notificationBuilder.setProgress(100, 0, false)
             val contentText = when (state) {
-                1 -> getString(R.string.end_of_execution)
-                2 -> getString(R.string.cancel_execution)
-                -1 -> getString(R.string.execution_failed)
+                TaskState.SUCCESS.code-> getString(R.string.end_of_execution)
+                TaskState.CANCELED.code -> getString(R.string.cancel_execution)
+                TaskState.FAILED.code -> getString(R.string.execution_failed)
                 else -> "unknown"
             }
             notificationBuilder.setContentText(contentText)
@@ -625,47 +668,29 @@ class TaskService : Service() {
      */
     private fun releaseTaskResource(taskInfo: TaskInfo, taskId: Long) {
         try {
-            if (taskInfo.int_arr[0] < 2) {
+            if (taskInfo.int_arr[0] == TaskType.REPACKAGING_TASK.code
+                ||taskInfo.int_arr[0] ==TaskType.REENCODING_TASK.code
+            ) {
                 releaseTask(tasksFactoryHandle, taskId)
-            } else {
+            }
+            else if(
+                taskInfo.int_arr[0]== TaskType.FFMPEGCOMMANDS_TASK.code
+                || taskInfo.int_arr[0]== TaskType.FFMPEGSERVICE_TASK .code
+            ){
                 ffmpegService?.releaseTask(taskId)
+            }
+            else if(
+                taskInfo.int_arr[0]== TaskType.HARDWARETRANSCODE_TASK.code
+            )
+            {
+                hardwareTranscodeTaskMap[taskId]?.release()
             }
         } catch (e: Exception) {
             Log.e(TAG, "释放任务资源失败 | 任务ID：$taskId", e)
         }
     }
 
-    /**
-     * 保存任务到数据库（核心：异常捕获）
-     */
-//    private fun saveTaskToDatabase(taskInfo: TaskInfo, taskId: Long, state: Int) {
-//        try {
-//            val date = Date(System.currentTimeMillis())
-//            val formatter = SimpleDateFormat(
-//                "yyyy-MM-dd HH:mm:ss",
-//                resources.configuration.locales[0]
-//            )
-//            val task = Task(
-//                task_id = taskId,
-//                type = taskInfo.int_arr[0],
-//                status = state,
-//                path = taskInfo.str_arr[0],
-//                log_path = taskInfo.str_arr[1],
-//                date = formatter.format(date)
-//            )
-//            // 数据库操作建议在子线程执行（优化：避免主线程阻塞）
-//            thread(name = "TaskDBInsert") {
-//                try {
-//                    tasksDao.insertTask(task)
-//                    Log.d(TAG, "任务持久化成功 | 任务ID：$taskId")
-//                } catch (e: Exception) {
-//                    Log.e(TAG, "任务持久化失败 | 任务ID：$taskId", e)
-//                }
-//            }
-//        } catch (e: Exception) {
-//            Log.e(TAG, "构建任务数据库实体失败 | 任务ID：$taskId", e)
-//        }
-//    }
+
 
     /**
      * 清理任务缓存（避免内存泄漏）
@@ -710,7 +735,10 @@ class TaskService : Service() {
         val taskType = taskInfo.int_arr[0]
 
         // 启动任务并记录状态
-        val state = if (taskType < 2) {
+        val state = if (
+            taskType == TaskType.REPACKAGING_TASK.code
+            ||  taskType == TaskType.REENCODING_TASK.code
+            ) {
             // JNI任务：调用JNI接口
             createAndStartTask(
                 tasksFactoryHandle,
@@ -719,9 +747,21 @@ class TaskService : Service() {
                 taskInfo.float_arr.toFloatArray(),
                 taskInfo.str_arr.toTypedArray()
             )
-        } else {
+        } else if(
+            taskType== TaskType.FFMPEGCOMMANDS_TASK.code
+            || taskType== TaskType.FFMPEGSERVICE_TASK .code
+        ) {
             // FFmpeg任务：绑定服务+调用AIDL
             startFFmpegTask(taskInfo)
+        }
+        else if(taskType== TaskType.HARDWARETRANSCODE_TASK.code) {
+            val hardwareTranscodeTask= HardwareTranscodeTask()
+            hardwareTranscodeTask.startTask(taskInfo)
+            hardwareTranscodeTaskMap[taskId]=hardwareTranscodeTask
+            hardwareTranscodeTask.getState()
+        }
+        else{
+            TaskState.UNKNOWN.code
         }
 
         taskStateCache[taskId] = state
@@ -779,8 +819,9 @@ class TaskService : Service() {
                 waitingIterator.remove()
 //                taskStateCache[taskId] = 2
                 cleanTaskCache(taskId)
-                CoroutineScope(Dispatchers.IO).launch {
-                    AppApplication.INSTANCE.taskRepository.saveTaskComplete(taskInfo, taskId, 2)
+                serviceScope.launch {
+                    AppApplication.INSTANCE.taskRepository.saveTaskComplete(taskInfo, taskId,
+                        TaskState.CANCELED.code)
                 }
                 Log.d(TAG, "从等待队列取消任务 | 任务ID：$taskId")
                 return
@@ -793,10 +834,21 @@ class TaskService : Service() {
             val taskInfo = runningIterator.next()
             if (taskInfo.long_arr[0] == taskId) {
                 runningIterator.remove()
-                if (taskInfo.int_arr[0] >= 2) {
+                if (taskInfo.int_arr[0] == TaskType.FFMPEGCOMMANDS_TASK.code
+                    ||   taskInfo.int_arr[0] == TaskType.FFMPEGCOMMANDS_TASK .code
+                ) {
                     // FFmpeg任务：调用AIDL取消
                     ffmpegService?.cancelTask(taskId)
-                } else {
+                }
+                else if(
+                    taskInfo.int_arr[0]==TaskType.HARDWARETRANSCODE_TASK.code
+                ){
+                    hardwareTranscodeTaskMap[taskInfo.long_arr[0]]?.cancel()
+                }
+                else if(
+                    taskInfo.int_arr[0]== TaskType.REPACKAGING_TASK.code
+                    ||taskInfo.int_arr[0]== TaskType.REENCODING_TASK.code
+                ){
                     // JNI任务：调用JNI取消
                     cancelTask(tasksFactoryHandle, taskId)
                 }
@@ -806,8 +858,9 @@ class TaskService : Service() {
                 releaseTaskResource(taskInfo,taskId)
 //                taskStateCache[taskId] = 2
                 cleanTaskCache(taskId)
-                CoroutineScope(Dispatchers.IO).launch {
-                    AppApplication.INSTANCE.taskRepository.saveTaskComplete(taskInfo, taskId, 2)
+                serviceScope.launch {
+                    AppApplication.INSTANCE.taskRepository.saveTaskComplete(taskInfo, taskId,
+                        TaskState.CANCELED.code)
                 }
                 Log.d(TAG, "从运行队列取消任务 | 任务ID：$taskId")
                 return
@@ -831,10 +884,16 @@ class TaskService : Service() {
             val taskId = taskInfo.long_arr.getOrNull(0) ?: return@forEach
             try {
                 // 区分JNI/FFmpeg任务释放资源
-                if (taskInfo.int_arr.getOrNull(0) ?: 0 < 2) {
+                if ((taskInfo.int_arr.getOrNull(0) ?: 0) == TaskType.REPACKAGING_TASK.code
+                    ||  (taskInfo.int_arr.getOrNull(0) ?: 0)== TaskType.REENCODING_TASK.code
+                    ) {
                     cancelTask(tasksFactoryHandle, taskId)
                     releaseTask(tasksFactoryHandle, taskId)
-                } else {
+                } else
+                if(
+                    (taskInfo.int_arr.getOrNull(0) ?: 0)== TaskType.FFMPEGCOMMANDS_TASK.code
+                    || (taskInfo.int_arr.getOrNull(0) ?: 0)== TaskType.FFMPEGSERVICE_TASK .code
+                ){
                     ffmpegService?.cancelTask(taskId)
                     ffmpegService?.releaseTask(taskId)
                 }
@@ -848,10 +907,22 @@ class TaskService : Service() {
         waitingTasksQueue.forEach { taskInfo ->
             val taskId = taskInfo.long_arr.getOrNull(0) ?: return@forEach
             try {
-                if (taskInfo.int_arr.getOrNull(0) ?: 0 < 2) {
+                if ((taskInfo.int_arr.getOrNull(0) ?: 0) == TaskType.REPACKAGING_TASK.code
+                    ||  (taskInfo.int_arr.getOrNull(0) ?: 0) == TaskType.REENCODING_TASK.code
+                    ) {
                     releaseTask(tasksFactoryHandle, taskId)
-                } else {
+                }
+                else if(
+                    (taskInfo.int_arr.getOrNull(0) ?: 0) == TaskType.FFMPEGCOMMANDS_TASK.code
+                    || (taskInfo.int_arr.getOrNull(0) ?: 0) == TaskType.FFMPEGSERVICE_TASK .code
+                )
+                {
                     ffmpegService?.releaseTask(taskId)
+                }
+                else if(
+                    (taskInfo.int_arr.getOrNull(0) ?: 0) == TaskType.HARDWARETRANSCODE_TASK.code
+                ){
+                    hardwareTranscodeTaskMap[taskId]?.release()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "清理等待任务失败 taskId:$taskId")

@@ -5,6 +5,8 @@ import com.example.audioandvideoeditor.dao.TasksDao
 import com.example.audioandvideoeditor.model.RecordingStatus
 import com.example.audioandvideoeditor.entity.Task
 import com.example.audioandvideoeditor.entity.TaskInfo
+import com.example.audioandvideoeditor.model.TaskState
+import com.example.audioandvideoeditor.model.TaskType
 import com.example.audioandvideoeditor.services.TasksBinder
 import com.example.audioandvideoeditor.utils.FilesUtils
 import kotlinx.coroutines.CoroutineScope
@@ -145,7 +147,7 @@ class TaskRepository(
                 task_id = info.long_arr[0],
                 type = info.int_arr[0],
                 file_name = FilesUtils.getNameFromPath(info.str_arr[0]),
-                status = 3, // 等待中状态
+                status = TaskState.IDLE.code, // 等待中状态
                 path = info.str_arr[0],
                 log_path = info.str_arr[1],
                 date = ""
@@ -213,11 +215,11 @@ class TaskRepository(
                 // 3. 构建统一实体并直接写入 Dao
                 val task = if (mediaUri != null) {
                     Task(
-                        task_id = id, type = 4, status = 1, file_name = fileName ,uri = mediaUri.toString(), date = formatter.format(date)
+                        task_id = id, type = TaskType.RECORDING_TASK.code, status = TaskState.SUCCESS.code, file_name = fileName ,uri = mediaUri.toString(), date = formatter.format(date)
                     )
                 } else {
                     Task(
-                        task_id = id, type = 4, status = 1, file_name = fileName ,path = filePath, date = formatter.format(date)
+                        task_id = id, type = TaskType.RECORDING_TASK.code, status = TaskState.SUCCESS.code, file_name = fileName ,path = filePath, date = formatter.format(date)
                     )
                 }
 
