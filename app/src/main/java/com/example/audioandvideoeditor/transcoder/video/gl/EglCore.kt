@@ -1,12 +1,18 @@
-package com.example.audioandvideoeditor.transcoder
+package com.example.audioandvideoeditor.transcoder.video.gl
 
 import android.graphics.SurfaceTexture
-import android.opengl.*
+import android.opengl.EGL14
+import android.opengl.EGLConfig
+import android.opengl.EGLContext
+import android.opengl.EGLDisplay
+import android.opengl.EGLExt
+import android.opengl.EGLSurface
+import android.os.Build
 import android.util.Log
 import android.view.Surface
 
 /**
- * 离屏 EGL 上下文核心管理类
+ * 离屏 EGL 上下文核心管理类（标准 EGL 1.4 高兼容版）
  * 负责在后台线程初始化 OpenGL ES 环境，并绑定 MediaCodec 的 Input Surface
  */
 class EglCore(sharedContext: EGLContext? = null, flags: Int = 0) {
@@ -31,22 +37,8 @@ class EglCore(sharedContext: EGLContext? = null, flags: Int = 0) {
             throw RuntimeException("unable to initialize EGL14")
         }
 
-        // 配置 EGL 属性 (RGB888 + OpenGL ES 2/3 支持)
-        val configAttribList = intArrayOf(
-            EGL14.EGL_RED_SIZE, 8,
-            EGL14.EGL_GREEN_SIZE, 8,
-            EGL14.EGL_BLUE_SIZE, 8,
-            EGL14.EGL_ALPHA_SIZE, 8,
-            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-            EGL14.EGL_NONE
-        )
-
-        val configs = arrayOfNulls<EGLConfig>(1)
-        val numConfigs = IntArray(1)
-        if (!EGL14.eglChooseConfig(eglDisplay, configAttribList, 0, configs, 0, configs.size, numConfigs, 0)) {
-            throw RuntimeException("unable to find RGB888 / 2 EGLConfig")
-        }
-        eglConfig = configs[0]
+        // 挑选配置（支持 Recordable 回退策略，确保兼容模拟器与各种芯片）
+        eglConfig = chooseConfig(flags)
 
         val attribList = intArrayOf(
             EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
@@ -56,6 +48,55 @@ class EglCore(sharedContext: EGLContext? = null, flags: Int = 0) {
         val rootContext = sharedContext ?: EGL14.EGL_NO_CONTEXT
         eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, rootContext, attribList, 0)
         checkEglError("eglCreateContext")
+    }
+
+    /**
+     * 具备回退保护的 Config 查找机制
+     */
+    private fun chooseConfig(flags: Int): EGLConfig {
+        val recordableKey = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            EGLExt.EGL_RECORDABLE_ANDROID
+        } else {
+            0x3142
+        }
+
+        // 优先使用带 RECORDABLE 标志的属性列表
+        val attribListWithRecordable = intArrayOf(
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_GREEN_SIZE, 8,
+            EGL14.EGL_BLUE_SIZE, 8,
+            EGL14.EGL_ALPHA_SIZE, 8,
+            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+            recordableKey, 1,
+            EGL14.EGL_NONE
+        )
+
+        val configs = arrayOfNulls<EGLConfig>(1)
+        val numConfigs = IntArray(1)
+
+        if (EGL14.eglChooseConfig(eglDisplay, attribListWithRecordable, 0, configs, 0, configs.size, numConfigs, 0)
+            && numConfigs[0] > 0 && configs[0] != null) {
+            return configs[0]!!
+        }
+
+        Log.w(TAG, "EGL_RECORDABLE_ANDROID not supported on this driver, falling back to standard RGB888.")
+
+        // 降级机制：移除 RECORDABLE 约束，重新匹配标准 RGB888
+        val attribListFallback = intArrayOf(
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_GREEN_SIZE, 8,
+            EGL14.EGL_BLUE_SIZE, 8,
+            EGL14.EGL_ALPHA_SIZE, 8,
+            EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+            EGL14.EGL_NONE
+        )
+
+        if (!EGL14.eglChooseConfig(eglDisplay, attribListFallback, 0, configs, 0, configs.size, numConfigs, 0)
+            || numConfigs[0] <= 0 || configs[0] == null) {
+            throw RuntimeException("unable to find RGB888 / 2 EGLConfig")
+        }
+
+        return configs[0]!!
     }
 
     /**
@@ -69,6 +110,23 @@ class EglCore(sharedContext: EGLContext? = null, flags: Int = 0) {
         val surfaceAttribs = intArrayOf(EGL14.EGL_NONE)
         val eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, surface, surfaceAttribs, 0)
         checkEglError("eglCreateWindowSurface")
+        if (eglSurface == null || eglSurface == EGL14.EGL_NO_SURFACE) {
+            throw RuntimeException("surface was null")
+        }
+        return eglSurface
+    }
+
+    /**
+     * 创建基于内存的离屏 Pbuffer Surface（供初始化或状态预热使用）
+     */
+    fun createOffscreenSurface(width: Int, height: Int): EGLSurface {
+        val surfaceAttribs = intArrayOf(
+            EGL14.EGL_WIDTH, width,
+            EGL14.EGL_HEIGHT, height,
+            EGL14.EGL_NONE
+        )
+        val eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs, 0)
+        checkEglError("eglCreatePbufferSurface")
         if (eglSurface == null || eglSurface == EGL14.EGL_NO_SURFACE) {
             throw RuntimeException("surface was null")
         }

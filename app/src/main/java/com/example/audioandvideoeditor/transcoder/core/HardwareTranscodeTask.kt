@@ -1,12 +1,19 @@
-package com.example.audioandvideoeditor.transcoder
+package com.example.audioandvideoeditor.transcoder.core
 
 import android.media.MediaFormat
+import android.util.Log
 import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.model.AudioEncodeConfig
 import com.example.audioandvideoeditor.model.TaskState
 import com.example.audioandvideoeditor.model.TranscodeTaskConfig
 import com.example.audioandvideoeditor.model.VideoEncodeConfig
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -80,7 +87,7 @@ class HardwareTranscodeTask(
                 }
             }.onFailure {
                 // JSON 格式解析失败时的日志兜底，防止崩溃
-                android.util.Log.e("HardwareTranscodeTask", "Failed to parse config JSON", it)
+                Log.e("HardwareTranscodeTask", "Failed to parse config JSON", it)
             }
         }
 
@@ -120,11 +127,11 @@ class HardwareTranscodeTask(
             }
 
             override fun onProgress(progress: Float) {
-                currentProgress=progress
+                currentProgress = progress
             }
 
             override fun onSuccess(outputPath: String) {
-                currentProgress=100f
+                currentProgress = 100f
                 currentState.set(TaskState.SUCCESS.code)
             }
 
@@ -203,7 +210,7 @@ class HardwareTranscodeTask(
 
     fun getState(): Int {
         val state = currentState.get()
-        return if(state== TaskState.IDLE.code || state== TaskState.INITED.code ||state==TaskState.RUNNING.code){
+        return if(state== TaskState.IDLE.code || state== TaskState.INITED.code ||state== TaskState.RUNNING.code){
             TaskState.UNFINISHED.code
         } else{
             state

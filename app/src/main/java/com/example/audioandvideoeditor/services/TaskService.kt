@@ -19,7 +19,7 @@ import com.example.audioandvideoeditor.entity.TaskInfo
 import com.example.audioandvideoeditor.model.TaskState
 import com.example.audioandvideoeditor.model.TaskType
 import com.example.audioandvideoeditor.navigation.Destination
-import com.example.audioandvideoeditor.transcoder.HardwareTranscodeTask
+import com.example.audioandvideoeditor.transcoder.core.HardwareTranscodeTask
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.utils.TextsUtils

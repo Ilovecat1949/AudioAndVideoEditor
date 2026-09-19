@@ -8,5 +8,10 @@ data class AudioEncodeConfig(
     val sampleRate: Int = 44100,
     val channelCount: Int = 2,
     val isPassthrough: Boolean = false,
-    val mimeType: String = "audio/mp4a-latm"
+    val mimeType: String = "audio/mp4a-latm",
+
+    // 扩展音频特效/ DSP 参数
+    val volume: Float = 1.0f,
+    val speed: Float = 1.0f,
+    val isMuted: Boolean = false
 )

@@ -1,4 +1,4 @@
-package com.example.audioandvideoeditor.transcoder
+package com.example.audioandvideoeditor.transcoder.core
 
 /**
  * 硬件转码进度与状态回调接口

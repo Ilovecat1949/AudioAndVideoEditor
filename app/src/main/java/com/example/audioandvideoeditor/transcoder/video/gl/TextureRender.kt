@@ -1,4 +1,4 @@
-package com.example.audioandvideoeditor.transcoder
+package com.example.audioandvideoeditor.transcoder.video.gl
 
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
@@ -9,7 +9,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * GPU 离屏纹理渲染器
+ * GPU 离屏纹理渲染器（标准 GLES20 高兼容版）
  * 负责接收解码器 SurfaceTexture (OES 纹理) 图像，并忠实地直通渲染/拉伸至目标 EGL Surface
  */
 class TextureRender {
@@ -75,13 +75,26 @@ class TextureRender {
     }
 
     /**
-     * 渲染单帧图像到当前目标 Viewport (自动完成拉伸)
+     * 渲染单帧图像到当前目标 Viewport
+     * @param targetWidth 目标输出宽
+     * @param targetHeight 目标输出高
      */
-    fun drawFrame(st: SurfaceTexture, textureId: Int, transformMatrix: FloatArray) {
+    fun drawFrame(
+        st: SurfaceTexture,
+        textureId: Int,
+        transformMatrix: FloatArray,
+        targetWidth: Int = 0,
+        targetHeight: Int = 0
+    ) {
         checkGlError("onDrawFrame start")
 
         // 提取 SurfaceTexture 变换矩阵
         st.getTransformMatrix(transformMatrix)
+
+        // 显式重置 Viewport，防止跨 Context 渲染时缩放错乱
+        if (targetWidth > 0 && targetHeight > 0) {
+            GLES20.glViewport(0, 0, targetWidth, targetHeight)
+        }
 
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
@@ -114,6 +127,16 @@ class TextureRender {
         GLES20.glDisableVertexAttribArray(aTextureCoordHandle)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
         GLES20.glUseProgram(0)
+    }
+
+    /**
+     * 显式回收 GPU Program 资源
+     */
+    fun release() {
+        if (program != 0) {
+            GLES20.glDeleteProgram(program)
+            program = 0
+        }
     }
 
     private fun loadShader(shaderType: Int, source: String): Int {

@@ -5,6 +5,8 @@
 #include "task/AudioAndVideoInfo.h"
 #include "task/FFmpegInfo.h"
 #include "task/MediaModifier.h"
+#include "transcoder/audio/include/base_audio_filter.h"
+#include "transcoder/audio/include/audio_resampler.h"
 
 
 extern "C" {
@@ -311,4 +313,69 @@ Java_com_example_audioandvideoeditor_services_TaskService_nativeApplyFastEdit(JN
     if (cmds) env->ReleaseStringUTFChars(edit_commands, cmds);
 
     return result;
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_example_audioandvideoeditor_transcoder_audio_bridge_FFmpegAudioFilterBridge_nativeInit(
+        JNIEnv *env, jobject thiz, jint type, jint in_sr, jint in_ch, jint out_sr, jint out_ch) {
+    BaseAudioFilter* filter = nullptr;
+
+    // 工厂模式：根据 type 创建具体的 C++ 处理实例
+    if (type == 1) { // TYPE_RESAMPLE
+        filter = new AudioResampler();
+    } else if (type == 2) {
+        // filter = new AudioAtempo(); // 后续扩展
+    }
+
+    if (filter && filter->init(in_sr, in_ch, out_sr, out_ch)) {
+        return reinterpret_cast<jlong>(filter); // 返回基类指针作为句柄
+    }
+
+    delete filter;
+    return 0;
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_example_audioandvideoeditor_transcoder_audio_bridge_FFmpegAudioFilterBridge_nativeProcess(
+        JNIEnv *env, jobject thiz, jlong handle, jobject in_buffer, jint in_size) {
+    auto* filter = reinterpret_cast<BaseAudioFilter*>(handle);
+    if (!filter) return nullptr;
+
+    auto* inData = static_cast<uint8_t*>(env->GetDirectBufferAddress(in_buffer));
+    if (!inData) return nullptr;
+
+    uint8_t* outData = nullptr;
+    int outSize = 0;
+
+    // 多态调用具体子类的 process
+    if (filter->process(inData, in_size, &outData, &outSize) && outSize > 0) {
+        return env->NewDirectByteBuffer(outData, outSize);
+    }
+
+    return nullptr;
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_example_audioandvideoeditor_transcoder_audio_bridge_FFmpegAudioFilterBridge_nativeFlush(
+        JNIEnv *env, jobject thiz, jlong handle) {
+    auto* filter = reinterpret_cast<BaseAudioFilter*>(handle);
+    if (!filter) return nullptr;
+
+    uint8_t* outData = nullptr;
+    int outSize = 0;
+
+    if (filter->flush(&outData, &outSize) && outSize > 0) {
+        return env->NewDirectByteBuffer(outData, outSize);
+    }
+    return nullptr;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_audioandvideoeditor_transcoder_audio_bridge_FFmpegAudioFilterBridge_nativeRelease(
+        JNIEnv *env, jobject thiz, jlong handle) {
+    auto* filter = reinterpret_cast<BaseAudioFilter*>(handle);
+    if (filter) {
+        filter->release();
+        delete filter;
+    }
 }

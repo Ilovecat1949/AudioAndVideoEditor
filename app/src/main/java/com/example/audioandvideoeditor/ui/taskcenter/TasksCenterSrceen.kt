@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.Task
+import com.example.audioandvideoeditor.model.TaskState
+import com.example.audioandvideoeditor.model.TaskType
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.utils.TextsUtils
 import kotlinx.coroutines.launch
@@ -145,12 +147,13 @@ private fun RunningTaskList(
                 showProgress = true,
                 showCancel = true,
                 showPlay = false,
+                showLog = (task.type== TaskType.FFMPEGCOMMANDS_TASK.code ||task.type== TaskType.FFMPEGSERVICE_TASK.code),
                 showDelete = false,
                 onCancelClick = { viewModel.cancelTask(task.task_id) },
                 onLogClick = {
 //                    viewModel.readTaskLog(task.log_path)
                     readContext(
-                        if(task.type!=2){
+                        if(task.type!= TaskType.FFMPEGCOMMANDS_TASK.code){
                             task.log_path
                         }
                         else{
@@ -190,6 +193,7 @@ private fun WaitingTaskList(
                 showProgress = false,
                 showCancel = true,
                 showPlay = false,
+                showLog = (task.type== TaskType.FFMPEGCOMMANDS_TASK.code ||task.type== TaskType.FFMPEGSERVICE_TASK.code),
                 showDelete = false,
                 onCancelClick = { viewModel.cancelTask(task.task_id) },
                 onLogClick = {
@@ -225,24 +229,17 @@ private fun HistoryTaskList(
                 showProgress = false,
                 showCancel = false,
                 showPlay =
-                    if(task.type==2){
+                    if(task.type==TaskType.FFMPEGCOMMANDS_TASK.code){
                         false
                     }
                     else{
                         true
                     }
                 ,
+                showLog = (task.type== TaskType.FFMPEGCOMMANDS_TASK.code ||task.type== TaskType.FFMPEGSERVICE_TASK.code),
                 showDelete = true,
                 onCancelClick = {},
                 onLogClick = {
-//                    viewModel.readTaskLog(
-//                        if(task.type==2){
-//                            task.path
-//                        }
-//                        else{
-//                            task.log_path
-//                        }
-//                        )
                     readContext(
                         task.log_path
                         ,
@@ -250,15 +247,9 @@ private fun HistoryTaskList(
                         false)
                 },
                 onPlayClick = {
-                    // 播放视频/音频（系统默认播放器）
-//                    val intent = Intent(Intent.ACTION_VIEW).apply {
-//                        setDataAndType(Uri.parse(task.path), "video/*")
-//                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-//                    }
-//                    context.startActivity(intent)
                     if(task.path.isNotEmpty()||task.uri.isNotEmpty()){
                         readContext(
-                            if(task.type!=4)
+                            if(task.type!= TaskType.RECORDING_TASK.code)
                             {task.path}
                             else
                             {task.uri},
@@ -293,7 +284,7 @@ private fun HistoryTaskList(
 
                     Spacer(modifier = Modifier.height(16.dp))
                     //类型2 ffmpege命令行 仅支持删除任务
-                    if(viewModel.taskToDelete!!.type!=2){
+                    if(viewModel.taskToDelete!!.type!= TaskType.FFMPEGCOMMANDS_TASK.code){
                     // 选项1：仅删除记录
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -381,6 +372,7 @@ private fun TaskItem(
     showProgress: Boolean,
     showCancel: Boolean,
     showPlay: Boolean,
+    showLog: Boolean,
     showDelete: Boolean,
     onCancelClick: () -> Unit,
     onLogClick: () -> Unit,
@@ -420,7 +412,7 @@ private fun TaskItem(
 
                 // 进度条（仅运行中显示）
                 if (showProgress) {
-                    if(task.type!=2){
+                    if(task.type!=TaskType.FFMPEGCOMMANDS_TASK.code){
                         LinearProgressIndicator(
                             progress = { progress },
                             modifier = Modifier.width(120.dp)
@@ -456,7 +448,7 @@ private fun TaskItem(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                if(task.type!=4 && task.status!=3){
+                if(showLog && task.status!= TaskState.IDLE.code){
                     // 日志按钮
                     TextButton(onClick = onLogClick) {
                         Text(stringResource(R.string.log))
@@ -527,11 +519,11 @@ private fun EmptyTaskTip(text: String) {
 // ==================== 工具方法：任务状态文本/颜色 ====================
 private fun getTaskStatusText(status: Int,context: Context): String {
     return when (status) {
-        0 -> context.getString(R.string.tab_running)
-        1 -> context.getString(R.string.status_completed)
-        2 -> context.getString(R.string.cancelled)
-        3 ->context.getString(R.string.wait)
-        -1 -> context.getString(R.string.status_failed)
+        TaskState.UNFINISHED.code -> context.getString(R.string.tab_running)
+        TaskState.SUCCESS.code -> context.getString(R.string.status_completed)
+        TaskState.CANCELED.code -> context.getString(R.string.cancelled)
+        TaskState.IDLE .code ->context.getString(R.string.wait)
+        TaskState.FAILED.code -> context.getString(R.string.status_failed)
         else -> context.getString(R.string.status_unknown_state)
     }
 }
