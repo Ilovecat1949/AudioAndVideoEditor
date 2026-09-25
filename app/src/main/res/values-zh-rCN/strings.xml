@@ -416,4 +416,9 @@
     <string name="start_recording_in_app_hint">请点击应用内录屏界面的开始按钮</string>
 
     <string name="enable_hardware_acceleration">硬件加速</string>
+    <string name="title_activity_goods_express">GoodsExpressActivity</string>
+    <string name="goods_express_title">好物驿站</string>
+    <string name="exit_goods_express">离开好物驿站</string>
+    <string name="goods_express_dialog_message">探索精选工具与好物推荐</string>
+    <string name="enter_goods_express">前往好物驿站</string>
 </resources>

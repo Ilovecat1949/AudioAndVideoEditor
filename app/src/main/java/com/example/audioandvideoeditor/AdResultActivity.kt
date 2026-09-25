@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.audioandvideoeditor.components.GoodsExpressAdDialog
 import com.example.audioandvideoeditor.components.InterstitialAdDialog
 import com.example.audioandvideoeditor.components.InterstitialAdDialog2
 import com.example.audioandvideoeditor.ui.theme.AudioAndVideoEditorTheme
@@ -51,9 +52,14 @@ class AdResultActivity : ComponentActivity() {
         setContent {
             AudioAndVideoEditorTheme {
                 // 🌟 直接挂载弹窗组件，不再包裹 Scaffold
-                InterstitialAdDialog2(
+                GoodsExpressAdDialog(
                     type = type,
-                    onDismiss = { finish() }
+                    onDismiss = { finish() },
+                    onNavigateToGoodsExpress = {
+                        // 直接拉起独立 Activity
+                        val intent = Intent(this, GoodsExpressActivity::class.java)
+                        this.startActivity(intent)
+                    }
                 )
             }
             // 在 AdResultActivity 的 setContent 内部：

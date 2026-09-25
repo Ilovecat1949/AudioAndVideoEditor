@@ -32,13 +32,18 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".GoodsExpressActivity"
+            android:exported="false"
+            android:label="@string/title_activity_goods_express"
+            android:theme="@style/Theme.AudioAndVideoEditor" />
+        <activity
             android:name=".AdResultActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:excludeFromRecents="true"
-            android:taskAffinity=""
             android:exported="false"
             android:label="@string/title_activity_ad_result"
             android:launchMode="singleTask"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:taskAffinity=""
             android:theme="@style/Theme.App.AdDialog" />
         <activity
             android:name=".MainActivity"

@@ -1,5 +1,6 @@
 package com.example.audioandvideoeditor.components
 
+import android.content.Intent
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -9,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import com.example.audioandvideoeditor.GoodsExpressActivity
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.navigation.Destination
 
@@ -78,6 +80,23 @@ fun SootheBottomNavigation(
             label = { Text(text = context.resources.getString(R.string.settings)) },
             selected = currentScreen == Destination.Config,
             onClick = { onTabSelected(Destination.Config) }
+        )
+
+// 🌟 新增：好物驿站（点击拉起独立全屏 Activity）
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.store_24px), // 好物/商城图标
+                    contentDescription = null
+                )
+            },
+            label = { Text(text = context.resources.getString(R.string.goods_express_title)) },
+            selected = false, // 不参与 Compose 路由的选中态切换
+            onClick = {
+                // 直接拉起独立 Activity
+                val intent = Intent(context, GoodsExpressActivity::class.java)
+                context.startActivity(intent)
+            }
         )
     }
 }

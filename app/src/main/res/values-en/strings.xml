@@ -421,4 +421,9 @@ Email: running_in_storm@qq.com\n
     <string name="start_recording_in_app_hint">Please tap the Start button on the in-app screen recording page</string>
 
     <string name="enable_hardware_acceleration">Hardware</string>
+    <string name="title_activity_goods_express">GoodsExpressActivity</string>
+    <string name="goods_express_title">Goods Station</string>
+    <string name="exit_goods_express">Leave Goods Station</string>
+    <string name="goods_express_dialog_message">Explore curated tools and recommended items</string>
+    <string name="enter_goods_express">Visit Goods Station</string>
 </resources>
