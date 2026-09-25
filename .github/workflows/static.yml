@@ -1,0 +1,36 @@
+name: Deploy Static Content to Pages
+
+on:
+  push:
+    branches: ["Ilovecat1949-patch-1", "main"]
+
+# 允许这个工作流部署到 Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 保证并发部署时，旧的构建会自动取消
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 部署根目录下的所有静态文件（包含 goods/ 目录）
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
