@@ -23,7 +23,7 @@ class GoodsExpressActivity : ComponentActivity() {
             AudioAndVideoEditorTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     GoodsExpressScreen(
-                        mainUrl = stringResource(R.string.link),
+                        mainUrl = stringResource(R.string.good_link),
                         onClose = { finish() }
                     )
                 }

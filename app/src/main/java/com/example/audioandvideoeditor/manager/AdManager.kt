@@ -34,7 +34,7 @@ class AdManager(private val context: Context) {
         if (webView != null) return
 
         val appContext = context.applicationContext
-        val adUrl = appContext.getString(R.string.link)
+        val adUrl = appContext.getString(R.string.good_link)
 
         webView = WebView(appContext).apply {
             layoutParams = ViewGroup.LayoutParams(
