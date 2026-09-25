@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>好物驿站</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://cn.vercount.one/js"></script>
+
+    <style>
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        /* 限制折叠状态下最多展示两行文字 */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <!-- 顶部标题栏 -->
+        <header class="bg-white sticky top-0 z-10 border-b border-gray-200 px-4 py-3 text-center">
+            <h1 class="text-base font-semibold text-gray-900">好物驿站</h1>
+        </header>
+
+        <!-- 列表容器（PC端限制 max-w-xl 居中，手机端自适应） -->
+        <main id="goods-container" class="p-4 space-y-6 max-w-xl mx-auto">
+            <div class="text-center text-xs text-gray-400 py-8">正在加载好物列表...</div>
+        </main>
+    </div>
+
+    <!-- 页脚统计 -->
+    <footer class="py-6 text-center text-xs text-gray-400">
+        <span>访问量 <span id="vercount_value_page_pv">--</span> 次</span>
+        <span class="mx-1">|</span>
+        <span>访客数 <span id="vercount_value_site_uv">--</span> 人</span>
+    </footer>
+
+<script>
+    // 动态加载并渲染 data.json
+    fetch('./data.json')
+        .then(response => response.json())
+        .then(data => renderGoods(data))
+        .catch(error => {
+            console.error('加载 data.json 失败:', error);
+            document.getElementById('goods-container').innerHTML = 
+                '<div class="text-center text-xs text-red-400 py-8">数据加载失败，请刷新重试</div>';
+        });
+
+    function renderGoods(data) {
+        const container = document.getElementById('goods-container');
+        container.innerHTML = '';
+
+        data.forEach(group => {
+            const section = document.createElement('section');
+            
+            // 日期标题
+            const dateHeader = document.createElement('h2');
+            dateHeader.className = 'text-xs font-bold text-gray-400 mb-2 px-1 tracking-wider';
+            dateHeader.textContent = group.date;
+            section.appendChild(dateHeader);
+
+            // 卡片容器
+            const cardList = document.createElement('div');
+            cardList.className = 'space-y-3';
+
+            group.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-shadow duration-200';
+
+                // 标签 HTML
+                const tagsHtml = item.tags.map(tag => 
+                    `<span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-normal">${tag}</span>`
+                ).join('');
+                
+                // 默认直接加上 line-clamp-2 限制两行
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                    <a href="${item.link}" target="_blank" class="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline active:text-indigo-900 flex-1 mr-2 transition-colors">
+                        ${item.title} ↗
+                    </a>
+                        <div class="flex gap-1 flex-wrap justify-end">${tagsHtml}</div>
+                    </div>
+                    <p class="desc-text text-xs text-gray-500 leading-relaxed line-clamp-2">
+                        ${item.desc}
+                    </p>
+                `;
+
+                cardList.appendChild(card);
+            });
+
+            section.appendChild(cardList);
+            container.appendChild(section);
+        });
+
+        // 🌟 DOM 渲染完成后，精准计算测量文本溢出情况
+        adjustTextOverflow();
+    }
+
+    // 动态判断实际高度溢出的方法
+    function adjustTextOverflow() {
+        const descElements = document.querySelectorAll('.desc-text');
+        
+        descElements.forEach(descText => {
+            // 当内容真实高度大于两行可视高度时，说明真的溢出截断了
+            if (descText.scrollHeight > descText.clientHeight) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'toggle-btn text-[11px] text-indigo-600 mt-1 focus:outline-none font-medium block';
+                toggleBtn.textContent = '展开';
+
+                toggleBtn.addEventListener('click', () => {
+                    const isClamped = descText.classList.contains('line-clamp-2');
+                    if (isClamped) {
+                        descText.classList.remove('line-clamp-2');
+                        toggleBtn.textContent = '收起';
+                    } else {
+                        descText.classList.add('line-clamp-2');
+                        toggleBtn.textContent = '展开';
+                    }
+                });
+
+                // 将按钮插入到 p 标签后面
+                descText.parentNode.appendChild(toggleBtn);
+            } else {
+                // 没有真正溢出的文本，移除 line-clamp-2 保持天然高度
+                descText.classList.remove('line-clamp-2');
+            }
+        });
+    }
+</script>
+</body>
+</html>

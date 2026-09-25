@@ -10,6 +10,8 @@
     <link rel="icon" href="assets/images/ic_launcher-playstore.png">
     <!-- 使用 Tailwind CSS CDN 来快速构建精美界面 -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Vercount 统计脚本 -->
+    <script async src="https://cn.vercount.one/js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
@@ -36,6 +38,7 @@
             <div class="flex space-x-6 font-medium text-gray-600">
                 <a href="#features" class="hover:text-indigo-600 transition-colors">功能</a>
                 <a href="#about" class="hover:text-indigo-600 transition-colors">关于</a>
+                <a href="./goods/index.html" class="hover:text-indigo-600 transition-colors">好物驿站</a>             
                 <a href="https://github.com/Ilovecat1949/AudioAndVideoEditor/releases" class="px-4 py-1.5 text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors">下载应用</a>
             </div>
         </nav>
@@ -204,7 +207,7 @@
     <footer class="bg-gray-900 text-gray-300 py-6">
         <div class="container mx-auto px-4 text-center">
             <p class="text-sm">
-                &copy; 2024 音视频编辑器. 保留所有权利。
+                &copy; 2026 音视频编辑器. 保留所有权利。
             </p>
     
             <div class="mt-3 text-sm flex justify-center items-center space-x-4">
@@ -222,6 +225,12 @@
                    class="hover:text-blue-400 transition-colors duration-200">
                     Privacy Policy
                 </a>
+            </div>
+            <!-- 🌟 新增：极简访问量统计 -->
+            <div class="mt-3 text-xs text-gray-500 flex justify-center items-center space-x-3">
+                <span>本页浏览量 <span id="vercount_value_page_pv">--</span> 次</span>
+                <span>|</span>
+                <span>站点访客数 <span id="vercount_value_site_uv">--</span> 人</span>
             </div>
         </div>
     </footer>

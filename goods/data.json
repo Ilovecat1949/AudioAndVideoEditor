@@ -1,0 +1,25 @@
+[
+  {
+    "date": "2026-09-25",
+    "items": [
+      {
+        "title": "FFmpegFreeUI",
+        "tags": ["ffmpeg", "转码"],
+        "desc": "3FUI 是 ffmpeg 在 Windows 上的轻度专业交互外壳，收录大量参数，界面美观，交互友好。此项目面向国内使用环境，让普通人也能够轻松压制视频和转换格式。",
+        "link": "https://ffmpegfreeui.top/"
+      },
+      {
+        "title": "VidParse Pro",
+        "tags": ["视频解析", "视频下载"],
+        "desc": "全能视频解析，支持 B站 与 YouTube，突破限制提取最高清直链。",
+        "link": "https://vidprase.eray.top/"
+      },
+      {
+        "title": "懒人去水印",
+        "tags": ["去AI水印", "免费","无需登录"],
+        "desc": "一个免费无需登录的去AI水印工具，支持移除Gemini图片水印，NotebookLM PDF水印，Seedance水印，豆包/可灵图片水印，可选择移除位置",
+        "link": "https://clean.lazyso.com/"
+      }    
+    ]
+  }
+]
