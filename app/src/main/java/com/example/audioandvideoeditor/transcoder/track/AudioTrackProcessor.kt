@@ -1,5 +1,6 @@
 package com.example.audioandvideoeditor.transcoder.track
 
+import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaExtractor
@@ -54,14 +55,20 @@ class AudioTrackProcessor(
         // 1. 解析与初始化音频参数模型
         val inSampleRate = inputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
         val inChannelCount = inputFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+        val pcmEncoding = if (inputFormat.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
+            inputFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
+        } else {
+            // 兼容性兜底：较旧设备或部分解码器可能不包含此 Key，默认按标准的 16-bit PCM 处理
+            AudioFormat.ENCODING_PCM_16BIT
+        }
 
-        inputAudioFormat = AudioFormatParams(sampleRate = inSampleRate, channelCount = inChannelCount)
-        outputAudioFormat = AudioFormatParams(sampleRate = config.sampleRate, channelCount = config.channelCount)
+
+        inputAudioFormat = AudioFormatParams(sampleRate = inSampleRate, channelCount = inChannelCount, pcmEncoding = pcmEncoding)
+        outputAudioFormat = AudioFormatParams(sampleRate = config.sampleRate, channelCount =config.channelCount,pcmEncoding=config.pcmEncoding)
 
          // 1. 判断是否真的需要重采样/声道转换
         val needResample = inSampleRate != config.sampleRate ||
                 inChannelCount != config.channelCount
-
         if (needResample) {
             // 仅在格式不匹配时，才将 SwresampleAudioFilter 压入第 0 位
             // 由于 AudioFilterChain 未 prepare，直接追加重采样滤镜

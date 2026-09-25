@@ -88,7 +88,7 @@ class TaskRepository(
              * 导出完成后刷新媒体库，使新视频立即在系统相册/视频中心显示
              */
             if(
-                task.type!=2
+                task.type!=TaskType.FFMPEGCOMMANDS_TASK.code
             ){
                 MediaScannerConnection.scanFile(
                     AppApplication.INSTANCE,
@@ -114,11 +114,14 @@ class TaskRepository(
             file_name = FilesUtils.getNameFromPath(taskInfo.str_arr[0]),
             path = taskInfo.str_arr[0],
             log_path =
-                if(taskInfo.int_arr[0]!=2){
+                if(taskInfo.int_arr[0]==TaskType.FFMPEGCOMMANDS_TASK.code){
+                    taskInfo.str_arr[0]
+                }
+                else if(taskInfo.int_arr[0]==TaskType.FFMPEGSERVICE_TASK.code){
                     taskInfo.str_arr[1]
                 }
-            else{
-                    taskInfo.str_arr[0]
+                else{
+                    ""
                 }
                 ,
             date = dateFormat.format(Date())

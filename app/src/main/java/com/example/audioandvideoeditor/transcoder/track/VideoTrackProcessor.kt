@@ -6,6 +6,7 @@ import android.media.MediaCodecInfo
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.opengl.EGLSurface
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
@@ -61,6 +62,13 @@ class VideoTrackProcessor(
             setInteger(MediaFormat.KEY_FRAME_RATE, config.frameRate)
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, config.iFrameInterval)
             setInteger(MediaFormat.KEY_BITRATE_MODE, config.bitrateMode)
+
+            // 3. 高级压缩工具链 (提升压缩率，同等码率画质更好/体积更小)
+            setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileHigh)
+            // 4. B 帧优化 (Android 7.0+ 提效)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                setInteger(MediaFormat.KEY_MAX_B_FRAMES, 1)
+            }
         }
 
         encoder = MediaCodec.createEncoderByType(config.mimeType).apply {

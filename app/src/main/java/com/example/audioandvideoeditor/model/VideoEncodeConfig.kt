@@ -20,7 +20,7 @@ data class VideoEncodeConfig(
     val targetHeight: Int,
     val bitrate: Int,
     val frameRate: Int = 30,
-    val iFrameInterval: Int = 1,
+    val iFrameInterval: Int = 2,
     val bitrateMode: Int = MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR,
     val mimeType: String = "video/avc",
 

@@ -11,9 +11,9 @@ class FFmpegAudioFilterBridge(
 ) {
     private var nativeHandle: Long = 0L
 
-    fun init(inSampleRate: Int, inChannels: Int, outSampleRate: Int, outChannels: Int): Boolean {
+    fun init(inSampleRate: Int, inChannels: Int,inSampleFmt:Int, outSampleRate: Int, outChannels: Int,outSampleFmt:Int): Boolean {
         // 传递 filterType.nativeId 给 C++ 层
-        nativeHandle = nativeInit(filterType.nativeId, inSampleRate, inChannels, outSampleRate, outChannels)
+        nativeHandle = nativeInit(filterType.nativeId, inSampleRate, inChannels, inSampleFmt,outSampleRate, outChannels,outSampleFmt)
         return nativeHandle != 0L
     }
 
@@ -34,7 +34,7 @@ class FFmpegAudioFilterBridge(
         }
     }
 
-    private external fun nativeInit(type: Int, inSR: Int, inCh: Int, outSR: Int, outCh: Int): Long
+    private external fun nativeInit(type: Int, inSR: Int, inCh: Int,inFMT:Int ,outSR: Int, outCh: Int,outFMT:Int): Long
     private external fun nativeProcess(handle: Long, inBuffer: ByteBuffer, inSize: Int): ByteBuffer?
     private external fun nativeFlush(handle: Long): ByteBuffer?
     private external fun nativeRelease(handle: Long)

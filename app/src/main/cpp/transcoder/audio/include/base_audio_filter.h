@@ -10,10 +10,17 @@ class BaseAudioFilter {
 public:
     virtual ~BaseAudioFilter() = default;
 
-    /**
+/**
      * 初始化滤镜
+     * @param inSampleRate  输入采样率
+     * @param inChannels    输入声道数
+     * @param inSampleFmt   输入采样格式 (对应 FFmpeg AVSampleFormat 枚举)
+     * @param outSampleRate 输出采样率
+     * @param outChannels   输出声道数
+     * @param outSampleFmt  输出采样格式 (对应 FFmpeg AVSampleFormat 枚举)
      */
-    virtual bool init(int inSampleRate, int inChannels, int outSampleRate, int outChannels) = 0;
+    virtual bool init(int inSampleRate, int inChannels, int inSampleFmt,
+                      int outSampleRate, int outChannels, int outSampleFmt) = 0;
 
     /**
      * 处理 PCM 数据

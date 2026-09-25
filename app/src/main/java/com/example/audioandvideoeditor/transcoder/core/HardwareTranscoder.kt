@@ -133,6 +133,8 @@ class HardwareTranscoder(
             var currentVideoPtsUs = 0L
             var currentAudioPtsUs = 0L
 
+            var progress=0f
+
             // 6. 核心驱动循环 (Interleaved Drain Loop)
             while (!isCanceled) {
                 val videoCompleted = videoProcessor?.isCompleted() ?: true
@@ -140,7 +142,6 @@ class HardwareTranscoder(
                 val otherTracksCompleted = otherTrackInfos.all { it.processor.isDone() }
                 // 两轨均已彻底完成，直接退出
                 if (videoCompleted && audioCompleted && otherTracksCompleted) {
-                    Log.d(TAG, "Both video and audio tracks completed natively. Exiting transcode loop.")
                     break
                 }
 
@@ -187,7 +188,10 @@ class HardwareTranscoder(
                         !videoCompleted -> currentVideoPtsUs
                         else -> currentAudioPtsUs
                     }
-                    val progress = (processedPts.toFloat() / totalDurationUs.toFloat() ).coerceIn(0f, 0.9999f)
+                    val p = (processedPts.toFloat() / totalDurationUs.toFloat() ).coerceIn(0f, 0.9999f)
+                    if(p>progress){
+                        progress=p
+                    }
                     listener.onProgress(progress)
                 }
             }

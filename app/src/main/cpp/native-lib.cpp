@@ -317,7 +317,8 @@ Java_com_example_audioandvideoeditor_services_TaskService_nativeApplyFastEdit(JN
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_example_audioandvideoeditor_transcoder_audio_bridge_FFmpegAudioFilterBridge_nativeInit(
-        JNIEnv *env, jobject thiz, jint type, jint in_sr, jint in_ch, jint out_sr, jint out_ch) {
+        JNIEnv *env, jobject thiz, jint type,jint in_sr, jint in_ch, jint in_fmt,
+        jint out_sr, jint out_ch, jint out_fmt) {
     BaseAudioFilter* filter = nullptr;
 
     // 工厂模式：根据 type 创建具体的 C++ 处理实例
@@ -327,7 +328,7 @@ Java_com_example_audioandvideoeditor_transcoder_audio_bridge_FFmpegAudioFilterBr
         // filter = new AudioAtempo(); // 后续扩展
     }
 
-    if (filter && filter->init(in_sr, in_ch, out_sr, out_ch)) {
+    if (filter && filter->init(in_sr, in_ch, in_fmt, out_sr, out_ch, out_fmt)) {
         return reinterpret_cast<jlong>(filter); // 返回基类指针作为句柄
     }
 

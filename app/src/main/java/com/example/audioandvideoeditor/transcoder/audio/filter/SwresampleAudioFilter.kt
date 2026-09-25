@@ -1,8 +1,9 @@
 package com.example.audioandvideoeditor.transcoder.audio.filter
 
-import com.example.audioandvideoeditor.transcoder.audio.bridge.FFmpegAudioFilterBridge
-import com.example.audioandvideoeditor.model.AudioFormatParams
+import android.util.Log
 import com.example.audioandvideoeditor.model.AudioFilterType
+import com.example.audioandvideoeditor.model.AudioFormatParams
+import com.example.audioandvideoeditor.transcoder.audio.bridge.FFmpegAudioFilterBridge
 import java.nio.ByteBuffer
 
 /**
@@ -23,17 +24,18 @@ class SwresampleAudioFilter : IAudioFilter {
         // 判断是否需要做重采样/声道转换
         isNeedResample = inputParams.sampleRate != outputParams.sampleRate ||
                 inputParams.channelCount != outputParams.channelCount
-
         if (isNeedResample) {
             // 释放旧的桥接实例（若有）
-            release()
+//            release()
 
             nativeBridge = FFmpegAudioFilterBridge(AudioFilterType.RESAMPLE).apply {
                 init(
                     inSampleRate = inputParams.sampleRate,
                     inChannels = inputParams.channelCount,
+                    inSampleFmt=inputParams.ffmpegSampleFmt,
                     outSampleRate = outputParams.sampleRate,
-                    outChannels = outputParams.channelCount
+                    outChannels = outputParams.channelCount,
+                    outSampleFmt = outputParams.ffmpegSampleFmt
                 )
             }
         }
@@ -47,6 +49,7 @@ class SwresampleAudioFilter : IAudioFilter {
 
         val inputSize = inputBuffer.remaining()
         if (inputSize <= 0) {
+            Log.d("nativeBridge?.process","inputSize <= 0")
             return inputBuffer
         }
 
@@ -54,7 +57,7 @@ class SwresampleAudioFilter : IAudioFilter {
         if (!inputBuffer.isDirect) {
             return inputBuffer
         }
-
+        Log.d("nativeBridge?.process","hhhhhhhhh")
         // 调用 JNI 执行 C++ 重采样
         val resampledBuffer = nativeBridge?.process(inputBuffer, inputSize)
 

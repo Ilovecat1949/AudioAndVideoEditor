@@ -336,7 +336,8 @@ private fun start(
             "video": {
                "width": ${viewModel.option.second.first},
                "height": ${viewModel.option.second.second},
-               "bitrate": $targetVideoBitrate
+               "bitrate": $targetVideoBitrate,
+               "frameRate":${viewModel.info.frame_rate}
             }
             """.trimIndent()
         } else null
@@ -347,7 +348,9 @@ private fun start(
             """
             "audio": {
                "isPassthrough": false,
-               "bitrate": $targetAudioBitrate
+               "bitrate": $targetAudioBitrate,
+               "sampleRate":${viewModel.info.sample_rate},
+               "channelCount":${viewModel.info.channels}
             }
             """.trimIndent()
         } else null

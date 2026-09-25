@@ -34,6 +34,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 
 /**
  * 任务管理服务：负责任务队列调度、JNI/FFmpeg任务生命周期管理、状态监控、通知展示
@@ -620,26 +621,26 @@ class TaskService : Service() {
      * 处理任务完成/取消/失败的收尾逻辑（核心优化点）
      */
     private fun handleTaskCompletion(taskInfo: TaskInfo, taskId: Long, state: Int) {
+// 1. 锁内仅做队列移除
         lock.lock()
         try {
-            // 1. 原有逻辑：通知更新、资源释放、队列移除（完全不变）
+            runningTasksQueue.remove(taskInfo)
+        } finally {
+            lock.unlock()
+        }
+
+        // 2. 锁外做通知更新、资源释放与持久化
+        try {
             updateCompletionNotification(taskId, state)
             releaseTaskResource(taskInfo, taskId)
             cleanTaskCache(taskId)
-            runningTasksQueue.remove(taskInfo)
 
-            // ============== 新增：调用 Repository 保存任务到数据库 ==============
-            // 获取全局 Repository
             val repository = AppApplication.INSTANCE.taskRepository
-            // 协程执行（因为 saveTaskComplete 是 suspend 挂起函数）
             serviceScope.launch {
                 repository.saveTaskComplete(taskInfo, taskId, state)
             }
-
         } catch (e: Exception) {
             Log.e(TAG, "处理任务收尾失败 | taskId:$taskId", e)
-        } finally {
-            lock.unlock()
         }
     }
 
@@ -710,19 +711,23 @@ class TaskService : Service() {
      * 调度等待队列的任务（填充空闲槽位）
      */
     private fun dispatchWaitingTasks() {
-        val freeSlotNum = maxConcurrentTasks - runningTasksQueue.size
-        var i = 0
-        while (i < freeSlotNum && waitingTasksQueue.isNotEmpty()) {
-            val taskInfo = waitingTasksQueue.first()
-            try {
-//                sleep(3000)
-                startTaskSafely(taskInfo)
+        while (true) {
+            val taskInfo: TaskInfo = lock.withLock {
+                val freeSlotNum = maxConcurrentTasks - runningTasksQueue.size
+                if (freeSlotNum <= 0 || waitingTasksQueue.isEmpty()) {
+                    return // 槽位满或无等待任务，直接退出
+                }
+                // 取出队首，但先不急着移出队列，等启动成功再移，或者在锁内安全转移
                 waitingTasksQueue.removeFirst()
-                runningTasksQueue.add(taskInfo)
-                i++
+            }
+
+            try {
+                startTaskSafely(taskInfo)
+                lock.withLock {
+                    runningTasksQueue.add(taskInfo)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "启动任务失败 | 任务ID：${taskInfo.long_arr[0]}", e)
-                i++
             }
         }
     }
@@ -811,68 +816,70 @@ class TaskService : Service() {
      * 取消任务内部实现
      */
     private fun cancelTaskInternal(taskId: Long) {
-        // 1. 从等待队列移除
-        val waitingIterator = waitingTasksQueue.iterator()
-        while (waitingIterator.hasNext()) {
-            val taskInfo = waitingIterator.next()
-            if (taskInfo.long_arr[0] == taskId) {
-                waitingIterator.remove()
-//                taskStateCache[taskId] = 2
-                cleanTaskCache(taskId)
-                serviceScope.launch {
-                    AppApplication.INSTANCE.taskRepository.saveTaskComplete(taskInfo, taskId,
-                        TaskState.CANCELED.code)
+        var taskToCancel: TaskInfo? = null
+
+        // 1. 仅在对队列进行 remove/find 操作时加锁
+        lock.lock()
+        try {
+            // 从等待队列移除
+            val waitingIterator = waitingTasksQueue.iterator()
+            while (waitingIterator.hasNext()) {
+                val taskInfo = waitingIterator.next()
+                if (taskInfo.long_arr[0] == taskId) {
+                    waitingIterator.remove()
+                    cleanTaskCache(taskId)
+                    serviceScope.launch {
+                        AppApplication.INSTANCE.taskRepository.saveTaskComplete(
+                            taskInfo, taskId, TaskState.CANCELED.code
+                        )
+                    }
+                    Log.d(TAG, "从等待队列取消任务 | 任务ID：$taskId")
+                    return
                 }
-                Log.d(TAG, "从等待队列取消任务 | 任务ID：$taskId")
-                return
             }
+
+            // 从运行队列寻找目标
+            val runningIterator = runningTasksQueue.iterator()
+            while (runningIterator.hasNext()) {
+                val taskInfo = runningIterator.next()
+                if (taskInfo.long_arr[0] == taskId) {
+                    runningIterator.remove()
+                    taskToCancel = taskInfo
+                    break
+                }
+            }
+        } finally {
+            lock.unlock() // 🌟 关键：处理完队列后立刻释放锁，绝不在锁内做耗时等待！
         }
 
-        // 2. 从运行队列取消（区分JNI/FFmpeg）
-        val runningIterator = runningTasksQueue.iterator()
-        while (runningIterator.hasNext()) {
-            val taskInfo = runningIterator.next()
-            if (taskInfo.long_arr[0] == taskId) {
-                runningIterator.remove()
-                if (taskInfo.int_arr[0] == TaskType.FFMPEGCOMMANDS_TASK.code
-                    ||   taskInfo.int_arr[0] == TaskType.FFMPEGCOMMANDS_TASK .code
-                ) {
-                    // FFmpeg任务：调用AIDL取消
-                    ffmpegService?.cancelTask(taskId)
-                }
-                else if(
-                    taskInfo.int_arr[0]==TaskType.HARDWARETRANSCODE_TASK.code
-                ){
-                    hardwareTranscodeTaskMap[taskInfo.long_arr[0]]?.cancel()
-                }
-                else if(
-                    taskInfo.int_arr[0]== TaskType.REPACKAGING_TASK.code
-                    ||taskInfo.int_arr[0]== TaskType.REENCODING_TASK.code
-                ){
-                    // JNI任务：调用JNI取消
-                    cancelTask(tasksFactoryHandle, taskId)
-                }
-                while(getTaskStateSafely(taskInfo, taskId)==0){
-                    sleep(100)
-                }
-                releaseTaskResource(taskInfo,taskId)
-//                taskStateCache[taskId] = 2
-                cleanTaskCache(taskId)
-                serviceScope.launch {
-                    AppApplication.INSTANCE.taskRepository.saveTaskComplete(taskInfo, taskId,
-                        TaskState.CANCELED.code)
-                }
-                Log.d(TAG, "从运行队列取消任务 | 任务ID：$taskId")
-                return
+        // 2. 在锁外执行真正的取消动作与状态等待
+        taskToCancel?.let { taskInfo ->
+            if (taskInfo.int_arr[0] == TaskType.FFMPEGCOMMANDS_TASK.code
+                || taskInfo.int_arr[0] == TaskType.FFMPEGSERVICE_TASK.code
+            ) {
+                ffmpegService?.cancelTask(taskId)
+            } else if (taskInfo.int_arr[0] == TaskType.HARDWARETRANSCODE_TASK.code) {
+                hardwareTranscodeTaskMap[taskInfo.long_arr[0]]?.cancel()
+            } else if (taskInfo.int_arr[0] == TaskType.REPACKAGING_TASK.code
+                || taskInfo.int_arr[0] == TaskType.REENCODING_TASK.code
+            ) {
+                cancelTask(tasksFactoryHandle, taskId)
             }
-        }
 
-        // 3. 兜底：直接调用JNI取消（任务未在队列中）
-//        if (taskStateCache[taskId] == 0 || !taskStateCache.containsKey(taskId)) {
-//            cancelTask(tasksFactoryHandle, taskId)
-//            taskStateCache[taskId] = 2
-//            Log.d(TAG, "直接取消任务 | 任务ID：$taskId")
-//        }
+            // 此时 sleep 不会阻塞主线程对队列的访问
+            while (getTaskStateSafely(taskInfo, taskId) == 0) {
+                sleep(100)
+            }
+
+            releaseTaskResource(taskInfo, taskId)
+            cleanTaskCache(taskId)
+            serviceScope.launch {
+                AppApplication.INSTANCE.taskRepository.saveTaskComplete(
+                    taskInfo, taskId, TaskState.CANCELED.code
+                )
+            }
+            Log.d(TAG, "从运行队列取消任务 | 任务ID：$taskId")
+        }
     }
 
     /**
