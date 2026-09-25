@@ -1,7 +1,12 @@
 package com.example.audioandvideoeditor.components
 
 
+import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
@@ -20,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,15 +61,58 @@ fun GoodsExpressScreen(
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
 
-    // 🌟 新增：加载状态与进度管理
+    // 加载状态与进度管理
     var isLoading by remember { mutableStateOf(true) }
     var loadingProgress by remember { mutableFloatStateOf(0f) }
 
-    // 统一返回处理逻辑：优先处理网页层级后退，已是主 URL 则退出 Activity
-    val handleBackNavigation = {
-        val currentUrl = webViewInstance?.url
-        if (canGoBack && currentUrl != mainUrl) {
-            webViewInstance?.goBack()
+    // 🌟 错误与超时状态记录
+    var isErrorOccurred by remember { mutableStateOf(false) }
+
+    // 超时定时器（默认 10 秒超时）
+    val timeoutHandler = remember { Handler(Looper.getMainLooper()) }
+    val timeoutRunnable = remember {
+        Runnable {
+            if (isLoading) {
+                webViewInstance?.stopLoading()
+                isLoading = false
+                isErrorOccurred = true
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            timeoutHandler.removeCallbacks(timeoutRunnable)
+        }
+    }
+
+    // 🌟 智能安全后退：跳过加载失败的历史页面
+    val handleSmartBack = {
+        val webView = webViewInstance
+        if (webView != null) {
+            val historyList = webView.copyBackForwardList()
+            val currentIndex = historyList.currentIndex
+
+            // 向上查找最近一个非错误的正常历史记录
+            var targetIndex = -1
+            for (i in currentIndex - 1 downTo 0) {
+                val item = historyList.getItemAtIndex(i)
+                val url = item.url
+                if (!url.startsWith("data:text/html") && url != "about:blank") {
+                    targetIndex = i
+                    break
+                }
+            }
+
+            if (targetIndex != -1) {
+                val steps = targetIndex - currentIndex
+                webView.goBackOrForward(steps)
+                isErrorOccurred = false
+            } else if (canGoBack && webView.url != mainUrl) {
+                webView.goBack()
+            } else {
+                onClose()
+            }
         } else {
             onClose()
         }
@@ -70,7 +120,7 @@ fun GoodsExpressScreen(
 
     // 拦截系统物理/手势返回键
     BackHandler(enabled = true) {
-        handleBackNavigation()
+        handleSmartBack()
     }
 
     Scaffold(
@@ -84,7 +134,7 @@ fun GoodsExpressScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { handleBackNavigation() }) {
+                        IconButton(onClick = { handleSmartBack() }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
@@ -104,7 +154,7 @@ fun GoodsExpressScreen(
                     )
                 )
 
-                // 🌟 顶栏下方贴合精细进度条（加载中且进度未达 100% 时展示）
+                // 顶栏下方加载进度条
                 if (isLoading && loadingProgress < 1.0f) {
                     LinearProgressIndicator(
                         progress = { loadingProgress },
@@ -119,15 +169,12 @@ fun GoodsExpressScreen(
         },
         bottomBar = {
             GoodsExpressBottomBar(
-                canGoBack = canGoBack,
+                canGoBack = canGoBack || isErrorOccurred,
                 canGoForward = canGoForward,
-                onBackClick = {
-                    if (canGoBack) webViewInstance?.goBack()
-                },
-                onForwardClick = {
-                    if (canGoForward) webViewInstance?.goForward()
-                },
+                onBackClick = { handleSmartBack() },
+                onForwardClick = { if (canGoForward) webViewInstance?.goForward() },
                 onRefreshClick = {
+                    isErrorOccurred = false
                     webViewInstance?.reload()
                 },
                 onCloseClick = onClose
@@ -140,34 +187,53 @@ fun GoodsExpressScreen(
                 .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
-            // 注入带生命周期与进度监听的 AdWebView
             AdWebView(
                 modifier = Modifier.fillMaxSize(),
                 url = mainUrl,
                 onCreated = { webView ->
                     webViewInstance = webView
 
-                    // 监听页面开始/结束状态
                     webView.webViewClient = object : WebViewClient() {
-                        override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             super.onPageStarted(view, url, favicon)
                             isLoading = true
+                            isErrorOccurred = false
+                            loadingProgress = 0.1f // 🌟 立即给用户 10% 进度反馈，消除“点击无反应”困惑
+
+                            // 启动 10 秒超时定时器
+                            timeoutHandler.removeCallbacks(timeoutRunnable)
+                            timeoutHandler.postDelayed(timeoutRunnable, 10000)
                         }
 
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
+                            timeoutHandler.removeCallbacks(timeoutRunnable)
                             isLoading = false
                             canGoBack = view?.canGoBack() == true
                             canGoForward = view?.canGoForward() == true
                         }
+
+                        override fun onReceivedError(
+                            view: WebView?,
+                            request: WebResourceRequest?,
+                            error: WebResourceError?
+                        ) {
+                            super.onReceivedError(view, request, error)
+                            // 仅主框架加载失败时标记错误
+                            if (request?.isForMainFrame == true) {
+                                timeoutHandler.removeCallbacks(timeoutRunnable)
+                                isLoading = false
+                                isErrorOccurred = true
+                            }
+                        }
                     }
 
-                    // 🌟 监听精确加载进度 (0 ~ 100)
                     webView.webChromeClient = object : WebChromeClient() {
                         override fun onProgressChanged(view: WebView?, newProgress: Int) {
                             super.onProgressChanged(view, newProgress)
-                            loadingProgress = newProgress / 100f
+                            loadingProgress = (newProgress / 100f).coerceAtLeast(0.1f)
                             if (newProgress >= 100) {
+                                timeoutHandler.removeCallbacks(timeoutRunnable)
                                 isLoading = false
                             }
                         }
@@ -175,7 +241,7 @@ fun GoodsExpressScreen(
                 }
             )
 
-            // 🌟 页面刚打开且进度较慢时，中央居中展示加载菊花图
+            // 中央居中加载菊花图
             if (isLoading && loadingProgress < 0.3f) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(36.dp),

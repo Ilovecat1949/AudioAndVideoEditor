@@ -193,7 +193,7 @@ private fun WaitingTaskList(
                 showProgress = false,
                 showCancel = true,
                 showPlay = false,
-                showLog = (task.type== TaskType.FFMPEGCOMMANDS_TASK.code ||task.type== TaskType.FFMPEGSERVICE_TASK.code),
+                showLog = false,
                 showDelete = false,
                 onCancelClick = { viewModel.cancelTask(task.task_id) },
                 onLogClick = {
@@ -522,7 +522,7 @@ private fun getTaskStatusText(status: Int,context: Context): String {
         TaskState.UNFINISHED.code -> context.getString(R.string.tab_running)
         TaskState.SUCCESS.code -> context.getString(R.string.status_completed)
         TaskState.CANCELED.code -> context.getString(R.string.cancelled)
-        TaskState.IDLE .code ->context.getString(R.string.wait)
+        TaskState.IDLE.code ->context.getString(R.string.wait)
         TaskState.FAILED.code -> context.getString(R.string.status_failed)
         else -> context.getString(R.string.status_unknown_state)
     }
@@ -530,11 +530,11 @@ private fun getTaskStatusText(status: Int,context: Context): String {
 
 private fun getTaskStatusColor(status: Int): Color {
     return when (status) {
-        0 -> Color(0xFF1976D2) // 运行中-蓝
-        1 -> Color(0xFF388E3C) // 已完成-绿
-        2 -> Color(0xFF757575) // 已取消-灰
-        3 -> Color(0xFFFFA000) // 等待中-琥珀黄
-        -1 -> Color(0xFFD32F2F) // 失败-红
+        TaskState.UNFINISHED.code-> Color(0xFF1976D2) // 运行中-蓝
+        TaskState.SUCCESS.code -> Color(0xFF388E3C) // 已完成-绿
+        TaskState.CANCELED.code -> Color(0xFF757575) // 已取消-灰
+        TaskState.IDLE .code  -> Color(0xFFFFA000) // 等待中-琥珀黄
+        TaskState.FAILED.code -> Color(0xFFD32F2F) // 失败-红
         else -> Color.Black
     }
 }
