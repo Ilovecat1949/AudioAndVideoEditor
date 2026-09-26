@@ -43,8 +43,8 @@ class AdManager(private val context: Context) {
             )
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            // 优先使用缓存，提速网页渲染
-            settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            // 根据 HTTP 协议头控制缓存。如果服务器未过期则用缓存，过期或有新版本则自动联网刷新
+            settings.cacheMode = WebSettings.LOAD_DEFAULT
 
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {

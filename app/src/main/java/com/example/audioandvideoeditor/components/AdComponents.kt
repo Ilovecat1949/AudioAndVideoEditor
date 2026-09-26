@@ -3,6 +3,7 @@ package com.example.audioandvideoeditor.components
 import android.annotation.SuppressLint
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.Image
@@ -154,13 +155,13 @@ fun AdWebView(
                 domStorageEnabled = true
                 databaseEnabled = true
 
-                // 2. 缓存策略（兼顾速度与时效）
-                cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+                // 根据 HTTP 协议头控制缓存。如果服务器未过期则用缓存，过期或有新版本则自动联网刷新
+                cacheMode = WebSettings.LOAD_DEFAULT
 
                 // 3. 页面适应与混合内容处理
                 useWideViewPort = true
                 loadWithOverviewMode = true
-                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
 
                 // 4. 安全与原生交互感
                 allowFileAccess = false
