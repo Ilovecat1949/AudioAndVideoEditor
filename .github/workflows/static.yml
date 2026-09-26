@@ -2,7 +2,7 @@ name: Deploy Static Content to Pages
 
 on:
   push:
-    branches: ["Ilovecat1949-patch-1", "main"]
+    branches: ["Ilovecat1949-patch-1"]
 
 # 允许这个工作流部署到 Pages
 permissions:
