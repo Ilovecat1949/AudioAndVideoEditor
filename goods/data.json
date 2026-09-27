@@ -1,5 +1,28 @@
 [
   {
+   "date": "2026-09-27",
+   "items": [
+      {
+        "title": "LightC",
+        "tags": ["Windows 桌面工具","垃圾清理"],
+        "desc": "干净、纯粹、不流氓，真正解决 C 盘爆红痛点的清理利器。12 个模块把爆红的 C 盘收拾干净 —— 开源、免费、无广告。",
+        "link": "https://lightc.app/zh-CN/"
+      },    
+      {
+        "title": "RightClickGuardian",
+        "tags": ["菜单管理器"],
+        "desc": "Q萌且强力的 Windows 右键菜单管理器：全量扫描、真实菜单预览、图标显示与防回写守护。",
+        "link": "https://github.com/linzifeng07/RightClickGuardian"
+      }, 
+      {
+        "title": "程序员副业诊断",
+        "tags": ["问卷","自测"],
+        "desc": "3 分钟自测：判断你的副业类型，以及是否具备可持续赚钱结构。",
+        "link": "https://shechubbb.com/tool/dev-side-income-checker"
+      }             
+   ]
+  },
+  {
     "date": "2026-09-26",
     "items": [
       {
