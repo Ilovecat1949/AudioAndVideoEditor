@@ -1,5 +1,28 @@
 [
   {
+   "date": "2026-10-11",
+    "items": [
+      {
+        "title": "Calibre电子书管理器",
+        "tags": ["电子书阅读器","epub","开源"],
+        "desc": "Calibre 是一款电子书管理软件。它可以查看、转换、编辑和整理所有主流电子书格式的电子书。它还可以与电子书阅读器设备通信，并能访问互联网获取书籍的元数据。此外，它还能下载报纸并将其转换为电子书，方便阅读。Calibre 是一款跨平台软件，可在 Linux、Windows 和 macOS 系统上运行。",
+        "link": "https://calibre-ebook.com/"
+      },
+      {
+        "title": "MicYou麦克风软件",
+        "tags": ["麦克风","开源"],
+        "desc": "MicYou 是一款功能强大的工具，可将您的 Android 设备变成适用于 PC 的高品质麦克风。",
+        "link": "https://micyou.top/"
+      },
+      {
+        "title": "TextNote文本编辑器",
+        "tags": ["文本编辑器","Android","开源"],
+        "desc": "一个轻量、纯粹的 Android 局部文件编辑器。为「编辑它原本的样子」而生——无任何不必要的系统权限，无云端账号，零隐私收集。",
+        "link": "https://github.com/groundgrounder/TextNote"
+      }                       
+    ] 
+  },
+  {
    "date": "2026-09-27",
    "items": [
       {
@@ -19,7 +42,13 @@
         "tags": ["问卷","自测"],
         "desc": "3 分钟自测：判断你的副业类型，以及是否具备可持续赚钱结构。",
         "link": "https://shechubbb.com/tool/dev-side-income-checker"
-      }             
+      },
+      {
+        "title": "Type Words",
+        "tags": ["背单词","开源免费"],
+        "desc": "打字记单词，科学间隔复习。不再靠死记硬背——键入单词强化肌肉记忆，记忆曲线算法自动安排复习时机，配合 7 种递进模式，让每个单词真正刻进脑子里。",
+        "link": "https://typewords.cc/"
+      }                     
    ]
   },
   {
