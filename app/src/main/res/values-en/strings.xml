@@ -30,7 +30,7 @@
     <string name="audio">Audio</string>
     <string name="file">File</string>
     <string name="function_center">Functional</string>
-    <string name="task_center">Task Center</string>
+    <string name="task_center">Task\nCenter</string>
     <string name="user_center">User Center</string>
     <string name="file_name">File Name</string>
     <string name="set_bitrate">Set bitrate</string>
@@ -422,9 +422,28 @@ Email: running_in_storm@qq.com\n
 
     <string name="enable_hardware_acceleration">Hardware</string>
     <string name="title_activity_goods_express">GoodsExpressActivity</string>
-    <string name="goods_express_title">Goods Station</string>
+    <string name="goods_express_title">Goods\nStation</string>
     <string name="exit_goods_express">Leave Goods Station</string>
     <string name="goods_express_dialog_message">Explore curated tools and recommended items</string>
     <string name="enter_goods_express">Visit Goods Station</string>
     <string name="good_link">https://ilovecat1949.github.io/AudioAndVideoEditor/goods/</string>
+    <string name="star_support_tip">Drop a Star ⭐️ to support us!</string>
+    <string name="open_browser">Open Browser</string>
+
+    <!-- 模板与批量任务相关文案 -->
+    <string name="custom_template_group">--- Custom Templates ---</string>
+    <string name="builtin_template_group">--- Built-in Templates ---</string>
+    <string name="add_template">Add Template</string>
+    <string name="edit_template">Edit Template</string>
+    <string name="delete_template">Delete Template</string>
+    <string name="add_custom_template">Add Custom Template</string>
+    <string name="edit_custom_template">Edit Custom Template</string>
+    <string name="template_name">Template Name</string>
+    <string name="ffmpeg_parameters">FFmpeg Parameters</string>
+    <string name="input_files_selected">Input Files (Selected %d):</string>
+    <string name="select_file_hint">Please click the folder icon in the upper right corner to select a file</string>
+    <string name="output_file_prefix">Output File Name Prefix:</string>
+    <string name="prefix_example_hint">e.g., prefix -> prefix_1.mp4</string>
+    <string name="batch_execute_tasks">Batch Execute (%d Tasks)</string>
+    <string name="deinterlace">Deinterlace</string>
 </resources>

@@ -140,7 +140,27 @@ fun HomeScreen(
             composable(Destination.FileSelection.route) {
                 FileSelectionScreen(
                     backDestination = { homeNavController.popBackStack() },
-                    setFile = { homeViewModel.path_or_uri = it.path },
+                    onFilesSelected = { homeViewModel.path_or_uri = it[0].path },
+                    nextDestination =
+//                        homeViewModel.nextDestination
+                        {
+                            // 核心优化点：文件选完了，直接在顶层读取刚才存的标志位
+                            val nextRoute = homeViewModel.target_route
+                            if (nextRoute.isNotEmpty()) {
+                                // 精准去往目标剪辑页面（如视频裁剪页），完全不需要借助任何复杂闭包！
+                                homeNavController.navigateSingleTopTo(nextRoute)
+                                // 消费掉该标志位，防止重复跳转
+//                                homeViewModel.target_route = ""
+                            }
+                        }
+                )
+            }
+            composable(Destination.FileSelection2.route) {
+                FileSelectionScreen(
+                    selectionMode=1,
+                    backDestination = { homeNavController.popBackStack() },
+                    onFilesSelected = {
+                        homeViewModel.file_list = it},
                     nextDestination =
 //                        homeViewModel.nextDestination
                         {
@@ -214,14 +234,17 @@ fun HomeScreen(
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
 //                        homeViewModel.show_interstistial_ad = true
                         showAdResultActivity(context,0)
+                        homeViewModel.file_list=null
                     },
-                    goDestination = { homeNavController.navigateSingleTopTo(it) },
+                    goDestination = {
+                        homeNavController.navigateSingleTopTo(it)
+                    },
                     setNextToNextDestination = {
 //                        homeViewModel.nextDestination =
 //                            { homeNavController.navigateSingleTopTo(it) }
                         homeViewModel.target_route=it
                     },
-                    file = File(homeViewModel.path_or_uri)
+                    file_list = homeViewModel.file_list
                 )
             }
 

@@ -33,6 +33,7 @@ enum class Destination(val route: String) {
     FilesList2("files_list_2"),
     Config("config"),
     FileSelection("file_selection"),
+    FileSelection2("file_selection2"),
     ReEncoding("re_encoding"),
     AudioAndVideoInfo("audio_and_video_info"),
     VideoFilesList("video_files_list"),

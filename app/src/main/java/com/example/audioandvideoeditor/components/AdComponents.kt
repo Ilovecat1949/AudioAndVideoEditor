@@ -52,7 +52,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.application.AppApplication
@@ -512,6 +514,7 @@ fun GoodsExpressAdDialog(
                             stringResource(id = R.string.task_completed_message)
                         },
                         style = MaterialTheme.typography.titleMedium,
+                        fontSize = 18.sp, // 直接设置你想要的字号大小
                         fontWeight = FontWeight.Bold
                     )
                     IconButton(
@@ -525,12 +528,26 @@ fun GoodsExpressAdDialog(
                         )
                     }
                 }
-
+                Text(
+                    text = stringResource(R.string.star_support_tip),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 15.sp, // 直接设置你想要的字号大小
+                    textDecoration = TextDecoration.Underline, // 添加下划线强调可点击
+                    modifier = Modifier.clickable {
+                        onDismiss()
+                        FilesUtils.openWebLink(context, context.getString(R.string.link))
+                    }
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 // 🌟 引导说明文字（好物驿站专用文案）
                 Text(
                     text = stringResource(id = R.string.goods_express_dialog_message),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 15.sp, // 直接设置你想要的字号大小
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 4.dp)

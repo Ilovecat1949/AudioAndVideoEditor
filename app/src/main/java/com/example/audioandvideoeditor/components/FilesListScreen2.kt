@@ -1105,7 +1105,7 @@ when(filesViewModel.show_details_flag.value){
                     ) {
                         Text("${LocalContext.current.getString(R.string.type)}:${FilesUtils.getTypeFromPath(filesViewModel.videoInfo!!.path)}")
                         Spacer(modifier = Modifier.height(10.dp))
-                        Text("${LocalContext.current.getString(R.string.duration)}:${filesViewModel.videoInfo!!.duration/1000}")
+                        Text("${LocalContext.current.getString(R.string.duration)}:${filesViewModel.videoInfo!!.duration/1000}s")
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             "${LocalContext.current.getString(R.string.size)}:${
@@ -1153,7 +1153,7 @@ when(filesViewModel.show_details_flag.value){
                     ) {
                         Text("${LocalContext.current.getString(R.string.type)}:${FilesUtils.getTypeFromPath(filesViewModel.audioInfo!!.path)}")
                         Spacer(modifier = Modifier.height(10.dp))
-                        Text("${LocalContext.current.getString(R.string.duration)}:${filesViewModel.audioInfo!!.duration/1000}")
+                        Text("${LocalContext.current.getString(R.string.duration)}:${filesViewModel.audioInfo!!.duration/1000}s")
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             "${LocalContext.current.getString(R.string.size)}:${

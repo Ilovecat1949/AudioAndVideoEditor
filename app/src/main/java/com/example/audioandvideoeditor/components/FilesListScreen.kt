@@ -102,9 +102,9 @@ private fun ShowFile(
     id:Int
 ){
     val file=filesViewModel.filesList[id]
-    if(!filesViewModel.filesState.containsKey(file.path)){
-        filesViewModel.filesState[file.path]= mutableStateOf(false)
-    }
+//    if(!filesViewModel.filesState.containsKey(file.path)){
+//        filesViewModel.filesState[file.path]= mutableStateOf(false)
+//    }
     val ctx=LocalContext.current
     if(file.isFile){
         Row(
@@ -151,7 +151,7 @@ private fun ShowFile(
                             .listFiles()
                             ?.let { it1 ->
                                 filesViewModel.filesList.addAll(it1)
-                                filesViewModel.initFilesState()
+//                                filesViewModel.initFilesState()
                             }
                     }
                 }

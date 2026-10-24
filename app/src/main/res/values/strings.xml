@@ -422,4 +422,23 @@
     <string name="enter_goods_express">前往好物驿站</string>
 
     <string name="good_link">https://ilovecat1949.github.io/AudioAndVideoEditor/goods/</string>
+    <string name="star_support_tip">点个 Star ⭐️ 支持一下吧！</string>
+    <string name="open_browser">打开浏览器</string>
+
+    <!-- 模板与批量任务相关文案 -->
+    <string name="custom_template_group">--- 自定义模板 ---</string>
+    <string name="builtin_template_group">--- 系统内置模板 ---</string>
+    <string name="add_template">新增模板</string>
+    <string name="edit_template">编辑模板</string>
+    <string name="delete_template">删除模板</string>
+    <string name="add_custom_template">新增自定义模板</string>
+    <string name="edit_custom_template">编辑自定义模板</string>
+    <string name="template_name">模板名称</string>
+    <string name="ffmpeg_parameters">FFmpeg 参数内容</string>
+    <string name="input_files_selected">输入文件 (已选 %d 个):</string>
+    <string name="select_file_hint">请点击右上侧文件夹图标选择文件</string>
+    <string name="output_file_prefix">输出文件名前缀:</string>
+    <string name="prefix_example_hint">例如 prefix -> prefix_1.mp4</string>
+    <string name="batch_execute_tasks">批量开始执行 (%d 个任务)</string>
+    <string name="deinterlace">反交错处理</string>
 </resources>

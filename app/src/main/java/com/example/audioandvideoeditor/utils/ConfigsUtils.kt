@@ -17,6 +17,7 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -40,7 +41,15 @@ data class GitHubAsset(
     @SerialName("browser_download_url") val browserDownloadUrl: String
 )
 
-
+// 🌟 1. 定义 FFmpeg 参数模板数据结构
+@Serializable
+data class FFmpegTemplate(
+    val id: String,           // 唯一标识（UUID 或时间戳）
+    val name: String,         // 模板名称
+    val context: String,      // FFmpeg 参数内容
+    val isBuiltIn: Boolean,   // 是否为系统内置（true: 只读兜底, false: 用户自定义）
+    val createdAt: Long       // 创建时间戳（用于自定义模板按时间倒序置顶）
+)
 
 object ConfigsUtils {
 
@@ -326,6 +335,30 @@ suspend fun getLatestGitHubRelease(owner: String, repo: String): GitHubRelease? 
         } finally {
             reader?.close()
             connection?.disconnect()
+        }
+    }
+
+
+    // 🌟 2. 保存用户自定义模板到独立 SharedPreferences
+    fun saveCustomTemplates(context: Context, templates: List<FFmpegTemplate>) {
+        val prefs = context.getSharedPreferences("ffmpeg_template_prefs", Context.MODE_PRIVATE)
+        // 过滤出仅属于用户自定义的模板进行持久化
+        val customList = templates.filter { !it.isBuiltIn }
+        // 显式指定类型参数 <List<FFmpegTemplate>>
+        val jsonStr = json.encodeToString<List<FFmpegTemplate>>(customList)
+        prefs.edit().putString("custom_templates", jsonStr).apply()
+    }
+
+    // 🌟 3. 加载用户自定义模板
+    fun loadCustomTemplates(context: Context): List<FFmpegTemplate> {
+        val prefs = context.getSharedPreferences("ffmpeg_template_prefs", Context.MODE_PRIVATE)
+        val jsonStr = prefs.getString("custom_templates", null) ?: return emptyList()
+        return try {
+            // 显式指定类型参数 <List<FFmpegTemplate>>
+            json.decodeFromString<List<FFmpegTemplate>>(jsonStr)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 }

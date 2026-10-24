@@ -1,6 +1,6 @@
 package com.example.audioandvideoeditor.components
 
-
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
@@ -18,14 +18,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,10 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.audioandvideoeditor.R
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,9 +58,15 @@ fun GoodsExpressScreen(
     mainUrl: String,
     onClose: () -> Unit
 ) {
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
+
+    // 🌟 实时追踪当前网页 URL，用于分享与外部浏览器打开
+    var currentUrl by remember { mutableStateOf(mainUrl) }
 
     // 加载状态与进度管理
     var isLoading by remember { mutableStateOf(true) }
@@ -142,10 +149,29 @@ fun GoodsExpressScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = onClose) {
+                        // 🌟 1. 分享当前网页链接
+                        IconButton(onClick = {
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, currentUrl)
+                                type = "text/plain"
+                            }
+                            val shareIntent = Intent.createChooser(sendIntent, null)
+                            context.startActivity(shareIntent)
+                        }) {
                             Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Exit"
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share"
+                            )
+                        }
+
+                        // 🌟 2. 在系统浏览器中打开当前网页
+                        IconButton(onClick = {
+                            uriHandler.openUri(currentUrl)
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.open_in_new_24px),
+                                contentDescription = "Open in Browser"
                             )
                         }
                     },
@@ -196,6 +222,9 @@ fun GoodsExpressScreen(
                     webView.webViewClient = object : WebViewClient() {
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             super.onPageStarted(view, url, favicon)
+                            if (url != null) {
+                                currentUrl = url
+                            }
                             isLoading = true
                             isErrorOccurred = false
                             loadingProgress = 0.1f // 🌟 立即给用户 10% 进度反馈，消除“点击无反应”困惑
@@ -207,6 +236,9 @@ fun GoodsExpressScreen(
 
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
+                            if (url != null) {
+                                currentUrl = url
+                            }
                             timeoutHandler.removeCallbacks(timeoutRunnable)
                             isLoading = false
                             canGoBack = view?.canGoBack() == true

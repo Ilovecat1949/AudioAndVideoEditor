@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,33 +79,34 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-private val TAG="FileSelectionScreen"
+private val TAG = "FileSelectionScreen"
 
 @Composable
 fun FileSelectionScreen(
-    backDestination:()->Unit,
-    setFile:(file:File)->Unit,
+    selectionMode: Int = 0, // 🌟 0: 单选, 1: 多选
+    backDestination: () -> Unit,
+    onFilesSelected: (List<File>) -> Unit, // 支持回调选中文件列表
     nextDestination:()->Unit,
-    filesViewModel: FilesViewModel= viewModel()
+    filesViewModel: FilesViewModel = viewModel()
 ){
+    filesViewModel.selectionMode = selectionMode
     filesViewModel.setContentResolver(LocalContext.current.contentResolver)
-    val life= rememberLifecycle()
+
+    val life = rememberLifecycle()
     life.onLifeCreate {
-        if(filesViewModel.parent==null){
-            val file= File(Environment.getExternalStorageDirectory().path)
+        if (filesViewModel.parent == null) {
+            val file = File(Environment.getExternalStorageDirectory().path)
             file.listFiles()?.let {
                 filesViewModel.filesList.addAll(it)
-                //filesViewModel.initFilesState()
             }
-            filesViewModel.parent= file
+            filesViewModel.parent = file
         }
         filesViewModel.setSortCriteriaAndOrder(ConfigsUtils.files_sort_flag)
     }
+
     Scaffold(
         topBar = {
             Row (
-//                horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -112,39 +115,37 @@ fun FileSelectionScreen(
             ){
                 Row (
                     horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier
-                        .width(160.dp)
+                    modifier = Modifier.width(160.dp)
                 ) {
-                    Icon(painter = painterResource(id = R.drawable.baseline_arrow_back_24),
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_arrow_back_24),
                         contentDescription = null,
-                        tint =  Color.White ,
+                        tint = Color.White,
                         modifier = Modifier
                             .padding(start = 20.dp)
                             .size(32.dp)
-                            .clickable {
-                                backDestination()
-                            }
+                            .clickable { backDestination() }
                     )
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.select_file), fontSize =20.sp, color = Color.White )
+                    Text(text = LocalContext.current.resources.getString(R.string.select_file), fontSize = 20.sp, color = Color.White)
                 }
                 Row (
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(painter = painterResource(id = R.drawable.baseline_check_24),
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_check_24),
                         contentDescription = null,
-                        tint =  Color.White ,
+                        tint = Color.White,
                         modifier = Modifier
                             .padding(end = 20.dp)
                             .size(32.dp)
                             .clickable {
-                                if (filesViewModel.file != null) {
-                                    setFile(filesViewModel.file!!)
-                                    filesViewModel.file = null
+                                if (filesViewModel.selectedFiles.isNotEmpty()) {
+                                    onFilesSelected(filesViewModel.selectedFiles.toList())
+                                    filesViewModel.selectedFiles.clear()
                                     filesViewModel.parent = null
                                     filesViewModel.filesList.clear()
-                                    filesViewModel.filesState.clear()
                                     nextDestination()
                                 }
                             }
@@ -152,98 +153,16 @@ fun FileSelectionScreen(
                 }
             }
         },
-
-        ) {
-            innerPadding ->ShowListScreen(innerPadding,filesViewModel)
-        //FilesList(innerPadding,filesViewModel)
-
-    }
-}
-
-
-@Composable
-private fun ShowListScreen_20250606(padding: PaddingValues,filesViewModel: FilesViewModel){
-    filesViewModel.setContentResolver(LocalContext.current.contentResolver)
-    Scaffold(
-        topBar ={
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(top = padding.calculateTopPadding())
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .background(
-                        color = Color.White
-                    )
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.video))
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Checkbox(
-                        checked =(filesViewModel.show_flag.value==0),
-                        onCheckedChange = {
-                            if(it){
-                                filesViewModel.show_flag.value=0
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                }
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.audio))
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Checkbox(
-                        checked =(filesViewModel.show_flag.value==1),
-                        onCheckedChange = {
-                            if(it){
-                                filesViewModel.show_flag.value=1
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                }
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically)
-                {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = LocalContext.current.resources.getString(R.string.file))
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Checkbox(
-                        checked =(filesViewModel.show_flag.value==2),
-                        onCheckedChange = {
-                            if(it){
-                                filesViewModel.show_flag.value=2
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                }
-            }
-        }
-    ){
-            innerPadding->
-        ShowList(innerPadding, filesViewModel )
+    ) { innerPadding ->
+        ShowListScreen(innerPadding, filesViewModel)
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ShowListScreen(padding: PaddingValues,filesViewModel: FilesViewModel){
+private fun ShowListScreen(padding: PaddingValues, filesViewModel: FilesViewModel){
     filesViewModel.setContentResolver(LocalContext.current.contentResolver)
-    val context= LocalContext.current
+    val context = LocalContext.current
     val titles = remember {
         listOf(
             context.getString(R.string.video),
@@ -251,23 +170,19 @@ private fun ShowListScreen(padding: PaddingValues,filesViewModel: FilesViewModel
             context.getString(R.string.file),
         )
     }
-    val pagerState = rememberPagerState(initialPage = 0) {
-        titles.size
-    }
+    val pagerState = rememberPagerState(initialPage = 0) { titles.size }
     val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = padding.calculateTopPadding())
-
     ) {
-        // 顶部 TabRow
         TabRow(
             selectedTabIndex = pagerState.currentPage,
             modifier = Modifier.fillMaxWidth(),
-            containerColor = MaterialTheme.colorScheme.primary, // 标签背景色
-            contentColor = MaterialTheme.colorScheme.onPrimary // 标签内容颜色（文字和指示器）
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
             titles.forEachIndexed { index, title ->
                 Tab(
@@ -275,28 +190,24 @@ private fun ShowListScreen(padding: PaddingValues,filesViewModel: FilesViewModel
                     onClick = {
                         coroutineScope.launch {
                             pagerState.animateScrollToPage(index)
-                            filesViewModel.show_flag.value=index
+                            filesViewModel.show_flag.value = index
                         }
                     },
                     text = { Text(title) }
                 )
             }
         }
-        // 页面内容
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-            //.weight(1f) // 让内容占据剩余空间
+            modifier = Modifier.fillMaxWidth()
         ) { page ->
-//            val padding= PaddingValues(5.dp)
             Column(
                 modifier = Modifier.fillMaxWidth()
             ){
                 when(page){
-                    0->VideoFilesList(padding,filesViewModel)
-                    1->AudioFilesList(padding, filesViewModel)
-                    2->FilesList(padding ,filesViewModel)
+                    0 -> VideoFilesList(padding, filesViewModel)
+                    1 -> AudioFilesList(padding, filesViewModel)
+                    2 -> FilesList(padding, filesViewModel)
                 }
                 Spacer(modifier = Modifier
                     .fillMaxWidth()
@@ -312,14 +223,13 @@ private fun FilesList(
     filesViewModel: FilesViewModel
 ){
     var showSortOptionsDialog by remember { mutableStateOf(false) }
-    val lazyListState = rememberLazyListState() // 1. Create LazyListState
-    val coroutineScope = rememberCoroutineScope() // 2. Create CoroutineScope
-    // 3. Launch a LaunchedEffect to observe sorting changes and scroll
+    val lazyListState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(filesViewModel.sortCriteria, filesViewModel.sortOrder) {
-        // Only scroll if the list is not empty
         if (filesViewModel.displayFilesList.isNotEmpty()) {
             coroutineScope.launch {
-                lazyListState.animateScrollToItem(0) // Animate scroll to the first item
+                lazyListState.animateScrollToItem(0)
             }
         }
     }
@@ -343,38 +253,32 @@ private fun FilesList(
                                     ?.let {
                                         filesViewModel.filesList.clear()
                                         filesViewModel.filesList.addAll(it)
-                                        //filesViewModel.initFilesState()
                                         filesViewModel.parent = filesViewModel.parent!!.parentFile
                                     }
                             } else {
                                 filesViewModel.filesList.clear()
                                 filesViewModel.filesList.add(filesViewModel.parent!!)
-                                //filesViewModel.initFilesState()
                                 filesViewModel.parent = null
                             }
-
                         }
                     },
                 ) {
                     Spacer(modifier = Modifier.width(20.dp))
                     Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
                     Spacer(modifier = Modifier.width(5.dp))
-                    Text(text="..")
+                    Text(text = "..")
                 }
                 IconButton(
-                    onClick = {
-                        showSortOptionsDialog = true
-                    },
-                    modifier =  Modifier.wrapContentSize(Alignment.TopEnd)
+                    onClick = { showSortOptionsDialog = true },
+                    modifier = Modifier.wrapContentSize(Alignment.TopEnd)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.sort_24px),
-                        modifier=Modifier.size(48.dp),
+                        modifier = Modifier.size(48.dp),
                         contentDescription = null
                     )
                 }
             }
-
         }
     ) {
         LazyColumn(
@@ -386,12 +290,12 @@ private fun FilesList(
                 .fillMaxWidth()
                 .padding(top = it.calculateTopPadding() + 30.dp)
         ){
-            items(count =filesViewModel.displayFilesList.size){
-                ShowFile2(filesViewModel,it)
+            items(count = filesViewModel.displayFilesList.size){
+                ShowFile(filesViewModel, it)
             }
         }
     }
-    BackHandler(enabled =filesViewModel.backHandler_flag ){
+    BackHandler(enabled = filesViewModel.backHandler_flag ){
         if (filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path) {
             if (filesViewModel.parent!!.parentFile != null) {
                 filesViewModel.parent!!.parentFile
@@ -399,18 +303,15 @@ private fun FilesList(
                     ?.let {
                         filesViewModel.filesList.clear()
                         filesViewModel.filesList.addAll(it)
-                        //filesViewModel.initFilesState()
                         filesViewModel.parent = filesViewModel.parent!!.parentFile
                     }
             } else {
                 filesViewModel.filesList.clear()
                 filesViewModel.filesList.add(filesViewModel.parent!!)
-                //filesViewModel.initFilesState()
                 filesViewModel.parent = null
             }
-
         }
-        filesViewModel.backHandler_flag=(filesViewModel.show_flag.value==2 &&filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path )
+        filesViewModel.backHandler_flag = (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
     }
     if (showSortOptionsDialog) {
         var sortCriteria2 by remember {
@@ -509,107 +410,27 @@ private fun FilesList(
 @Composable
 private fun ShowFile(
     filesViewModel: FilesViewModel,
-    id:Int
+    id: Int
 ){
-    val file=filesViewModel.filesList[id]
-    if(!filesViewModel.filesState.containsKey(file.path)){
-        filesViewModel.filesState[file.path]= mutableStateOf(false)
-    }
-    if(file.isFile){
-        Row(
-            modifier = Modifier
-                .height(40.dp)
-                .fillMaxWidth()
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.baseline_insert_drive_file_24),
-                contentDescription = null
-            )
-            Spacer(modifier = Modifier.width(40.dp))
-//            if(file.name.length<20) {
-//                Text(text = file.name)
-//            }
-//            else{
-//                Text(text =file.name.substring(0,14)+"..."+file.name.substring(file.name.length-5))
-//            }
-            if(file.name.length<=19) {
-                Text(text = file.name)
-            }
-            else{
-                Text(text =file.name.substring(0,11)+"..."+file.name.substring(file.name.length-5))
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Row(
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
-            ){
-                    Checkbox(
-                        checked =filesViewModel.filesState[file.path]!!.value,
-                        onCheckedChange = {
-                            filesViewModel.updateFilesState(file.path,it)
-                            if(it){
-                                filesViewModel.file=file
-                            }
-                            else{
-                                filesViewModel.file=null
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-            }
-        }
-    }
-    else if(file.isDirectory){
-        Row(
-            modifier = Modifier
-                .height(40.dp)
-                .fillMaxWidth()
-                .clickable {
-                    val dir = file
-                    if (dir.listFiles() != null) {
-                        filesViewModel.filesList.clear()
-                        filesViewModel.parent = dir
-                        dir
-                            .listFiles()
-                            ?.let { it1 ->
-                                filesViewModel.filesList.addAll(it1)
-                                filesViewModel.initFilesState()
-                            }
-                    }
-                }
-        ){
-            Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
-            Spacer(modifier = Modifier.width(40.dp))
-            if(file.name.length<=19) {
-                Text(text = file.name)
-            }
-            else{
-                Text(text =file.name.substring(0,11)+"..."+file.name.substring(file.name.length-5))
-            }
-        }
-    }
-}
+    val file = filesViewModel.displayFilesList[id]
+    // 🌟 获取当前文件在选中列表中的位置索引 (-1 表示未选中)
+    val NOT_SELECTED = -1
+    val selectedIndex = filesViewModel.selectedFiles.indexOfFirst { it.path == file.path }
+    val isSelected = selectedIndex != NOT_SELECTED
 
-@Composable
-private fun ShowFile2(
-    filesViewModel: FilesViewModel,
-    id:Int
-){
-    val file=filesViewModel.displayFilesList [id]
-    if(!filesViewModel.filesState.containsKey(file.path)){
-        filesViewModel.filesState[file.path]= mutableStateOf(false)
-    }
     if(file.isFile){
-        Column (
-            modifier = Modifier
-                .fillMaxWidth()
-
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ){
             Spacer(modifier = Modifier.height(20.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable {
+                        // 🌟 点击整行即可触发选择切换
+                        filesViewModel.toggleFileSelection(file)
+                    }
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_insert_drive_file_24),
@@ -617,29 +438,47 @@ private fun ShowFile2(
                 )
                 Spacer(modifier = Modifier.width(20.dp))
                 Text(
-                    text =file.name,
+                    text = file.name,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 5,
-                    softWrap = true
+                    softWrap = true,
+                    modifier = Modifier.weight(1f)
                 )
                 Row(
                     horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.wrapContentWidth()
                 ){
                     Spacer(modifier = Modifier.width(5.dp))
-                    Checkbox(
-                        checked =filesViewModel.filesState[file.path]!!.value,
-                        onCheckedChange = {
-                            filesViewModel.updateFilesState(file.path,it)
-                            if(it){
-                                filesViewModel.file=file
+                    if (filesViewModel.selectionMode == 0) {
+                        // 🌟 单选模式：渲染标准 Checkbox
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { _ ->
+                                filesViewModel.toggleFileSelection(file)
+                            },
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        // 🌟 多选模式：渲染带数字序号的圆形徽标
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Text(
+                                    text = (selectedIndex + 1).toString(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
-                            else{
-                                filesViewModel.file=null
-                            }
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
+                        }
+                    }
                     Spacer(modifier = Modifier.width(5.dp))
                 }
             }
@@ -648,7 +487,7 @@ private fun ShowFile2(
         }
     }
     else if(file.isDirectory){
-        Column (
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
@@ -658,25 +497,21 @@ private fun ShowFile2(
                         filesViewModel.parent = dir
                         filesViewModel.backHandler_flag =
                             (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
-                        dir
-                            .listFiles()
-                            ?.let { it1 ->
-                                filesViewModel.filesList.addAll(it1)
-                                filesViewModel.initFilesState()
-                            }
+                        dir.listFiles()?.let { it1 ->
+                            filesViewModel.filesList.addAll(it1)
+                        }
                     }
                 }
         ){
             Spacer(modifier = Modifier.height(20.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(painter = painterResource(id = R.drawable.baseline_folder_24), contentDescription = null)
                 Spacer(modifier = Modifier.width(20.dp))
                 Text(
-                    text =file.name,
+                    text = file.name,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 5,
                     softWrap = true
@@ -688,174 +523,118 @@ private fun ShowFile2(
     }
 }
 
-
-
-@Composable
-private fun ShowList(padding: PaddingValues,filesViewModel: FilesViewModel){
-    if(filesViewModel.show_flag.value==0){
-        VideoFilesList(padding,filesViewModel)
-    }
-    else if(filesViewModel.show_flag.value==1){
-        AudioFilesList(padding ,filesViewModel)
-    }
-    else if(filesViewModel.show_flag.value==2){
-        FilesList(padding , filesViewModel)
-    }
-}
-
-
 @Composable
 private fun VideoFilesList(
     padding: PaddingValues,
     filesViewModel: FilesViewModel
 ){
-
-    val videosPager=filesViewModel.videosPager
+    val videosPager = filesViewModel.videosPager
     val lazyPagingItems = videosPager.flow.collectAsLazyPagingItems()
     LazyVerticalGrid (
         columns = GridCells.Adaptive(minSize = 128.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        modifier = Modifier
-//                  .padding(top = padding.calculateTopPadding())
     ) {
         item(span = { GridItemSpan(maxLineSpan) }){
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-//                  .background(color = Color.Yellow)
-            )
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
         }
         if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
-            item(
-                span = { GridItemSpan(maxLineSpan) }
-            ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     text = "Waiting for items to load from the backend",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
                 )
             }
         }
         items(count = lazyPagingItems.itemCount) { index ->
             val item = lazyPagingItems[index]
-//            Text("Index=$index: $item", fontSize = 20.sp)
             if (item != null) {
-                ShowVideoFileInfo(filesViewModel,item)
+                ShowVideoFileInfo(filesViewModel, item)
             }
         }
         if (lazyPagingItems.loadState.append == LoadState.Loading) {
-            item(
-                span = { GridItemSpan(maxLineSpan) }
-            ){
+            item(span = { GridItemSpan(maxLineSpan) }){
                 CircularProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
                 )
             }
         }
         item(span = { GridItemSpan(maxLineSpan) }){
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-//                  .background(color = Color.Yellow)
-            )
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
         }
     }
 }
+
 @Composable
 private fun AudioFilesList(
     padding: PaddingValues,
     filesViewModel: FilesViewModel
 ){
-    val audiosPager=filesViewModel.audiosPager
+    val audiosPager = filesViewModel.audiosPager
     val lazyPagingItems = audiosPager.flow.collectAsLazyPagingItems()
     LazyVerticalGrid (
         columns = GridCells.Adaptive(minSize = 128.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        modifier = Modifier
-//            .padding(top = padding.calculateTopPadding())
     ) {
         item(span = { GridItemSpan(maxLineSpan) }){
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-//                  .background(color = Color.Yellow)
-            )
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
         }
         if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
-            item(
-                span = { GridItemSpan(maxLineSpan) }
-            ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     text = "Waiting for items to load from the backend",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
                 )
             }
         }
         items(count = lazyPagingItems.itemCount) { index ->
             val item = lazyPagingItems[index]
-//            Text("Index=$index: $item", fontSize = 20.sp)
             if (item != null) {
-                ShowAudioFileInfo(filesViewModel,item)
+                ShowAudioFileInfo(filesViewModel, item)
             }
         }
         if (lazyPagingItems.loadState.append == LoadState.Loading) {
-            item(
-                span = { GridItemSpan(maxLineSpan) }
-            ){
+            item(span = { GridItemSpan(maxLineSpan) }){
                 CircularProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
                 )
             }
         }
         item(span = { GridItemSpan(maxLineSpan) }){
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-//                  .background(color = Color.Yellow)
-            )
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
         }
     }
 }
-
 
 @Composable
 private fun ShowVideoFileInfo(
     filesViewModel: FilesViewModel,
     info: VideoInfo
 ){
-    if(!filesViewModel.filesState.containsKey(info.path)){
-         filesViewModel.filesState[info.path]= mutableStateOf(false)
-     }
+    val selectedIndex = filesViewModel.selectedFiles.indexOfFirst { it.path == info.path }
+    val isSelected = selectedIndex != -1
     val context = LocalContext.current
     var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
     LaunchedEffect(info.uri) {
         withContext(Dispatchers.IO){
             filesViewModel.mutex.withLock {
-                if(thumbnailBitmap==null){
-                    val bitmap=filesViewModel.thumbnailBitmapArray.find { it.first==info.path }?.second
-                    if(bitmap!=null){
-                        thumbnailBitmap=bitmap
-                    }
-                    else{
+                if(thumbnailBitmap == null){
+                    val bitmap = filesViewModel.thumbnailBitmapArray.find { it.first == info.path }?.second
+                    if(bitmap != null){
+                        thumbnailBitmap = bitmap
+                    } else {
                         thumbnailBitmap = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-                            FilesUtils.getThumbnail(context.contentResolver,info.uri)
-                        }else{
+                            FilesUtils.getThumbnail(context.contentResolver, info.uri)
+                        } else {
                             FilesUtils.getVideoCover(info.path)
                         }
-                        if(thumbnailBitmap!=null){
-                            if(filesViewModel.thumbnailBitmapArray.size>filesViewModel.thumbnailsMaxNum){
-                                val pair=filesViewModel.thumbnailBitmapArray.first()
+                        if(thumbnailBitmap != null){
+                            if(filesViewModel.thumbnailBitmapArray.size > filesViewModel.thumbnailsMaxNum){
+                                val pair = filesViewModel.thumbnailBitmapArray.first()
                                 filesViewModel.thumbnailBitmapArray.removeAt(0)
                                 pair.second.recycle()
                             }
-                            filesViewModel.thumbnailBitmapArray.add(Pair(info.path,thumbnailBitmap!!))
+                            filesViewModel.thumbnailBitmapArray.add(Pair(info.path, thumbnailBitmap!!))
                         }
                     }
                     thumbnailBitmap?.prepareToDraw()
@@ -863,30 +642,19 @@ private fun ShowVideoFileInfo(
             }
         }
     }
-//    val lifecycleOwner = LocalLifecycleOwner.current
-//    DisposableEffect(lifecycleOwner) {
-//        onDispose {
-//            thumbnailBitmap?.recycle()
-//        }
-//    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement= Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
     ){
         Spacer(modifier = Modifier.height(5.dp))
         Box(
             modifier = Modifier
                 .clickable {
-                    val is_checked = !filesViewModel.filesState[info.path]!!.value
-                    filesViewModel.updateFilesState(info.path, is_checked)
-                    if (is_checked) {
-                        filesViewModel.file = File(info.path)
-                    } else {
-                        filesViewModel.file = null
-                    }
+                    filesViewModel.toggleFileSelection(File(info.path))
                 }
         ){
-            if(thumbnailBitmap!=null) {
+            if(thumbnailBitmap != null) {
                 Image(
                     bitmap = thumbnailBitmap!!.asImageBitmap(),
                     modifier = Modifier
@@ -895,104 +663,125 @@ private fun ShowVideoFileInfo(
                         .background(color = Color.Black, shape = RoundedCornerShape(10.dp)),
                     contentDescription = null
                 )
-            }
-            else{
-                Icon(painter = painterResource(id = R.drawable.baseline_video_file_24),
+            } else {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_video_file_24),
                     tint = Color.Yellow,
                     modifier = Modifier
                         .width(128.dp)
                         .height(128.dp)
-                        .background(color = Color.Black, shape = RoundedCornerShape(10.dp))
-                    ,
-                    contentDescription = null)
+                        .background(color = Color.Black, shape = RoundedCornerShape(10.dp)),
+                    contentDescription = null
+                )
             }
-            if(filesViewModel.filesState[info.path]!!.value) {
-                Icon(painter =painterResource(R.drawable.baseline_check_24),
-                    tint = Color.White,
-                    modifier = Modifier
-                        .padding(start = 64.dp, top = 64.dp)
-                        .size(64.dp) ,
-                    contentDescription =null)
+
+            // 🌟 选中状态展示：单选显示勾选图标，多选显示数字序号徽标
+            if (isSelected) {
+                if (filesViewModel.selectionMode == 0) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_check_24),
+                        tint = Color.White,
+                        modifier = Modifier
+                            .padding(start = 64.dp, top = 64.dp)
+                            .size(64.dp),
+                        contentDescription = null
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape)
+                            .align(Alignment.TopEnd),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (selectedIndex + 1).toString(),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
-        val file_name=info.name
         Text(
-            text =info.name,
-//            fontWeight = FontWeight.Bold,
+            text = info.name,
             overflow = TextOverflow.Ellipsis,
             maxLines = 5,
             softWrap = true
         )
         Spacer(modifier = Modifier.height(50.dp))
-//        if(file_name.length<=19) {
-//            Text(text = file_name)
-//        }
-//        else{
-//            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
-//        }
     }
 }
-
 
 @Composable
 private fun ShowAudioFileInfo(
     filesViewModel: FilesViewModel,
     info: AudioInfo
 ){
-    if(!filesViewModel.filesState.containsKey(info.path)){
-        filesViewModel.filesState[info.path]= mutableStateOf(false)
-    }
+    val selectedIndex = filesViewModel.selectedFiles.indexOfFirst { it.path == info.path }
+    val isSelected = selectedIndex != -1
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement= Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
     ){
         Spacer(modifier = Modifier.height(5.dp))
         Box(
             modifier = Modifier
                 .clickable {
-                    val is_checked = !filesViewModel.filesState[info.path]!!.value
-                    filesViewModel.updateFilesState(info.path, is_checked)
-                    if (is_checked) {
-                        filesViewModel.file = File(info.path)
-                    } else {
-                        filesViewModel.file = null
-                    }
+                    filesViewModel.toggleFileSelection(File(info.path))
                 }
         ){
-            Icon(painter = painterResource(id = R.drawable.baseline_audio_file_24),
+            Icon(
+                painter = painterResource(id = R.drawable.baseline_audio_file_24),
                 tint = Color.Green,
                 modifier = Modifier
                     .width(128.dp)
                     .height(128.dp)
-                    .background(color = Color.White, shape = RoundedCornerShape(10.dp))
-                ,
-                contentDescription = null)
-            if(filesViewModel.filesState[info.path]!!.value) {
-                Icon(painter =painterResource(R.drawable.baseline_check_24),
-                    tint = Color.White,
-                    modifier = Modifier
-                        .padding(start = 64.dp, top = 64.dp)
-                        .size(64.dp) ,
-                    contentDescription =null)
+                    .background(color = Color.White, shape = RoundedCornerShape(10.dp)),
+                contentDescription = null
+            )
+
+            // 🌟 选中状态展示：单选显示勾选图标，多选显示数字序号徽标
+            if (isSelected) {
+                if (filesViewModel.selectionMode == 0) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_check_24),
+                        tint = Color.White,
+                        modifier = Modifier
+                            .padding(start = 64.dp, top = 64.dp)
+                            .size(64.dp),
+                        contentDescription = null
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape)
+                            .align(Alignment.TopEnd),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (selectedIndex + 1).toString(),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
-        val file_name=info.name
         Text(
-            text =info.name,
-//            fontWeight = FontWeight.Bold,
+            text = info.name,
             overflow = TextOverflow.Ellipsis,
             maxLines = 5,
             softWrap = true
         )
         Spacer(modifier = Modifier.height(50.dp))
-//        if(file_name.length<=19) {
-//            Text(text = file_name)
-//        }
-//        else{
-//            Text(text =file_name.substring(0,11)+"..."+file_name.substring(file_name.length-5))
-//        }
     }
 }
-

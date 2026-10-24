@@ -585,7 +585,7 @@ class TaskService : Service() {
         }
         taskProgressCache[taskId] = when {
             (progress < 0) &&  taskInfo.int_arr[0] !=TaskType.FFMPEGCOMMANDS_TASK.code -> 0f
-            (progress > 1 ) &&  taskInfo.int_arr[0] !=TaskType.FFMPEGSERVICE_TASK.code -> 0.99f
+            (progress > 1 ) &&  taskInfo.int_arr[0] !=TaskType.FFMPEGCOMMANDS_TASK.code -> 0.99f
             else -> progress
         }
         // 更新通知（有权限时）
