@@ -1,4 +1,27 @@
 [
+    {
+   "date": "2026-10-24",
+    "items": [
+      {
+        "title": "GSYVideoPlayer",
+        "tags": ["视频播放器","开源免费"],
+        "desc": "视频播放器（IJKplayer、ExoPlayer、MediaPlayer）、HTTPS、16k 页面大小、弹幕（子弹聊天）支持、外部字幕、支持滤镜、水印和 GIF 截图、片头和片中广告、多设备同时播放、基本进度条拖动/拖动、音量和亮度调节、支持缓存播放",
+        "link": "https://github.com/CarGuo/GSYVideoPlayer"
+      },
+      {
+        "title": "rea",
+        "tags": ["ai-agents","逆向工程","开源"],
+        "desc": "利用代理对任何事物进行逆向工程，从应用程序行为到原生二进制文件。",
+        "link": "https://rea.tools/"
+      },
+      {
+        "title": "openGym",
+        "tags": ["健身","开源"],
+        "desc": "一款免费开源的健身和体重追踪器。无需订阅，无需注册，也无需遥测数据。现在不需要，以后也不需要。",
+        "link": "https://opengym.ch/"
+      }                       
+    ] 
+  },
   {
    "date": "2026-10-11",
     "items": [
