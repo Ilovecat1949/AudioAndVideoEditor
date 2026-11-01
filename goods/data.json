@@ -1,5 +1,28 @@
 [
     {
+   "date": "2026-11-01",
+    "items": [
+      {
+        "title": "streamfirefly",
+        "tags": ["媒体嗅探与下载","开源"],
+        "desc": "网页媒体嗅探与下载工具，包含浏览器扩展和 Windows 本地助手。",
+        "link": "https://github.com/rumoii/streamfirefly"
+      },
+      {
+        "title": "android-ad-cleaner",
+        "tags": ["去广告","开源"],
+        "desc": "关掉国产安卓手机系统里的广告、热搜、资讯推荐和营销推送。不 root，可还原，支持 AI 智能体一键执行。",
+        "link": "https://github.com/rddmwmddr/android-ad-cleaner"
+      },
+      {
+        "title": "BBPlayer",
+        "tags": ["音乐播放器","开源"],
+        "desc": "一款使用 React Native 构建的本地优先的 Bilibili 音频播放器。更轻量 & 舒服的听歌体验，远离臃肿卡顿的 Bilibili 客户端。",
+        "link": "https://github.com/bbplayer-app/BBPlayer"
+      }                       
+    ] 
+  },  
+    {
    "date": "2026-10-24",
     "items": [
       {
