@@ -179,6 +179,25 @@ private fun FunctionsListScreen2(
                     .width(200.dp)
                     .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
                     .clickable {
+                        setNextToNextDestination(Destination.VideoRegion.route)
+                        nextDestination(Destination.FileSelection.route)
+                    }
+            ){
+                Text(
+                    text= "${stringResource(R.string.feature_region_edit_title)}\n${stringResource(R.string.feature_region_edit_desc)}"
+                    , modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
                         setNextToNextDestination(Destination.VideoAspectRatio.route)
                         nextDestination(Destination.FileSelection.route)
                     }

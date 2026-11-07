@@ -133,7 +133,7 @@ fun VideoAspectRatioScreen(
                             PlayerView(context).apply {
                                 this.player = player
 //                                player.prepare()
-                                player.play()
+//                                player.play()
                             }
                         },
                         modifier = Modifier

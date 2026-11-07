@@ -436,9 +436,28 @@
     <string name="template_name">模板名称</string>
     <string name="ffmpeg_parameters">FFmpeg 参数内容</string>
     <string name="input_files_selected">输入文件 (已选 %d 个):</string>
-    <string name="select_file_hint">请点击右上侧文件夹图标选择文件</string>
+    <string name="select_file_hint">请点击右上角文件夹图标选择文件</string>
     <string name="output_file_prefix">输出文件名前缀:</string>
     <string name="prefix_example_hint">例如 prefix -> prefix_1.mp4</string>
     <string name="batch_execute_tasks">批量开始执行 (%d 个任务)</string>
     <string name="deinterlace">反交错处理</string>
+
+    <!-- 视频精准微调相关文案 -->
+    <string name="decrease">减少</string>
+    <string name="increase">增加</string>
+    <string name="step_seconds">步长(s)</string>
+
+    <string name="invalid_step_input">请输入有效的步长数值</string>
+
+    <string name="mode_crop">画面裁剪</string>
+    <string name="mode_remove_watermark">清除水印</string>
+    <string name="mode_add_mosaic">添加马赛克</string>
+
+    <string name="feature_region_edit_title">视频区域编辑</string>
+    <string name="feature_region_edit_desc">画面裁剪、去水印、添加马赛克</string>
+
+    <string name="mode_add_watermark">添加水印</string>
+
+    <string name="watermark_invalid_file_tip">所选文件不是有效的图片，已为您自动应用默认水印</string>
+    <string name="watermark_select">选择水印</string>
 </resources>

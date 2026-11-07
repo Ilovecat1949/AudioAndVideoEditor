@@ -10,6 +10,7 @@ import java.io.File
 class HomeViewModel: ViewModel() {
     // 你页面正在用的所有字段，原样保留，不加任何权限限制
     var path_or_uri by mutableStateOf("")
+    var path_or_uri2 by mutableStateOf("")
     var file_list: List<File>?=null
 //    var nextDestination: () -> Unit by mutableStateOf({})
     // 2. 用一个纯文本路由标志，替代原本的 nextDestination 闭包

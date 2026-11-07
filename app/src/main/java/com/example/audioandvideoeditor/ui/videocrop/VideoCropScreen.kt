@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -181,188 +184,211 @@ fun VideoCropScreen(
                 }
             }
 //            Spacer(modifier = Modifier.height(10.dp))
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp),
-            ){
-                item {
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            // TODO: Implement export functionality
-                            viewModel.editFileNameFlag.value=true
+
+// 💡 用一个 Box 包裹 LazyColumn，以便在底部叠加渐变阴影
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // 让它填满视频下方剩余的空间
+            ) {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp),
+                ){
+                    item {
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                // TODO: Implement export functionality
+                                viewModel.editFileNameFlag.value=true
+                            }
+                        )
+                        {
+                            Text(stringResource(id = R.string.export))
                         }
-                    )
-                    {
-                        Text(stringResource(id = R.string.export))
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.distance_from_the_left_side)}:${"%.2f".format(viewModel.crop_start*100)}%")
-                    }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            Spacer(modifier = Modifier.width(20.dp))
+                            Text(text = "${stringResource(id = R.string.distance_from_the_left_side)}:${"%.2f".format(viewModel.crop_start*100)}%")
+                        }
 
-                    Slider(
-                        value = viewModel.crop_start,
-                        onValueChange = {
-                            val new_rect=viewModel.crop_rect.copy(
-                                start = viewModel.video_rect.start + viewModel.video_rect.width * it
-                            )
-                            if(
-                                new_rect.start+new_rect.width<=viewModel.video_rect.start+viewModel.video_rect.width
+                        Slider(
+                            value = viewModel.crop_start,
+                            onValueChange = {
+                                val new_rect=viewModel.crop_rect.copy(
+                                    start = viewModel.video_rect.start + viewModel.video_rect.width * it
+                                )
+                                if(
+                                    new_rect.start+new_rect.width<=viewModel.video_rect.start+viewModel.video_rect.width
                                 ){
-                                viewModel.crop_start = it
-                                viewModel.crop_rect =new_rect
-                            } },
-                        thumb = {
-                            SliderDefaults.Thumb(
-                                interactionSource = remember { MutableInteractionSource() },
-                                thumbSize = DpSize(24.dp, 24.dp),
-                                // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
-                                colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                            )
-                        },
-                        // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
-                        track = { sliderState ->
-                            SliderDefaults.Track(
-                                colors = SliderDefaults.colors().copy(
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                ),
-                                sliderState = sliderState,
-                                thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        valueRange = 0f..1f,
+                                    viewModel.crop_start = it
+                                    viewModel.crop_rect =new_rect
+                                } },
+                            thumb = {
+                                SliderDefaults.Thumb(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    thumbSize = DpSize(24.dp, 24.dp),
+                                    // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
+                                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                                )
+                            },
+                            // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    colors = SliderDefaults.colors().copy(
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                                    ),
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            valueRange = 0f..1f,
 //                        steps = 100,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.distance_from_the_top)}:${"%.2f".format(viewModel.crop_top*100)}%")
-                    }
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            Spacer(modifier = Modifier.width(20.dp))
+                            Text(text = "${stringResource(id = R.string.distance_from_the_top)}:${"%.2f".format(viewModel.crop_top*100)}%")
+                        }
 
-                    Slider(
-                        value = viewModel.crop_top,
-                        onValueChange = {
-                            val new_rect=viewModel.crop_rect.copy(
-                                top =  viewModel.video_rect.top + viewModel.video_rect.height * it
-                            )
-                            if(
-                                new_rect.top+new_rect.height<=viewModel.video_rect.top+viewModel.video_rect.height
-                            ) {
-                                viewModel.crop_top = it
-                                viewModel.crop_rect = new_rect
-                            }
-                        },
-                        thumb = {
-                            SliderDefaults.Thumb(
-                                interactionSource = remember { MutableInteractionSource() },
-                                thumbSize = DpSize(24.dp, 24.dp),
-                                // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
-                                colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                            )
-                        },
-                        // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
-                        track = { sliderState ->
-                            SliderDefaults.Track(
-                                colors = SliderDefaults.colors().copy(
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                ),
-                                sliderState = sliderState,
-                                thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        valueRange = 0f..1f,
+                        Slider(
+                            value = viewModel.crop_top,
+                            onValueChange = {
+                                val new_rect=viewModel.crop_rect.copy(
+                                    top =  viewModel.video_rect.top + viewModel.video_rect.height * it
+                                )
+                                if(
+                                    new_rect.top+new_rect.height<=viewModel.video_rect.top+viewModel.video_rect.height
+                                ) {
+                                    viewModel.crop_top = it
+                                    viewModel.crop_rect = new_rect
+                                }
+                            },
+                            thumb = {
+                                SliderDefaults.Thumb(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    thumbSize = DpSize(24.dp, 24.dp),
+                                    // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
+                                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                                )
+                            },
+                            // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    colors = SliderDefaults.colors().copy(
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                                    ),
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            valueRange = 0f..1f,
 //                        steps = 100,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.width)}:${"%.2f".format(viewModel.crop_width*100)}%")
-                    }
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            Spacer(modifier = Modifier.width(20.dp))
+                            Text(text = "${stringResource(id = R.string.width)}:${"%.2f".format(viewModel.crop_width*100)}%")
+                        }
 
-                    Slider(
-                        value = viewModel.crop_width,
-                        onValueChange = {
-                            val new_rect=viewModel.crop_rect.copy(
-                                width = viewModel.video_rect.width * it
-                            )
-                            if(new_rect.start+new_rect.width<=viewModel.video_rect.start+viewModel.video_rect.width){
-                                viewModel.crop_width = it
-                                viewModel.crop_rect =new_rect
-                            }
-                        },
-                        thumb = {
-                            SliderDefaults.Thumb(
-                                interactionSource = remember { MutableInteractionSource() },
-                                thumbSize = DpSize(24.dp, 24.dp),
-                                // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
-                                colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                            )
-                        },
-                        // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
-                        track = { sliderState ->
-                            SliderDefaults.Track(
-                                colors = SliderDefaults.colors().copy(
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                ),
-                                sliderState = sliderState,
-                                thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        valueRange = 0f..1f,
+                        Slider(
+                            value = viewModel.crop_width,
+                            onValueChange = {
+                                val new_rect=viewModel.crop_rect.copy(
+                                    width = viewModel.video_rect.width * it
+                                )
+                                if(new_rect.start+new_rect.width<=viewModel.video_rect.start+viewModel.video_rect.width){
+                                    viewModel.crop_width = it
+                                    viewModel.crop_rect =new_rect
+                                }
+                            },
+                            thumb = {
+                                SliderDefaults.Thumb(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    thumbSize = DpSize(24.dp, 24.dp),
+                                    // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
+                                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                                )
+                            },
+                            // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    colors = SliderDefaults.colors().copy(
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                                    ),
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            valueRange = 0f..1f,
 //                        steps = 100,
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = "${stringResource(id = R.string.height)}:${"%.2f".format(viewModel.crop_height*100)}%")
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            Spacer(modifier = Modifier.width(20.dp))
+                            Text(text = "${stringResource(id = R.string.height)}:${"%.2f".format(viewModel.crop_height*100)}%")
+                        }
+                        Slider(
+                            value = viewModel.crop_height,
+                            onValueChange = {
+                                val new_rect=viewModel.crop_rect.copy(
+                                    height = viewModel.video_rect.height * it
+                                )
+                                if( new_rect.top+new_rect.height<=viewModel.video_rect.top+viewModel.video_rect.height ) {
+                                    viewModel.crop_height = it
+                                    viewModel.crop_rect = new_rect
+                                }
+                            },
+                            thumb = {
+                                SliderDefaults.Thumb(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    thumbSize = DpSize(24.dp, 24.dp),
+                                    // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
+                                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                                )
+                            },
+                            // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    colors = SliderDefaults.colors().copy(
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                                    ),
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            valueRange = 0f..1f,
+//                        steps = 100,
+                        )
                     }
-                    Slider(
-                        value = viewModel.crop_height,
-                        onValueChange = {
-                            val new_rect=viewModel.crop_rect.copy(
-                                height = viewModel.video_rect.height * it
-                            )
-                            if( new_rect.top+new_rect.height<=viewModel.video_rect.top+viewModel.video_rect.height ) {
-                                viewModel.crop_height = it
-                                viewModel.crop_rect = new_rect
-                            }
-                        },
-                        thumb = {
-                            SliderDefaults.Thumb(
-                                interactionSource = remember { MutableInteractionSource() },
-                                thumbSize = DpSize(24.dp, 24.dp),
-                                // 💡 修复方案 A：不写参数名，直接把主题色塞给第一个参数 (thumbColor)
-                                colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                            )
-                        },
-                        // 💥 核心：覆盖默认轨道，强制关闭镂空缝隙！
-                        track = { sliderState ->
-                            SliderDefaults.Track(
-                                colors = SliderDefaults.colors().copy(
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                ),
-                                sliderState = sliderState,
-                                thumbTrackGapSize = 0.dp // 👈 就是这个罪魁祸首！把它设为 0.dp，缝隙瞬间闭合。
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        valueRange = 0f..1f,
-//                        steps = 100,
-                    )
                 }
+// 🌟 核心：底部渐变阴影遮罩（视觉滚动提示器）
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp) // 渐变条的高度
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.95f) // 渐变过渡到当前页面的背景色
+                                )
+                            )
+                        )
+                )
             }
 
         }
@@ -373,12 +399,12 @@ fun VideoCropScreen(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
-//                CircularProgressIndicator(
-//                    modifier = Modifier.width(64.dp),
-//                    color = MaterialTheme.colorScheme.secondary,
-//                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-//                )
-            Text(context.getString(R.string.wait), textAlign = TextAlign.Center) // More informative message
+                CircularProgressIndicator(
+                    modifier = Modifier.width(64.dp),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+//            Text(context.getString(R.string.wait), textAlign = TextAlign.Center) // More informative message
         }
     }
     editFileName(file, nextDestination, viewModel)
@@ -436,7 +462,7 @@ private fun startExportVideo(
         && FormatsUtils.FullySupportsFormatsConfigs[file.extension.uppercase()]!!.videoCodecs.contains("H.264(AVC)")){
         cmd_str+=" -vcodec libx264 -preset ultrafast -q:v 5"
     }
-    cmd_str+=" -vf crop=iw*${viewModel.crop_width}:ih*${viewModel.crop_height}:iw*${viewModel.crop_start}:ih*${viewModel.crop_height}"
+    cmd_str+=" -vf crop=iw*${viewModel.crop_width}:ih*${viewModel.crop_height}:iw*${viewModel.crop_start}:ih*${viewModel.crop_top}"
     cmd_str+=" output_file"
     Log.d(TAG,"ffmpeg cmd:${cmd_str}")
     val command_arg_list=cmd_str.trim().split("[\\s\\n]+".toRegex())

@@ -1,8 +1,6 @@
 package com.example.audioandvideoeditor.components
 
 import PermissionsScreen
-import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,15 +22,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState // 补充缺失的导入
 import androidx.navigation.compose.rememberNavController
-import com.example.audioandvideoeditor.AdResultActivity
 import com.example.audioandvideoeditor.R
-import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.navigation.navigateSingleTopTo
 import com.example.audioandvideoeditor.showAdResultActivity
@@ -51,6 +46,7 @@ import com.example.audioandvideoeditor.ui.videocompress.VideoCompressScreen
 import com.example.audioandvideoeditor.ui.videocrop.VideoCropScreen
 import com.example.audioandvideoeditor.ui.videomute.VideoMuteScreen
 import com.example.audioandvideoeditor.ui.videoplay.VideoPlayScreen
+import com.example.audioandvideoeditor.ui.videoregion.VideoRegionEditScreen
 import com.example.audioandvideoeditor.ui.videosegmenter.VideoSegmenterScreen
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.viewmodel.AdViewModel
@@ -157,6 +153,24 @@ fun HomeScreen(
             }
             composable(Destination.FileSelection2.route) {
                 FileSelectionScreen(
+                    backDestination = { homeNavController.popBackStack() },
+                    onFilesSelected = { homeViewModel.path_or_uri2 = it[0].path },
+                    nextDestination =
+//                        homeViewModel.nextDestination
+                        {
+                            // 核心优化点：文件选完了，直接在顶层读取刚才存的标志位
+                            val nextRoute = homeViewModel.target_route
+                            if (nextRoute.isNotEmpty()) {
+                                // 精准去往目标剪辑页面（如视频裁剪页），完全不需要借助任何复杂闭包！
+                                homeNavController.navigateSingleTopTo(nextRoute)
+                                // 消费掉该标志位，防止重复跳转
+//                                homeViewModel.target_route = ""
+                            }
+                        }
+                )
+            }
+            composable(Destination.MultiFileSelection.route) {
+                FileSelectionScreen(
                     selectionMode=1,
                     backDestination = { homeNavController.popBackStack() },
                     onFilesSelected = {
@@ -232,7 +246,6 @@ fun HomeScreen(
                 FFmpegCommandsScreen(
                     nextDestination = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
-//                        homeViewModel.show_interstistial_ad = true
                         showAdResultActivity(context,0)
                         homeViewModel.file_list=null
                     },
@@ -240,8 +253,6 @@ fun HomeScreen(
                         homeNavController.navigateSingleTopTo(it)
                     },
                     setNextToNextDestination = {
-//                        homeViewModel.nextDestination =
-//                            { homeNavController.navigateSingleTopTo(it) }
                         homeViewModel.target_route=it
                     },
                     file_list = homeViewModel.file_list
@@ -365,6 +376,23 @@ fun HomeScreen(
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
                         showAdResultActivity(context,0)
                     }
+                )
+            }
+
+            composable(Destination.VideoRegion.route) {
+                VideoRegionEditScreen(
+                    file = File(homeViewModel.path_or_uri),
+                    nextDestination = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                    },
+                    onNavigateToFilePicker = {
+                        homeNavController.navigateSingleTopTo(it)
+                    },//功能内部点击文件选择器图标后跳转的页面（就是跳到文件选择器页面）
+                    onSaveReturnRoute = {
+                        homeViewModel.target_route=it
+                    },//文件选择器页面选择好文件后要跳转的页面（就是自己）
+                    watermarkFile =if(homeViewModel.path_or_uri2.isEmpty()) null else File(homeViewModel.path_or_uri2)//文件选择器页面选好的文件（默认为null,没选时就是null）
                 )
             }
 

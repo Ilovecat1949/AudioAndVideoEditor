@@ -19,6 +19,44 @@ class VideoSegmenterViewModel : ViewModel() {
         currentVideoUri = uri
     }
     var initialize_source_flag by mutableStateOf(false)
+
+// 在 VideoSegmenterViewModel 类中添加以下属性和方法：
+
+    var startTimeStepText by mutableStateOf("1.0")
+    var endTimeStepText by mutableStateOf("1.0")
+
+    /**
+     * 精准调整开始时间（单位：秒）
+     * 包含严格的边界保护：不能小于 0，且不能超过当前的结束时间
+     */
+    fun adjustStartTime(deltaSeconds: Float) {
+        val durationMs = getDuration()
+        if (durationMs <= 0L) return
+        val durationSec = durationMs / 1000f
+        val currentStartSec = startTime * durationSec
+
+        // 安全夹逼：0 <= 新开始时间 <= 当前结束时间
+        val newStartSec = (currentStartSec + deltaSeconds).coerceIn(0f, endTime * durationSec)
+        startTime = newStartSec / durationSec
+        seekToFraction(startTime)
+    }
+
+    /**
+     * 精准调整结束时间（单位：秒）
+     * 包含严格的边界保护：不能小于当前的开始时间，且不能超过视频总时长
+     */
+    fun adjustEndTime(deltaSeconds: Float) {
+        val durationMs = getDuration()
+        if (durationMs <= 0L) return
+        val durationSec = durationMs / 1000f
+        val currentEndSec = endTime * durationSec
+
+        // 安全夹逼：当前开始时间 <= 新结束时间 <= 总时长
+        val newEndSec = (currentEndSec + deltaSeconds).coerceIn(startTime * durationSec, durationSec)
+        endTime = newEndSec / durationSec
+        seekToFraction(endTime)
+    }
+
     fun initializeSource(context: Context) {
         if (exoPlayer == null && currentVideoUri != null) {
             exoPlayer = ExoPlayer.Builder(context).build().apply {

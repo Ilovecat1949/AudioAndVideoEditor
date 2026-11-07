@@ -446,4 +446,24 @@ Email: running_in_storm@qq.com\n
     <string name="prefix_example_hint">e.g., prefix -> prefix_1.mp4</string>
     <string name="batch_execute_tasks">Batch Execute (%d Tasks)</string>
     <string name="deinterlace">Deinterlace</string>
+
+
+    <!-- 视频精准微调相关文案 -->
+    <string name="decrease">Decrease</string>
+    <string name="increase">Increase</string>
+    <string name="step_seconds">Step (s)</string>
+
+    <string name="invalid_step_input">Please enter a valid step value</string>
+
+    <string name="mode_crop">Crop</string>
+    <string name="mode_remove_watermark">Remove Watermark</string>
+    <string name="mode_add_mosaic">Add Mosaic</string>
+
+    <string name="feature_region_edit_title">Video Region Edit</string>
+    <string name="feature_region_edit_desc">Crop, Remove Watermark, Add Mosaic</string>
+
+    <string name="mode_add_watermark">Add Watermark</string>
+
+    <string name="watermark_invalid_file_tip">The selected file is not a valid image. Default watermark applied.</string>
+    <string name="watermark_select">Select Watermark</string>
 </resources>

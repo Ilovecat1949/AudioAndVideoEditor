@@ -240,7 +240,7 @@ private fun SimpleCommandsEditor(
                             color = MaterialTheme.colorScheme.primary
                         )
                         IconButton(onClick = {
-                            goDestination(Destination.FileSelection2.route)
+                            goDestination(Destination.MultiFileSelection.route)
                             setNextToNextDestination(Destination.FFmpegCommands.route)
                         }) {
                             Icon(
