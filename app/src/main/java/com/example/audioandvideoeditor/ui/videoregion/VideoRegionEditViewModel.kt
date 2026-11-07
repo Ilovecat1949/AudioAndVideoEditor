@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
@@ -143,6 +145,39 @@ class VideoRegionEditViewModel : ViewModel() {
         }
         BitmapFactory.decodeFile(filePath, options)
         return options.outWidth > 0 && options.outHeight > 0
+    }
+
+// 在 VideoRegionEditViewModel 类中新增：
+
+    var watermarkImageBitmap by mutableStateOf<ImageBitmap?>(null)
+        private set
+
+    /**
+     * 加载水印图片文件为 Compose ImageBitmap 供 Canvas 渲染
+     */
+    fun loadWatermarkBitmap(watermarkFile: File) {
+        try {
+            if (watermarkFile.exists()) {
+                val bitmap = BitmapFactory.decodeFile(watermarkFile.path)
+                watermarkImageBitmap = bitmap?.asImageBitmap()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            watermarkImageBitmap = null
+        }
+    }
+
+    // 🌟 新增：水印缩放模式枚举
+    enum class WatermarkScaleMode {
+        FIT,      // 等比例适应，居中显示，允许留白（默认）
+        STRETCH   // 强行拉伸，填满方框
+    }
+
+    var watermarkScaleMode by mutableStateOf(WatermarkScaleMode.FIT)
+        private set
+
+    fun setWatermarkScaleMode(mode: WatermarkScaleMode) {
+        watermarkScaleMode = mode
     }
 }
 

@@ -56,6 +56,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -103,7 +105,8 @@ fun VideoRegionEditScreen(
     }
     val configuration = LocalConfiguration.current
     viewModel.screenWidth = configuration.screenWidthDp
-    viewModel.screenHeight = configuration.screenHeightDp * 1 / 2
+    // 调整预览区高度比例，给下方的控制面板留出充裕的黄金操作空间
+    viewModel.screenHeight = (configuration.screenHeightDp * 0.42f).toInt()
 
     val borderColor = Color.White
     val density = LocalDensity.current.density
@@ -148,7 +151,6 @@ fun VideoRegionEditScreen(
             if (viewModel.isValidImageFile(watermarkFile.path)) {
                 watermarkFile
             } else {
-                // 校验失败，触发 Snackbar 提示并兜底使用默认水印
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.watermark_invalid_file_tip)
@@ -160,49 +162,25 @@ fun VideoRegionEditScreen(
             defaultFile
         }
     }
-// 用 Scaffold 包裹原有结构以支持 SnackbarHost
+    // 🌟 实时加载水印 Bitmap
+    LaunchedEffect(effectiveWatermarkFile) {
+        viewModel.loadWatermarkBitmap(effectiveWatermarkFile)
+    }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        if (viewModel.initializeSourceFlag)
-        {
+        if (viewModel.initializeSourceFlag) {
             Column(
-                modifier = Modifier.fillMaxSize()
-                .padding(paddingValues)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
             ) {
-
-                // 🌟 顶部模式切换 Segmented Buttons / Chips
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    VideoRegionEditViewModel.EditMode.values().forEach { mode ->
-                        FilterChip(
-                            selected = viewModel.currentMode == mode,
-                            onClick = {
-                                viewModel.switchMode(mode)
-                            },
-                            label = {
-                                Text(
-                                    when (mode) {
-                                        VideoRegionEditViewModel.EditMode.CROP -> stringResource(R.string.mode_crop)
-                                        VideoRegionEditViewModel.EditMode.WATERMARK_REMOVE -> stringResource(R.string.mode_remove_watermark)
-                                        VideoRegionEditViewModel.EditMode.MOSAIC_ADD -> stringResource(R.string.mode_add_mosaic)
-                                        VideoRegionEditViewModel.EditMode.WATERMARK_ADD -> stringResource(R.string.mode_add_watermark) // 👈 新增
-                                    }
-                                )
-                            }
-                        )
-                    }
-                }
-
-                // 预览播放器与框选 Canvas
+                // 1. 黄金上部：预览播放器与框选 Canvas
                 Box(
                     modifier = Modifier
                         .width(viewModel.screenWidth.dp)
                         .height(viewModel.screenHeight.dp)
+                        .background(Color.Black)
                 ) {
                     if (viewModel.currentVideoUri != null && videoReady) {
                         AndroidView(
@@ -227,205 +205,119 @@ fun VideoRegionEditScreen(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .width(viewModel.screenWidth.dp)
-                                .height(viewModel.screenHeight.dp)
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             CircularProgressIndicator(
-                                modifier = Modifier.width(64.dp),
+                                modifier = Modifier.width(48.dp),
                                 color = MaterialTheme.colorScheme.secondary,
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             )
                         }
                     }
                     Canvas(modifier = Modifier.fillMaxSize()) {
+                        val left = viewModel.regionRect.start * density
+                        val top = viewModel.regionRect.top * density
+                        val width = viewModel.regionRect.width * density
+                        val height = viewModel.regionRect.height * density
+
+                        // 🌟 如果是水印添加模式，且已加载了图片位图，则在框内实时渲染图片
+                        if (viewModel.currentMode == VideoRegionEditViewModel.EditMode.WATERMARK_ADD &&
+                            viewModel.watermarkImageBitmap != null) {
+                            val bitmap = viewModel.watermarkImageBitmap!!
+                            drawImage(
+                                image = bitmap,
+                                dstOffset = IntOffset(left.toInt(), top.toInt()),
+                                dstSize = IntSize(width.toInt(), height.toInt())
+                            )
+                        }
+
+                        // 绘制外层白色的框选描边，保持操作可见性
                         drawRect(
                             color = borderColor,
-                            topLeft = Offset(viewModel.regionRect.start * density, viewModel.regionRect.top * density),
-                            size = Size(viewModel.regionRect.width * density, viewModel.regionRect.height * density),
+                            topLeft = Offset(left, top),
+                            size = Size(width, height),
                             style = Stroke(width = 2f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
                         )
                     }
                 }
 
-                // 下方滑块控制面板
+                // 2. 核心操作下沉区：导出按钮紧贴预览下方，大拇指极易触达
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { viewModel.editFileNameFlag.value = true }
+                    ) {
+                        Text(stringResource(id = R.string.export))
+                    }
+                }
+
+                // 3. 中部：一级功能切换 Tab (Segmented Chips)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    VideoRegionEditViewModel.EditMode.values().forEach { mode ->
+                        FilterChip(
+                            selected = viewModel.currentMode == mode,
+                            onClick = { viewModel.switchMode(mode) },
+                            label = {
+                                Text(
+                                    when (mode) {
+                                        VideoRegionEditViewModel.EditMode.CROP -> stringResource(R.string.mode_crop)
+                                        VideoRegionEditViewModel.EditMode.WATERMARK_REMOVE -> stringResource(R.string.mode_remove_watermark)
+                                        VideoRegionEditViewModel.EditMode.MOSAIC_ADD -> stringResource(R.string.mode_add_mosaic)
+                                        VideoRegionEditViewModel.EditMode.WATERMARK_ADD -> stringResource(R.string.mode_add_watermark)
+                                    }
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // 4. 下方：动态属性面板容器 (Inspector Panel)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
                     LazyColumn(
-                        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
                     ) {
                         item {
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { viewModel.editFileNameFlag.value = true }
-                            ) {
-                                Text(stringResource(id = R.string.export))
-                            }
-                            if (viewModel.currentMode == VideoRegionEditViewModel.EditMode.WATERMARK_ADD) {
-                                OutlinedButton(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = {
-                                        // 触发内部文件选择
-                                        onNavigateToFilePicker(Destination.FileSelection2.route)
-                                        onSaveReturnRoute(Destination.VideoRegion.route)
+                            // 🌟 动态面板：根据当前模式展示专属控制项
+                            when (viewModel.currentMode) {
+                                VideoRegionEditViewModel.EditMode.WATERMARK_ADD -> {
+                                     // 🟢 优化后的清爽居中/紧凑按钮
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                onNavigateToFilePicker(Destination.FileSelection2.route)
+                                                onSaveReturnRoute(Destination.VideoRegion.route)
+                                            },
+                                            // 可以通过 contentPadding 让按钮显得更轻量精致
+                                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
+                                        ) {
+                                            Text(stringResource(R.string.watermark_select))
+                                        }
                                     }
-                                ) {
-                                    Text(stringResource(R.string.watermark_select))
+                                    Spacer(modifier = Modifier.height(16.dp))
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
+                                else -> {
+                                    // 其他模式暂不需要额外按钮，预留给未来扩展（如马赛克颗粒度调节等）
+                                }
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
 
-                            // 1. 左边距
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "${stringResource(id = R.string.distance_from_the_left_side)}:${"%.2f".format(viewModel.regionStart * 100)}%")
-                            }
-                            Slider(
-                                value = viewModel.regionStart,
-                                onValueChange = {
-                                    val newRect = viewModel.regionRect.copy(
-                                        start = viewModel.videoRect.start + viewModel.videoRect.width * it
-                                    )
-                                    if (newRect.start + newRect.width <= viewModel.videoRect.start + viewModel.videoRect.width) {
-                                        viewModel.regionStart = it
-                                        viewModel.regionRect = newRect
-                                    }
-                                },
-                                thumb = {
-                                    SliderDefaults.Thumb(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        thumbSize = DpSize(24.dp, 24.dp),
-                                        colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                                    )
-                                },
-                                track = { sliderState ->
-                                    SliderDefaults.Track(
-                                        colors = SliderDefaults.colors().copy(
-                                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                                            inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                        ),
-                                        sliderState = sliderState,
-                                        thumbTrackGapSize = 0.dp
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                valueRange = 0f..1f
-                            )
-
-                            // 2. 上边距
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "${stringResource(id = R.string.distance_from_the_top)}:${"%.2f".format(viewModel.regionTop * 100)}%")
-                            }
-                            Slider(
-                                value = viewModel.regionTop,
-                                onValueChange = {
-                                    val newRect = viewModel.regionRect.copy(
-                                        top = viewModel.videoRect.top + viewModel.videoRect.height * it
-                                    )
-                                    if (newRect.top + newRect.height <= viewModel.videoRect.top + viewModel.videoRect.height) {
-                                        viewModel.regionTop = it
-                                        viewModel.regionRect = newRect
-                                    }
-                                },
-                                thumb = {
-                                    SliderDefaults.Thumb(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        thumbSize = DpSize(24.dp, 24.dp),
-                                        colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                                    )
-                                },
-                                track = { sliderState ->
-                                    SliderDefaults.Track(
-                                        colors = SliderDefaults.colors().copy(
-                                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                                            inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                        ),
-                                        sliderState = sliderState,
-                                        thumbTrackGapSize = 0.dp
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                valueRange = 0f..1f
-                            )
-
-                            // 3. 宽度
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "${stringResource(id = R.string.width)}:${"%.2f".format(viewModel.regionWidth * 100)}%")
-                            }
-                            Slider(
-                                value = viewModel.regionWidth,
-                                onValueChange = {
-                                    val newRect = viewModel.regionRect.copy(
-                                        width = viewModel.videoRect.width * it
-                                    )
-                                    if (newRect.start + newRect.width <= viewModel.videoRect.start + viewModel.videoRect.width) {
-                                        viewModel.regionWidth = it
-                                        viewModel.regionRect = newRect
-                                    }
-                                },
-                                thumb = {
-                                    SliderDefaults.Thumb(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        thumbSize = DpSize(24.dp, 24.dp),
-                                        colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                                    )
-                                },
-                                track = { sliderState ->
-                                    SliderDefaults.Track(
-                                        colors = SliderDefaults.colors().copy(
-                                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                                            inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                        ),
-                                        sliderState = sliderState,
-                                        thumbTrackGapSize = 0.dp
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                valueRange = 0f..1f
-                            )
-
-                            // 4. 高度
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(20.dp))
-                                Text(text = "${stringResource(id = R.string.height)}:${"%.2f".format(viewModel.regionHeight * 100)}%")
-                            }
-                            Slider(
-                                value = viewModel.regionHeight,
-                                onValueChange = {
-                                    val newRect = viewModel.regionRect.copy(
-                                        height = viewModel.videoRect.height * it
-                                    )
-                                    if (newRect.top + newRect.height <= viewModel.videoRect.top + viewModel.videoRect.height) {
-                                        viewModel.regionHeight = it
-                                        viewModel.regionRect = newRect
-                                    }
-                                },
-                                thumb = {
-                                    SliderDefaults.Thumb(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        thumbSize = DpSize(24.dp, 24.dp),
-                                        colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
-                                    )
-                                },
-                                track = { sliderState ->
-                                    SliderDefaults.Track(
-                                        colors = SliderDefaults.colors().copy(
-                                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                                            inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                        ),
-                                        sliderState = sliderState,
-                                        thumbTrackGapSize = 0.dp
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                valueRange = 0f..1f
-                            )
+                            // 通用几何区域调整滑块组 (Crop, Remove, Mosaic, Watermark 均需定位)
+                            RegionTransformSliders(viewModel = viewModel)
                         }
                     }
 
@@ -433,7 +325,7 @@ fun VideoRegionEditScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(32.dp)
+                            .height(24.dp)
                             .align(Alignment.BottomCenter)
                             .background(
                                 Brush.verticalGradient(
@@ -446,12 +338,12 @@ fun VideoRegionEditScreen(
                     )
                 }
             }
-        }
-        else {
+        } else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxSize()
                     .padding(paddingValues)
             ) {
                 CircularProgressIndicator(
@@ -461,10 +353,172 @@ fun VideoRegionEditScreen(
                 )
             }
         }
-
     }
 
-    EditFileNameDialog(file, effectiveWatermarkFile,nextDestination, viewModel)
+    EditFileNameDialog(file, effectiveWatermarkFile, nextDestination, viewModel)
+}
+
+/**
+ * 封装的几何区域调整滑块组件（左边距、上边距、宽度、高度）
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RegionTransformSliders(viewModel: VideoRegionEditViewModel) {
+    Column {
+        // 1. 左边距
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "${stringResource(id = R.string.distance_from_the_left_side)}:${"%.2f".format(viewModel.regionStart * 100)}%")
+        }
+        Slider(
+            value = viewModel.regionStart,
+            onValueChange = {
+                val newRect = viewModel.regionRect.copy(
+                    start = viewModel.videoRect.start + viewModel.videoRect.width * it
+                )
+                if (newRect.start + newRect.width <= viewModel.videoRect.start + viewModel.videoRect.width) {
+                    viewModel.regionStart = it
+                    viewModel.regionRect = newRect
+                }
+            },
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = remember { MutableInteractionSource() },
+                    thumbSize = DpSize(24.dp, 24.dp),
+                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    colors = SliderDefaults.colors().copy(
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                    ),
+                    sliderState = sliderState,
+                    thumbTrackGapSize = 0.dp
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..1f
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // 2. 上边距
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "${stringResource(id = R.string.distance_from_the_top)}:${"%.2f".format(viewModel.regionTop * 100)}%")
+        }
+        Slider(
+            value = viewModel.regionTop,
+            onValueChange = {
+                val newRect = viewModel.regionRect.copy(
+                    top = viewModel.videoRect.top + viewModel.videoRect.height * it
+                )
+                if (newRect.top + newRect.height <= viewModel.videoRect.top + viewModel.videoRect.height) {
+                    viewModel.regionTop = it
+                    viewModel.regionRect = newRect
+                }
+            },
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = remember { MutableInteractionSource() },
+                    thumbSize = DpSize(24.dp, 24.dp),
+                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    colors = SliderDefaults.colors().copy(
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                    ),
+                    sliderState = sliderState,
+                    thumbTrackGapSize = 0.dp
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..1f
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // 3. 宽度
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "${stringResource(id = R.string.width)}:${"%.2f".format(viewModel.regionWidth * 100)}%")
+        }
+        Slider(
+            value = viewModel.regionWidth,
+            onValueChange = {
+                val newRect = viewModel.regionRect.copy(
+                    width = viewModel.videoRect.width * it
+                )
+                if (newRect.start + newRect.width <= viewModel.videoRect.start + viewModel.videoRect.width) {
+                    viewModel.regionWidth = it
+                    viewModel.regionRect = newRect
+                }
+            },
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = remember { MutableInteractionSource() },
+                    thumbSize = DpSize(24.dp, 24.dp),
+                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    colors = SliderDefaults.colors().copy(
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                    ),
+                    sliderState = sliderState,
+                    thumbTrackGapSize = 0.dp
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..1f
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // 4. 高度
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "${stringResource(id = R.string.height)}:${"%.2f".format(viewModel.regionHeight * 100)}%")
+        }
+        Slider(
+            value = viewModel.regionHeight,
+            onValueChange = {
+                val newRect = viewModel.regionRect.copy(
+                    height = viewModel.videoRect.height * it
+                )
+                if (newRect.top + newRect.height <= viewModel.videoRect.top + viewModel.videoRect.height) {
+                    viewModel.regionHeight = it
+                    viewModel.regionRect = newRect
+                }
+            },
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = remember { MutableInteractionSource() },
+                    thumbSize = DpSize(24.dp, 24.dp),
+                    colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    colors = SliderDefaults.colors().copy(
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                    ),
+                    sliderState = sliderState,
+                    thumbTrackGapSize = 0.dp
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..1f
+        )
+    }
 }
 
 @Composable
@@ -515,7 +569,6 @@ private fun startExportVideo(
 ) {
     var cmdStr = "ffmpeg -i input_file "
 
-    // 🌟 如果是水印模式且选了图片，追加第二个输入源
     if (viewModel.currentMode == VideoRegionEditViewModel.EditMode.WATERMARK_ADD) {
         cmdStr += "-i watermark_file "
     }
@@ -527,13 +580,11 @@ private fun startExportVideo(
         cmdStr += " -vcodec libx264 -preset ultrafast -q:v 5"
     }
 
-    // 换算绝对像素
     val w = (viewModel.info.width * viewModel.regionWidth).toInt()
     val h = (viewModel.info.height * viewModel.regionHeight).toInt()
     val x = (viewModel.info.width * viewModel.regionStart).toInt()
     val y = (viewModel.info.height * viewModel.regionTop).toInt()
 
-    // 🌟 根据模式拼装 FFmpeg 参数
     when (viewModel.currentMode) {
         VideoRegionEditViewModel.EditMode.CROP -> {
             cmdStr += " -vf crop=iw*${viewModel.regionWidth}:ih*${viewModel.regionHeight}:iw*${viewModel.regionStart}:ih*${viewModel.regionTop}"
@@ -545,8 +596,8 @@ private fun startExportVideo(
             cmdStr += " -filter_complex [0:v]split[base][m];[m]crop=$w:$h:$x:$y,scale=iw/10:-1:flags=neighbor,scale=$w:$h:flags=neighbor[mosaic];[base][mosaic]overlay=$x:$y"
         }
         VideoRegionEditViewModel.EditMode.WATERMARK_ADD -> {
-            // 双输入源叠加滤镜
-            cmdStr += " -filter_complex [0:v][1:v]overlay=$x:$y"
+            // 🌟 核心升级：先对第二输入源（水印）进行 scale 缩放至用户框选的 w:h，再与视频流 overlay 叠加
+            cmdStr += " -filter_complex [1:v]scale=$w:$h[wm_scaled];[0:v][wm_scaled]overlay=$x:$y"
         }
     }
 
@@ -558,7 +609,7 @@ private fun startExportVideo(
             when (it) {
                 "input_file" -> file.path
                 "output_file" -> targetPath
-                "watermark_file" -> watermarkFile.path ?:"" // 映射水印真实路径
+                "watermark_file" -> watermarkFile.path
                 else -> it
             }
         }
