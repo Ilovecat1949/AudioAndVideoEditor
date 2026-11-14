@@ -466,4 +466,56 @@ Email: running_in_storm@qq.com\n
 
     <string name="watermark_invalid_file_tip">The selected file is not a valid image. Default watermark applied.</string>
     <string name="watermark_select">Select Watermark</string>
+
+    <string name="scale_mode_fit">Fit</string>
+    <string name="scale_mode_stretch">Stretch</string>
+
+    <string name="mosaic_granularity">Mosaic Granularity</string>
+
+    <string name="preview_disclaimer">Preview is for reference only.</string>
+    <string name="preview_mosaic">The preview only shows the location and granularity of the mosaic</string>
+    <string name="img_watermark_select">Select Image Watermark</string>
+
+    <string name="template_video_concat">Multiple Videos Concat</string>
+    <string name="template_audio_video_merge">Audio &amp; Video Merge</string>
+    <string name="merge_output_option">Merge into a single output file (e.g., video concat / A&amp;V muxing)</string>
+
+
+    <!-- Audio & Video Merge -->
+    <string name="av_merge_title">Audio &amp; Video Merge</string>
+    <string name="av_merge_video_slot">Main Video</string>
+    <string name="av_merge_select_video_hint">Tap to select a video file</string>
+    <string name="av_merge_audio_slot">Background Audio / Track</string>
+    <string name="av_merge_select_audio_hint">Tap to select an audio file</string>
+    <string name="av_merge_shortest_option">Trim to shortest duration</string>
+    <string name="av_merge_shortest_desc">Prevents frozen video frames if audio is longer</string>
+    <string name="av_merge_replace_audio_option">Replace original video audio</string>
+    <string name="av_merge_output_name_label">Output File Name</string>
+    <string name="av_merge_start_btn">Start Merge</string>
+
+
+    <!-- Video or Audio Sequential Concat -->
+    <string name="media_concat_title">Video or Audio Concat</string>
+    <string name="media_concat_media_type_label">Media Type</string>
+    <string name="media_concat_type_video">Video Concat</string>
+    <string name="media_concat_type_audio">Audio Concat</string>
+    <string name="media_concat_mode_label">Concat Mode</string>
+    <string name="media_concat_mode_fast">Fast Lossless (Concat Demuxer)</string>
+    <string name="media_concat_mode_fast_desc">Instant &amp; lossless; requires identical codec, resolution, and format</string>
+    <string name="media_concat_mode_compat">Universal Compatible (Concat Filter)</string>
+    <string name="media_concat_mode_compat_desc">Re-encodes and normalizes resolution/sample rate; works with mixed formats</string>
+    <string name="media_concat_files_header">Files to Concatenate (In Order)</string>
+    <string name="media_concat_add_files_btn">Add Files</string>
+    <string name="media_concat_empty_hint">Tap the folder icon to add at least 2 files to concatenate</string>
+    <string name="media_concat_move_up">Move Up</string>
+    <string name="media_concat_move_down">Move Down</string>
+    <string name="media_concat_clear_all">Clear All</string>
+    <string name="media_concat_output_name_label">Output File Name</string>
+    <string name="media_concat_start_btn">Start Concat (%1$d files)</string>
+
+    <string name="media_concat_resolution_label">Target Canvas Resolution</string>
+    <string name="media_concat_res_auto">Smart Auto (Follow First Video)</string>
+    <string name="media_concat_res_1080p">HD 1080P (1920x1080)</string>
+    <string name="media_concat_res_720p">SD 720P (1280x720)</string>
+    <string name="media_concat_res_vertical">Vertical Short (1080x1920)</string>
 </resources>

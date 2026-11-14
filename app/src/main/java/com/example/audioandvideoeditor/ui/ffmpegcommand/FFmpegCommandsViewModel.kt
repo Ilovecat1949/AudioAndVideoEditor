@@ -23,6 +23,20 @@ class FFmpegCommandsViewModel: ViewModel()  {
     // 🌟 多输入文件列表（统一管理单选/多选）
     val selectedInputFiles = mutableStateListOf<File>()
 
+    // 🌟 新增：是否开启多文件合并模式
+    var isMergeMode by mutableStateOf(false)
+
+    fun setMergeTaskMode(enabled: Boolean) {
+        isMergeMode  = enabled
+        if (enabled) {
+            // 当勾选合并时，自动切换到包含“拼接”或“合并”的模板作为示例
+            val mergeTemplate = templates.find { it.name.contains("拼接") || it.name.contains("合并") }
+            if (mergeTemplate != null) {
+                selectTemplate(mergeTemplate)
+            }
+        }
+    }
+
     var output_file_name by mutableStateOf("")
     val extensionTemplate = listOf("mp4", "mkv", "mov", "flv", "ts", "avi", "mp3", "m4a")
     var extensionText by mutableStateOf(extensionTemplate[0])

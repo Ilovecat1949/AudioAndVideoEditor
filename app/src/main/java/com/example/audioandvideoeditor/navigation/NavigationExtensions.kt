@@ -59,8 +59,11 @@ enum class Destination(val route: String) {
     APPTest("app_test"),
     Permissions("permissions"),
     VideoCompress("video_compress"),
-    Recording("recording");
+    Recording("recording"),
+    AudioVideoMerge("audio_video_merge"),
+    MediaConcat("media_concat"),
 
+    ;
     // 扩展：导航跳转
     fun navigate(navController: NavHostController) {
         navController.navigateSingleTopTo(this.route)

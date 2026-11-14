@@ -32,11 +32,13 @@ import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.navigation.navigateSingleTopTo
 import com.example.audioandvideoeditor.showAdResultActivity
 import com.example.audioandvideoeditor.ui.avinfo.AVInfoScreen
+import com.example.audioandvideoeditor.ui.avmerge.AudioVideoMergeScreen
 import com.example.audioandvideoeditor.ui.extractaudio.ExtractAudioScreen
 import com.example.audioandvideoeditor.ui.ffmpegcommand.FFmpegCommandsScreen
 import com.example.audioandvideoeditor.ui.ffmpeginfo.FFmpegInfoScreen
 import com.example.audioandvideoeditor.ui.formatconversion.VideoFormatConversionScreen
 import com.example.audioandvideoeditor.ui.functionscenter.FunctionsCenterScreen
+import com.example.audioandvideoeditor.ui.mediaconcat.MediaConcatScreen
 import com.example.audioandvideoeditor.ui.recording.RecordingScreen
 import com.example.audioandvideoeditor.ui.speedchange.SpeedChangeScreen
 import com.example.audioandvideoeditor.ui.taskcenter.TasksCenterScreen
@@ -244,15 +246,15 @@ fun HomeScreen(
 
             composable(Destination.FFmpegCommands.route) {
                 FFmpegCommandsScreen(
-                    nextDestination = {
+                    onTaskSubmitted = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
                         showAdResultActivity(context,0)
                         homeViewModel.file_list=null
                     },
-                    goDestination = {
+                    onNavigateToFilePicker = {
                         homeNavController.navigateSingleTopTo(it)
                     },
-                    setNextToNextDestination = {
+                    onSaveReturnRoute = {
                         homeViewModel.target_route=it
                     },
                     file_list = homeViewModel.file_list
@@ -382,7 +384,7 @@ fun HomeScreen(
             composable(Destination.VideoRegion.route) {
                 VideoRegionEditScreen(
                     file = File(homeViewModel.path_or_uri),
-                    nextDestination = {
+                    onTaskSubmitted = {
                         homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
                         showAdResultActivity(context,0)
                     },
@@ -430,6 +432,40 @@ fun HomeScreen(
                 }
                 )
 //                RecordingScreenTest()
+            }
+
+            composable(Destination.AudioVideoMerge.route){
+                AudioVideoMergeScreen(
+                    onTaskSubmitted = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                        homeViewModel.path_or_uri=""
+                    },
+                    onNavigateToFilePicker = {
+                        homeNavController.navigateSingleTopTo(it)
+                    },
+                    onSaveReturnRoute = {
+                        homeViewModel.target_route=it
+                    },
+                    pickedFiles= File(homeViewModel.path_or_uri)
+                )
+            }
+
+            composable(Destination.MediaConcat.route){
+                MediaConcatScreen(
+                    onTaskSubmitted = {
+                        homeNavController.navigateSingleTopTo(Destination.TasksCenter.route)
+                        showAdResultActivity(context,0)
+                        homeViewModel.file_list =null
+                    },
+                    onNavigateToFilePicker = {
+                        homeNavController.navigateSingleTopTo(it)
+                    },
+                    onSaveReturnRoute = {
+                        homeViewModel.target_route=it
+                    },
+                    pickedFiles= homeViewModel.file_list
+                )
             }
         }
 

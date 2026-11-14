@@ -14,6 +14,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.example.audioandvideoeditor.application.AppApplication
 import com.example.audioandvideoeditor.entity.MediaInfo
 import java.io.File
+import android.graphics.Canvas
+import android.graphics.Paint
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.core.graphics.createBitmap
 
 class VideoRegionEditViewModel : ViewModel() {
 
@@ -173,11 +177,65 @@ class VideoRegionEditViewModel : ViewModel() {
         STRETCH   // 强行拉伸，填满方框
     }
 
-    var watermarkScaleMode by mutableStateOf(WatermarkScaleMode.FIT)
+    var mywatermarkScaleMode by mutableStateOf(WatermarkScaleMode.FIT)
         private set
 
     fun setWatermarkScaleMode(mode: WatermarkScaleMode) {
-        watermarkScaleMode = mode
+        mywatermarkScaleMode = mode
+    }
+
+    // === 马赛克占位图相关 ===
+    var mymosaicGranularity by mutableIntStateOf(10)
+        private set
+    // 马赛克平铺单元（2*k x 2*k 的灰度棋盘格，用于 BitmapShader 无缝平铺）
+    var mosaicTileBitmap by mutableStateOf<android.graphics.Bitmap?>(null)
+        private set
+
+    fun setMosaicGranularity(k: Int) {
+        mymosaicGranularity = k.coerceIn(3, 50)
+        updateMosaicTexture()
+    }
+
+    private fun updateMosaicTexture() {
+        mosaicTileBitmap = generateMosaicTile(mymosaicGranularity)
+    }
+
+    /**
+     * 生成一个平铺单元 Bitmap（2*blockSize x 2*blockSize）
+     * 用 BitmapShader(TileMode.REPEAT) 平铺后，每个色块精确等于 k x k 像素，
+     * 与 FFmpeg 的 scale=iw/k:-1 + neighbor 效果一致。
+     */
+    private fun generateMosaicTile(k: Int): android.graphics.Bitmap? {
+        val blockSize = k.coerceAtLeast(1)
+        // 2x2 个色块组成一个重复单元，确保平铺无缝
+        val tileSize = blockSize * 2
+        val bmp = android.graphics.Bitmap.createBitmap(
+            tileSize, tileSize, android.graphics.Bitmap.Config.ARGB_8888
+        ) ?: return null
+        val canvas = Canvas(bmp)
+        val paint = Paint()
+
+        // 2级灰度交替（棋盘格图案）
+        val grayLight = 0xFFD0D0D0.toInt()
+        val grayDark = 0xFF808080.toInt()
+
+        for (x in 0 until tileSize step blockSize) {
+            for (y in 0 until tileSize step blockSize) {
+                val colorIndex = ((x / blockSize) + (y / blockSize)) % 2
+                paint.color = if (colorIndex == 0) grayLight else grayDark
+                canvas.drawRect(
+                    x.toFloat(), y.toFloat(),
+                    (x + blockSize).toFloat(), (y + blockSize).toFloat(),
+                    paint
+                )
+            }
+        }
+
+        return bmp
+    }
+
+    init {
+        updateMosaicTexture()
     }
 }
 

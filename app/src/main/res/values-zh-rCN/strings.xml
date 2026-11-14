@@ -461,4 +461,57 @@
 
     <string name="watermark_invalid_file_tip">所选文件不是有效的图片，已为您自动应用默认水印</string>
     <string name="watermark_select">选择水印</string>
+
+    <string name="scale_mode_fit">等比例适应</string>
+    <string name="scale_mode_stretch">强行拉伸</string>
+
+    <string name="mosaic_granularity">马赛克颗粒度</string>
+
+    <string name="preview_disclaimer">预览效果仅供参考。</string>
+    <string name="preview_mosaic">预览仅展示马赛克的位置与颗粒度</string>
+    <string name="img_watermark_select">选择图片水印</string>
+
+
+    <!-- FFmpeg 辅助编辑模板扩展 -->
+    <string name="template_video_concat">多个视频拼接 (Concat)</string>
+    <string name="template_audio_video_merge">音视频合并 (Merge)</string>
+    <string name="merge_output_option">合并为一个文件输出（如多视频拼接/音视频混流）</string>
+
+
+    <!-- 音视频合并 (Audio & Video Merge) -->
+    <string name="av_merge_title">音视频合并</string>
+    <string name="av_merge_video_slot">主视频文件</string>
+    <string name="av_merge_select_video_hint">点击选择需要合成的视频</string>
+    <string name="av_merge_audio_slot">背景音频 / 音轨</string>
+    <string name="av_merge_select_audio_hint">点击选择配乐或音频文件</string>
+    <string name="av_merge_shortest_option">自动对齐时长（以较短文件为准）</string>
+    <string name="av_merge_shortest_desc">开启后可防止音乐过长导致视频结尾画面定格</string>
+    <string name="av_merge_replace_audio_option">替换原视频声音（静音原声）</string>
+    <string name="av_merge_output_name_label">输出文件名</string>
+    <string name="av_merge_start_btn">开始合成</string>
+
+    <!-- 视频或音频顺序拼接 (Media Concat) -->
+    <string name="media_concat_title">视频或音频顺序拼接</string>
+    <string name="media_concat_media_type_label">拼接类型</string>
+    <string name="media_concat_type_video">视频拼接</string>
+    <string name="media_concat_type_audio">音频拼接</string>
+    <string name="media_concat_mode_label">拼接模式</string>
+    <string name="media_concat_mode_fast">极速无损模式 (Concat Demuxer)</string>
+    <string name="media_concat_mode_fast_desc">秒级完成、画质无损，要求所有文件分辨率、编码和格式完全一致</string>
+    <string name="media_concat_mode_compat">通用兼容模式 (Concat Filter)</string>
+    <string name="media_concat_mode_compat_desc">自动统一分辨率与采样率并重编码，支持不同来源/格式文件混拼</string>
+    <string name="media_concat_files_header">待拼接文件列表（按先后顺序）</string>
+    <string name="media_concat_add_files_btn">添加文件</string>
+    <string name="media_concat_empty_hint">请点击右上角添加至少 2 个需要拼接的文件</string>
+    <string name="media_concat_move_up">上移</string>
+    <string name="media_concat_move_down">下移</string>
+    <string name="media_concat_clear_all">清空列表</string>
+    <string name="media_concat_output_name_label">输出文件名</string>
+    <string name="media_concat_start_btn">开始顺序拼接 (%1$d 个文件)</string>
+
+    <string name="media_concat_resolution_label">目标画布分辨率</string>
+    <string name="media_concat_res_auto">智能自适应 (跟随首个视频)</string>
+    <string name="media_concat_res_1080p">高清 1080P (1920x1080)</string>
+    <string name="media_concat_res_720p">标清 720P (1280x720)</string>
+    <string name="media_concat_res_vertical">竖屏短视频 (1080x1920)</string>
 </resources>

@@ -60,9 +60,9 @@ import java.util.Date
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FFmpegCommandsScreen(
-    nextDestination: () -> Unit,
-    goDestination: (route: String) -> Unit,
-    setNextToNextDestination: (route: String) -> Unit,
+    onTaskSubmitted: () -> Unit,
+    onNavigateToFilePicker: (route: String) -> Unit,
+    onSaveReturnRoute: (route: String) -> Unit,
     file_list: List<File>?,
     ffmpegCommandsViewModel: FFmpegCommandsViewModel = viewModel()
 ) {
@@ -110,14 +110,14 @@ fun FFmpegCommandsScreen(
         ) { page ->
             if (page == 0) {
                 SimpleCommandsEditor(
-                    nextDestination,
-                    goDestination,
-                    setNextToNextDestination,
+                    onTaskSubmitted,
+                    onNavigateToFilePicker,
+                    onSaveReturnRoute,
                     file_list,
                     ffmpegCommandsViewModel
                 )
             } else {
-                CommandsEditor(nextDestination, ffmpegCommandsViewModel)
+                CommandsEditor(onTaskSubmitted, ffmpegCommandsViewModel)
             }
         }
     }
@@ -125,7 +125,7 @@ fun FFmpegCommandsScreen(
 
 @Composable
 private fun CommandsEditor(
-    nextDestination: () -> Unit,
+    onTaskSubmitted: () -> Unit,
     ffmpegCommandsViewModel: FFmpegCommandsViewModel
 ) {
     val ctx = LocalContext.current
@@ -146,7 +146,7 @@ private fun CommandsEditor(
         Spacer(modifier = Modifier.height(20.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Button(onClick = {
-                startSelfFFmpegCommandsTask(ffmpegCommandsViewModel, ctx, nextDestination)
+                startSelfFFmpegCommandsTask(ffmpegCommandsViewModel, ctx, onTaskSubmitted)
             }) {
                 Text(text = LocalContext.current.getString(R.string.ok))
             }
@@ -157,9 +157,9 @@ private fun CommandsEditor(
 
 @Composable
 private fun SimpleCommandsEditor(
-    nextDestination: () -> Unit,
-    goDestination: (route: String) -> Unit,
-    setNextToNextDestination: (route: String) -> Unit,
+    onTaskSubmitted: () -> Unit,
+    onNavigateToFilePicker: (route: String) -> Unit,
+    onSaveReturnRoute: (route: String) -> Unit,
     file_list: List<File>?,
     viewModel: FFmpegCommandsViewModel
 ) {
@@ -190,6 +190,8 @@ private fun SimpleCommandsEditor(
             context.getString(R.string.screen_clipping),
             context.getString(R.string.extract_audio),
             context.getString(R.string.video_muting),
+            context.getString(R.string.template_video_concat),
+            context.getString(R.string.template_audio_video_merge),
         )
         val defaultContexts = listOf(
             "-c:v libx264 -q:v 5 -c:a aac -ab 128k -ar 44100",
@@ -204,6 +206,8 @@ private fun SimpleCommandsEditor(
             "-vf crop=3/5*iw:ih:iw/5:0",
             "-vn -c:a copy",
             "-c:v copy -an",
+            "-filter_complex [0:v][1:v]concat=n=2:v=1:a=0[outv] -map [outv]", // 🌟 新增示例
+            "-c:v copy -c:a aac -shortest"                                         // 🌟 新增示例
         )
         viewModel.initTemplates(context, defaultNames, defaultContexts)
     }
@@ -240,8 +244,8 @@ private fun SimpleCommandsEditor(
                             color = MaterialTheme.colorScheme.primary
                         )
                         IconButton(onClick = {
-                            goDestination(Destination.MultiFileSelection.route)
-                            setNextToNextDestination(Destination.FFmpegCommands.route)
+                            onNavigateToFilePicker(Destination.MultiFileSelection.route)
+                            onSaveReturnRoute(Destination.FFmpegCommands.route)
                         }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.baseline_folder_24),
@@ -321,10 +325,29 @@ private fun SimpleCommandsEditor(
                     }
                 }
             }
-
+// 🌟 新增：当选择文件大于1个时，显示“合并为一个文件输出”勾选框
+            if (selectedFiles.size > 1) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    androidx.compose.material3.Checkbox(
+                        checked = viewModel.isMergeMode,
+                        onCheckedChange = { viewModel.setMergeTaskMode(it) }
+                    )
+                    Text(
+                        text = stringResource(R.string.merge_output_option),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // 🌟 2. 输出文件命名区
+            val isBatchMode = selectedFiles.size > 1 && !viewModel.isMergeMode
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -347,7 +370,8 @@ private fun SimpleCommandsEditor(
                         readOnly = false,
                         singleLine = true,
                         label = {
-                            if (selectedFiles.size > 1) Text(stringResource(R.string.prefix_example_hint))
+                            // 只有纯批量模式才显示前缀提示
+                            if (isBatchMode) Text(stringResource(R.string.prefix_example_hint))
                         },
                         modifier = Modifier.width((width * 0.58).dp)
                     )
@@ -397,7 +421,7 @@ private fun SimpleCommandsEditor(
                 val ctx = LocalContext.current
                 Button(
                     onClick = {
-                        startAssistedFFmpegCommandsTask(viewModel, ctx, nextDestination)
+                        startAssistedFFmpegCommandsTask(viewModel, ctx, onTaskSubmitted)
                     },
                     enabled = selectedFiles.isNotEmpty(),
                     modifier = Modifier
@@ -406,7 +430,7 @@ private fun SimpleCommandsEditor(
                     shape = RoundedCornerShape(25.dp) // 药丸形现代商业级按钮
                 ) {
                     Text(
-                        text = if (selectedFiles.size > 1) stringResource(R.string.batch_execute_tasks, selectedFiles.size)
+                        text = if (isBatchMode) stringResource(R.string.batch_execute_tasks, selectedFiles.size)
                         else stringResource(id = R.string.ok),
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -656,7 +680,7 @@ private fun TemplateEditDialog(
 private fun startSelfFFmpegCommandsTask(
     ffmpegCommandsViewModel: FFmpegCommandsViewModel,
     ctx: Context,
-    nextDestination: () -> Unit,
+    onTaskSubmitted: () -> Unit,
 ) {
     val command_arg_list = ffmpegCommandsViewModel.command_args_str.value.trim().split("[\\s\\n]+".toRegex())
     val int_arr = ArrayList<Int>()
@@ -678,40 +702,70 @@ private fun startSelfFFmpegCommandsTask(
         float_arr
     )
     AppApplication.INSTANCE.taskRepository.startNewTask(info)
-    nextDestination()
+    onTaskSubmitted()
 }
 
 // 🌟 4. 重构：支持单文件/多文件的批量任务并发提交
 private fun startAssistedFFmpegCommandsTask(
     viewModel: FFmpegCommandsViewModel,
     ctx: Context,
-    nextDestination: () -> Unit,
+    onTaskSubmitted: () -> Unit,
 ) {
     val files = viewModel.selectedInputFiles
     if (files.isEmpty()) return
 
-    val isBatch = files.size > 1
+    val isMerge = viewModel.isMergeMode && files.size > 1
+    val date = Date(System.currentTimeMillis())
+    val formatter = SimpleDateFormat("yyyyMMddHHmmss", ctx.resources.configuration.locales[0])
 
-    files.forEachIndexed { index, file ->
-        val outFileName = if (isBatch) {
-            "${viewModel.output_file_name}_${index + 1}.${viewModel.extensionText}"
-        } else {
-            "${viewModel.output_file_name}.${viewModel.extensionText}"
+    if (isMerge) {
+        // 🌟 1. 多文件合并为一个文件的单任务模式
+        val taskLogPath = "${ConfigsUtils.target_dir}/${ctx.getString(R.string.ffmpeg_command_line)}${formatter.format(date)}.log"
+        val commandArgList = mutableListOf("ffmpeg")
+
+        // 依次追加所有输入文件：-i file1 -i file2 ...
+        files.forEach { file ->
+            commandArgList.add("-i")
+            commandArgList.add(file.path)
         }
 
-        val date = Date(System.currentTimeMillis())
-        val formatter = SimpleDateFormat("yyyyMMddHHmmss", ctx.resources.configuration.locales[0])
-        val taskLogPath =if (isBatch) {
-            "${ConfigsUtils.target_dir}/${ctx.getString(R.string.ffmpeg_command_line)}${formatter.format(date)}_${index + 1}.log"
+        // 追加用户选择或修改的参数模板内容
+        val params = viewModel.parameterContextText.trim().split("[\\s\\n]+".toRegex()).filter { it.isNotEmpty() }
+        commandArgList.addAll(params)
+
+        // 追加输出文件路径
+        val targetPath = "${ConfigsUtils.target_dir}/${viewModel.output_file_name}.${viewModel.extensionText}"
+        commandArgList.add(targetPath)
+
+        val intArr = ArrayList<Int>().apply { add(2); add(commandArgList.size) }
+        val longArr = ArrayList<Long>()
+        val strArr = ArrayList<String>().apply {
+            add(taskLogPath)
+            addAll(commandArgList)
         }
-        else{
-            "${ConfigsUtils.target_dir}/${ctx.getString(R.string.ffmpeg_command_line)}${formatter.format(date)}.log"
-        }
-        val cmdStr = "ffmpeg -i input_file ${viewModel.parameterContextText} output_file"
-        val commandArgList = cmdStr
-            .trim()
-            .split("[\\s\\n]+".toRegex())
-            .map {
+        val floatArr = ArrayList<Float>()
+
+        val info = TaskInfo(intArr, longArr, strArr, floatArr)
+        AppApplication.INSTANCE.taskRepository.startNewTask(info)
+
+    } else {
+        // 🌟 2. 原有的多文件独立批量执行 / 单文件执行逻辑
+        val isBatch = files.size > 1
+        files.forEachIndexed { index, file ->
+            val outFileName = if (isBatch) {
+                "${viewModel.output_file_name}_${index + 1}.${viewModel.extensionText}"
+            } else {
+                "${viewModel.output_file_name}.${viewModel.extensionText}"
+            }
+
+            val taskLogPath = if (isBatch) {
+                "${ConfigsUtils.target_dir}/${ctx.getString(R.string.ffmpeg_command_line)}${formatter.format(date)}_${index + 1}.log"
+            } else {
+                "${ConfigsUtils.target_dir}/${ctx.getString(R.string.ffmpeg_command_line)}${formatter.format(date)}.log"
+            }
+
+            val cmdStr = "ffmpeg -i input_file ${viewModel.parameterContextText} output_file"
+            val commandArgList = cmdStr.trim().split("[\\s\\n]+".toRegex()).map {
                 when (it) {
                     "input_file" -> file.path
                     "output_file" -> "${ConfigsUtils.target_dir}/$outFileName"
@@ -719,26 +773,21 @@ private fun startAssistedFFmpegCommandsTask(
                 }
             }
 
-        val intArr = ArrayList<Int>()
-        intArr.add(2)
-        intArr.add(commandArgList.size)
-        val longArr = ArrayList<Long>()
-        val strArr = ArrayList<String>()
+            val intArr = ArrayList<Int>().apply { add(2); add(commandArgList.size) }
+            val longArr = ArrayList<Long>()
+            val strArr = ArrayList<String>().apply {
+                add(taskLogPath)
+                addAll(commandArgList)
+            }
+            val floatArr = ArrayList<Float>()
 
-        strArr.add(taskLogPath)
-        strArr.addAll(commandArgList)
-        val floatArr = ArrayList<Float>()
-
-        val info = TaskInfo(
-            intArr,
-            longArr,
-            strArr,
-            floatArr
-        )
-        AppApplication.INSTANCE.taskRepository.startNewTask(info)
+            val info = TaskInfo(intArr, longArr, strArr, floatArr)
+            AppApplication.INSTANCE.taskRepository.startNewTask(info)
+        }
     }
 
     viewModel.clearInputFiles()
     viewModel.output_file_name = ""
-    nextDestination()
+    viewModel.isMergeMode  = false
+    onTaskSubmitted()
 }

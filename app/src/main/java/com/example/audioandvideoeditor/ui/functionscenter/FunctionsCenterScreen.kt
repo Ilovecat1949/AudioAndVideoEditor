@@ -153,24 +153,24 @@ private fun FunctionsListScreen2(
                 )
             }
         }
-        item {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.height(150.dp)
-                    .width(200.dp)
-                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
-                    .clickable {
-                        setNextToNextDestination(Destination.VideoCrop.route)
-                        nextDestination(Destination.FileSelection.route)
-                    }
-            ){
-                Text(
-                    text= LocalContext.current.getString(R.string.video_screen_cropping)
-                    , modifier = Modifier.padding(10.dp)
-                )
-            }
-        }
+//        item {
+//            Column(
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                modifier = Modifier.height(150.dp)
+//                    .width(200.dp)
+//                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+//                    .clickable {
+//                        setNextToNextDestination(Destination.VideoCrop.route)
+//                        nextDestination(Destination.FileSelection.route)
+//                    }
+//            ){
+//                Text(
+//                    text= LocalContext.current.getString(R.string.video_screen_cropping)
+//                    , modifier = Modifier.padding(10.dp)
+//                )
+//            }
+//        }
         item {
             Column(
                 verticalArrangement = Arrangement.Center,
@@ -184,7 +184,7 @@ private fun FunctionsListScreen2(
                     }
             ){
                 Text(
-                    text= "${stringResource(R.string.feature_region_edit_title)}\n${stringResource(R.string.feature_region_edit_desc)}"
+                    text= "${stringResource(R.string.feature_region_edit_title)}(${stringResource(R.string.feature_region_edit_desc)})"
                     , modifier = Modifier.padding(10.dp)
                 )
             }
@@ -244,6 +244,41 @@ private fun FunctionsListScreen2(
                 )
             }
         }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        nextDestination(Destination.AudioVideoMerge.route)
+                    }
+            ){
+                Text(
+                    text= stringResource(R.string.av_merge_title),
+                    modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(150.dp)
+                    .width(200.dp)
+                    .background(color = Color(0xFFFFDBD1), shape=RoundedCornerShape(10.dp))
+                    .clickable {
+                        nextDestination(Destination.MediaConcat.route)
+                    }
+            ){
+                Text(
+                    text= stringResource(R.string.media_concat_title),
+                    modifier = Modifier.padding(10.dp)
+                )
+            }
+        }
+
         item {
             Column(
                 verticalArrangement = Arrangement.Center,

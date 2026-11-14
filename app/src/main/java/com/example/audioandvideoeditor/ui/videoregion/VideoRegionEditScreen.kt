@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -72,6 +74,7 @@ import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.navigation.Destination
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FormatsUtils
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -80,11 +83,11 @@ import java.util.Locale
 
 private const val TAG = "VideoRegionEditScreen"
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
 fun VideoRegionEditScreen(
     file: File,
-    nextDestination: () -> Unit,
+    onTaskSubmitted: () -> Unit,
     onNavigateToFilePicker: (route: String) -> Unit,
     onSaveReturnRoute: (route: String) -> Unit,
     watermarkFile: File?,
@@ -220,18 +223,74 @@ fun VideoRegionEditScreen(
                         val width = viewModel.regionRect.width * density
                         val height = viewModel.regionRect.height * density
 
-                        // 🌟 如果是水印添加模式，且已加载了图片位图，则在框内实时渲染图片
+                        // 🌟 如果是水印添加模式，且已加载了图片位图
                         if (viewModel.currentMode == VideoRegionEditViewModel.EditMode.WATERMARK_ADD &&
                             viewModel.watermarkImageBitmap != null) {
                             val bitmap = viewModel.watermarkImageBitmap!!
-                            drawImage(
-                                image = bitmap,
-                                dstOffset = IntOffset(left.toInt(), top.toInt()),
-                                dstSize = IntSize(width.toInt(), height.toInt())
-                            )
-                        }
+                            val imgW = bitmap.width.toFloat()
+                            val imgH = bitmap.height.toFloat()
 
-                        // 绘制外层白色的框选描边，保持操作可见性
+                            if (viewModel.mywatermarkScaleMode == VideoRegionEditViewModel.WatermarkScaleMode.FIT && imgW > 0f && imgH > 0f) {
+                                // Fit 模式：保持宽高比，计算等比例缩放与居中偏移
+                                val scale = minOf(width / imgW, height / imgH)
+                                val scaledW = imgW * scale
+                                val scaledH = imgH * scale
+                                val offsetX = left + (width - scaledW) / 2f
+                                val offsetY = top + (height - scaledH) / 2f
+                                // 🌟 Fit 模式：先绘制黑色背景填满整个区域（与 FFmpeg pad 默认黑色保持一致）
+                                drawRect(
+                                    color = Color.Black,
+                                    topLeft = Offset(left, top),
+                                    size = Size(width, height)
+                                )
+                                drawImage(
+                                    image = bitmap,
+                                    dstOffset = IntOffset(offsetX.toInt(), offsetY.toInt()),
+                                    dstSize = IntSize(scaledW.toInt(), scaledH.toInt())
+                                )
+                            } else {
+                                // Stretch 模式：强行拉伸填满
+                                drawImage(
+                                    image = bitmap,
+                                    dstOffset = IntOffset(left.toInt(), top.toInt()),
+                                    dstSize = IntSize(width.toInt(), height.toInt())
+                                )
+                            }
+                        }
+                        // 🌟 马赛克占位图绘制（MOSAIC_ADD 模式，BitmapShader 平铺）
+                        if (viewModel.currentMode == VideoRegionEditViewModel.EditMode.MOSAIC_ADD) {
+                            viewModel.mosaicTileBitmap?.let { tileBitmap ->
+                                // 1. 计算比例：屏幕预览区的物理像素宽度 / 视频原始宽度
+                                val videoWidthPx = viewModel.info.width.toFloat()
+                                val previewWidthPx = viewModel.videoDimensions.first * density
+                                val scaleFactor = if (videoWidthPx > 0f) previewWidthPx / videoWidthPx else 1f
+
+                                val shader = android.graphics.BitmapShader(
+                                    tileBitmap,
+                                    android.graphics.Shader.TileMode.REPEAT,
+                                    android.graphics.Shader.TileMode.REPEAT
+                                )
+
+                                // 2. 使用 Matrix 对 Shader 进行缩放，使预览“反映”视频原始像素
+                                val matrix = android.graphics.Matrix()
+                                matrix.setScale(scaleFactor, scaleFactor)
+                                shader.setLocalMatrix(matrix)
+
+                                val paint = android.graphics.Paint().apply {
+                                    this.shader = shader
+                                    // 3. 🌟 关键：关闭平滑和抗锯齿，保证颗粒边缘硬朗，与 FFmpeg 的 neighbor 效果一致
+                                    this.isFilterBitmap = false
+                                    this.isAntiAlias = false
+                                }
+
+                                drawIntoCanvas { composeCanvas ->
+                                    composeCanvas.nativeCanvas.drawRect(
+                                        left, top, left + width, top + height, paint
+                                    )
+                                }
+                            }
+                        }
+                        // 绘制外层白色的框选描边
                         drawRect(
                             color = borderColor,
                             topLeft = Offset(left, top),
@@ -293,7 +352,7 @@ fun VideoRegionEditScreen(
                             // 🌟 动态面板：根据当前模式展示专属控制项
                             when (viewModel.currentMode) {
                                 VideoRegionEditViewModel.EditMode.WATERMARK_ADD -> {
-                                     // 🟢 优化后的清爽居中/紧凑按钮
+                                    // 选择水印按钮
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.Center
@@ -303,12 +362,71 @@ fun VideoRegionEditScreen(
                                                 onNavigateToFilePicker(Destination.FileSelection2.route)
                                                 onSaveReturnRoute(Destination.VideoRegion.route)
                                             },
-                                            // 可以通过 contentPadding 让按钮显得更轻量精致
                                             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
                                         ) {
-                                            Text(stringResource(R.string.watermark_select))
+                                            Text(stringResource(R.string.img_watermark_select))
                                         }
                                     }
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // 🌟 缩放模式切换栏 (Fit vs Stretch)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        FilterChip(
+                                            selected = viewModel.mywatermarkScaleMode == VideoRegionEditViewModel.WatermarkScaleMode.FIT,
+                                            onClick = { viewModel.setWatermarkScaleMode(VideoRegionEditViewModel.WatermarkScaleMode.FIT) },
+                                            label = { Text(stringResource(R.string.scale_mode_fit)) }
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        FilterChip(
+                                            selected = viewModel.mywatermarkScaleMode == VideoRegionEditViewModel.WatermarkScaleMode.STRETCH,
+                                            onClick = { viewModel.setWatermarkScaleMode(VideoRegionEditViewModel.WatermarkScaleMode.STRETCH) },
+                                            label = { Text(stringResource(R.string.scale_mode_stretch)) }
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                                VideoRegionEditViewModel.EditMode.MOSAIC_ADD -> {
+                                    // 马赛克颗粒度滑块
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(text = "${stringResource(R.string.mosaic_granularity)}: ${viewModel.mymosaicGranularity}")
+                                    }
+                                    Slider(
+                                        value = viewModel.mymosaicGranularity.toFloat(),
+                                        onValueChange = { viewModel.setMosaicGranularity(it.toInt()) },
+                                        thumb = {
+                                            SliderDefaults.Thumb(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                thumbSize = DpSize(24.dp, 24.dp),
+                                                colors = SliderDefaults.colors(MaterialTheme.colorScheme.primary)
+                                            )
+                                        },
+                                        track = { sliderState ->
+                                            SliderDefaults.Track(
+                                                colors = SliderDefaults.colors().copy(
+                                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                                                ),
+                                                sliderState = sliderState,
+                                                thumbTrackGapSize = 0.dp
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        valueRange = 3f..50f,
+                                        steps = 47
+                                    )
+                                    // 🌟 新增：预览提示文本
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.preview_mosaic),
+                                        style = MaterialTheme.typography.bodySmall, // 使用小号字体
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant, // 使用次要文本颜色
+                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                    )
                                     Spacer(modifier = Modifier.height(16.dp))
                                 }
                                 else -> {
@@ -355,7 +473,7 @@ fun VideoRegionEditScreen(
         }
     }
 
-    EditFileNameDialog(file, effectiveWatermarkFile, nextDestination, viewModel)
+    EditFileNameDialog(file, effectiveWatermarkFile, onTaskSubmitted, viewModel)
 }
 
 /**
@@ -525,7 +643,7 @@ private fun RegionTransformSliders(viewModel: VideoRegionEditViewModel) {
 private fun EditFileNameDialog(
     file: File,
     watermarkFile: File,
-    nextDestination: () -> Unit,
+    onTaskSubmitted: () -> Unit,
     viewModel: VideoRegionEditViewModel
 ) {
     val context = LocalContext.current
@@ -545,7 +663,7 @@ private fun EditFileNameDialog(
             confirmButton = {
                 Button(onClick = {
                     viewModel.targetName = text
-                    startExportVideo(context, file, watermarkFile, nextDestination, viewModel)
+                    startExportVideo(context, file, watermarkFile, onTaskSubmitted, viewModel)
                     viewModel.editFileNameFlag.value = false
                 }) {
                     Text(stringResource(id = R.string.ok))
@@ -564,7 +682,7 @@ private fun startExportVideo(
     context: Context,
     file: File,
     watermarkFile: File,
-    nextDestination: () -> Unit,
+    onTaskSubmitted: () -> Unit,
     viewModel: VideoRegionEditViewModel
 ) {
     var cmdStr = "ffmpeg -i input_file "
@@ -593,11 +711,18 @@ private fun startExportVideo(
             cmdStr += " -vf delogo=x=$x:y=$y:w=$w:h=$h:show=0"
         }
         VideoRegionEditViewModel.EditMode.MOSAIC_ADD -> {
-            cmdStr += " -filter_complex [0:v]split[base][m];[m]crop=$w:$h:$x:$y,scale=iw/10:-1:flags=neighbor,scale=$w:$h:flags=neighbor[mosaic];[base][mosaic]overlay=$x:$y"
+            val k = viewModel.mymosaicGranularity
+            // 🌟 直接使用 iw/k 和 ih/k，这里的 k 就是原始视频像素
+            cmdStr += " -filter_complex [0:v]split[base][m];[m]crop=$w:$h:$x:$y,scale=iw/$k:ih/$k:flags=neighbor,scale=$w:$h:flags=neighbor[mosaic];[base][mosaic]overlay=$x:$y"
         }
         VideoRegionEditViewModel.EditMode.WATERMARK_ADD -> {
-            // 🌟 核心升级：先对第二输入源（水印）进行 scale 缩放至用户框选的 w:h，再与视频流 overlay 叠加
-            cmdStr += " -filter_complex [1:v]scale=$w:$h[wm_scaled];[0:v][wm_scaled]overlay=$x:$y"
+            if (viewModel.mywatermarkScaleMode == VideoRegionEditViewModel.WatermarkScaleMode.FIT) {
+                // 🌟 Fit 模式：等比例缩放至框内，并用透明 pad 居中补齐到 w:h 尺寸
+                cmdStr += " -filter_complex [1:v]scale=$w:$h:force_original_aspect_ratio=decrease,pad=$w:$h:(ow-iw)/2:(oh-ih)/2:color=black[wm_scaled];[0:v][wm_scaled]overlay=$x:$y"
+            } else {
+                // 🌟 Stretch 模式：强行拉伸
+                cmdStr += " -filter_complex [1:v]scale=$w:$h[wm_scaled];[0:v][wm_scaled]overlay=$x:$y"
+            }
         }
     }
 
@@ -632,5 +757,5 @@ private fun startExportVideo(
 
     val taskInfo = TaskInfo(intArr, longArr, strArr, floatArr)
     AppApplication.INSTANCE.taskRepository.startNewTask(taskInfo)
-    nextDestination()
+    onTaskSubmitted()
 }
