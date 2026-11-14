@@ -2,6 +2,7 @@ package com.example.audioandvideoeditor.viewmodel
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
+import android.util.LruCache
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -11,8 +12,10 @@ import androidx.lifecycle.ViewModel
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import com.example.audioandvideoeditor.dao.AudiosPagingSource
+import com.example.audioandvideoeditor.dao.ImagesPagingSource
 import com.example.audioandvideoeditor.dao.VideosPagingSource
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 
 class FilesViewModel : ViewModel() {
@@ -49,9 +52,28 @@ class FilesViewModel : ViewModel() {
         }
     }
 
+    // 🌟 新增：图片加载并发限制
+    val imageLoadSemaphore = Semaphore(3)
+
+    // 🌟 新增：图片 LruCache
+    val imageMemoryCache = object : LruCache<String, Bitmap>(
+        (Runtime.getRuntime().maxMemory() / 1024 / 8).toInt()
+    ) {
+        override fun sizeOf(key: String, value: Bitmap): Int {
+            return value.byteCount / 1024
+        }
+        // 不手动 recycle
+    }
+
+    fun getImageFromCache(path: String): Bitmap? = imageMemoryCache.get(path)
+    fun putImageToCache(path: String, bitmap: Bitmap) {
+        imageMemoryCache.put(path, bitmap)
+    }
+
     private val pagerSize = 5000
     private var videosSource: VideosPagingSource = VideosPagingSource()
     private var audiosSource: AudiosPagingSource = AudiosPagingSource()
+    private var imagesSource: ImagesPagingSource = ImagesPagingSource() // 🌟 新增
 
     val videosPager = Pager(
         PagingConfig(pageSize = pagerSize, enablePlaceholders = true)
@@ -64,10 +86,13 @@ class FilesViewModel : ViewModel() {
     ) {
         audiosSource
     }
-
+    val imagesPager = Pager( // 🌟 新增
+        PagingConfig(pageSize = pagerSize, enablePlaceholders = true)
+    ) { imagesSource }
     fun setContentResolver(contentResolver: ContentResolver) {
         videosSource.setContentResolver(contentResolver)
         audiosSource.setContentResolver(contentResolver)
+        imagesSource.setContentResolver(contentResolver) // 🌟 新增
     }
 
     val show_flag = mutableStateOf(0)

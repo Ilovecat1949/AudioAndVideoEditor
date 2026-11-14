@@ -1,6 +1,7 @@
 package com.example.audioandvideoeditor.components
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Environment
 import androidx.activity.compose.BackHandler
@@ -68,14 +69,17 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.AudioInfo
+import com.example.audioandvideoeditor.entity.ImageInfo
 import com.example.audioandvideoeditor.entity.VideoInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.utils.ConfigsUtils
 import com.example.audioandvideoeditor.utils.FilesUtils
 import com.example.audioandvideoeditor.viewmodel.FilesViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -167,6 +171,7 @@ private fun ShowListScreen(padding: PaddingValues, filesViewModel: FilesViewMode
         listOf(
             context.getString(R.string.video),
             context.getString(R.string.audio),
+            context.getString(R.string.image), // 🌟 新增
             context.getString(R.string.file),
         )
     }
@@ -207,7 +212,8 @@ private fun ShowListScreen(padding: PaddingValues, filesViewModel: FilesViewMode
                 when(page){
                     0 -> VideoFilesList(padding, filesViewModel)
                     1 -> AudioFilesList(padding, filesViewModel)
-                    2 -> FilesList(padding, filesViewModel)
+                    2 -> ImageFilesList(padding, filesViewModel) // 🌟 新增图片
+                    3 -> FilesList(padding, filesViewModel)
                 }
                 Spacer(modifier = Modifier
                     .fillMaxWidth()
@@ -311,7 +317,7 @@ private fun FilesList(
                 filesViewModel.parent = null
             }
         }
-        filesViewModel.backHandler_flag = (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
+        filesViewModel.backHandler_flag = (filesViewModel.show_flag.value == 3 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
     }
     if (showSortOptionsDialog) {
         var sortCriteria2 by remember {
@@ -496,7 +502,7 @@ private fun ShowFile(
                         filesViewModel.filesList.clear()
                         filesViewModel.parent = dir
                         filesViewModel.backHandler_flag =
-                            (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
+                            (filesViewModel.show_flag.value == 3 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
                         dir.listFiles()?.let { it1 ->
                             filesViewModel.filesList.addAll(it1)
                         }
@@ -602,6 +608,184 @@ private fun AudioFilesList(
         item(span = { GridItemSpan(maxLineSpan) }){
             Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
         }
+    }
+}
+
+
+@Composable
+private fun ImageFilesList(
+    padding: PaddingValues,
+    filesViewModel: FilesViewModel
+){
+    val imagesPager = filesViewModel.imagesPager
+    val lazyPagingItems = imagesPager.flow.collectAsLazyPagingItems()
+    LazyVerticalGrid (
+        columns = GridCells.Adaptive(minSize = 128.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }){
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
+        }
+        if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Waiting for images to load...",
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        items(count = lazyPagingItems.itemCount) { index ->
+            val item = lazyPagingItems[index]
+            if (item != null) {
+                ShowImageFileInfo(filesViewModel, item)
+            }
+        }
+        if (lazyPagingItems.loadState.append == LoadState.Loading) {
+            item(span = { GridItemSpan(maxLineSpan) }){
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }){
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
+        }
+    }
+}
+
+@Composable
+private fun ShowImageFileInfo(
+    filesViewModel: FilesViewModel,
+    info: ImageInfo
+){
+    val selectedIndex = filesViewModel.selectedFiles.indexOfFirst { it.path == info.path }
+    val isSelected = selectedIndex != -1
+    val context = LocalContext.current
+    var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(info.path) {
+        val cached = filesViewModel.getImageFromCache(info.path)
+        if (cached != null && !cached.isRecycled) {
+            thumbnailBitmap = cached
+            return@LaunchedEffect
+        }
+
+        withContext(Dispatchers.IO) {
+            try {
+                filesViewModel.imageLoadSemaphore.withPermit {
+                    val doubleCheck = filesViewModel.getImageFromCache(info.path)
+                    if (doubleCheck != null && !doubleCheck.isRecycled) {
+                        withContext(Dispatchers.Main) { thumbnailBitmap = doubleCheck }
+                        return@withPermit
+                    }
+
+                    var targetSize = 512
+                    var sampleSize = 1
+
+                    context.contentResolver.openInputStream(info.uri)?.use { inputStream ->
+                        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeStream(inputStream, null, options)
+
+                        if (options.outHeight > targetSize || options.outWidth > targetSize) {
+                            val halfHeight = options.outHeight / 2
+                            val halfWidth = options.outWidth / 2
+                            while (halfHeight / sampleSize >= targetSize && halfWidth / sampleSize >= targetSize) {
+                                sampleSize *= 2
+                            }
+                        }
+                    }
+
+                    var bitmap: Bitmap? = null
+                    context.contentResolver.openInputStream(info.uri)?.use { input2 ->
+                        val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                        bitmap = BitmapFactory.decodeStream(input2, null, decodeOptions)
+                    }
+
+                    if (bitmap != null) {
+                        filesViewModel.putImageToCache(info.path, bitmap!!)
+                        withContext(Dispatchers.Main) {
+                            thumbnailBitmap = bitmap
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ){
+        Spacer(modifier = Modifier.height(5.dp))
+        Box(
+            modifier = Modifier
+                .clickable {
+                    filesViewModel.toggleFileSelection(File(info.path))
+                }
+        ){
+            if(thumbnailBitmap != null) {
+                Image(
+                    bitmap = thumbnailBitmap!!.asImageBitmap(),
+                    modifier = Modifier
+                        .width(128.dp)
+                        .height(128.dp)
+                        .background(color = Color.Black, shape = RoundedCornerShape(10.dp)),
+                    contentDescription = null
+                )
+            } else {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_insert_drive_file_24), // 暂用默认图
+                    tint = Color.Gray,
+                    modifier = Modifier
+                        .width(128.dp)
+                        .height(128.dp)
+                        .background(color = Color.Black, shape = RoundedCornerShape(10.dp)),
+                    contentDescription = null
+                )
+            }
+
+            // 🌟 选中状态展示（同视频/音频）
+            if (isSelected) {
+                if (filesViewModel.selectionMode == 0) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_check_24),
+                        tint = Color.White,
+                        modifier = Modifier
+                            .padding(start = 64.dp, top = 64.dp)
+                            .size(64.dp),
+                        contentDescription = null
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape)
+                            .align(Alignment.TopEnd),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (selectedIndex + 1).toString(),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = info.name,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 5,
+            softWrap = true
+        )
+        Spacer(modifier = Modifier.height(50.dp))
     }
 }
 

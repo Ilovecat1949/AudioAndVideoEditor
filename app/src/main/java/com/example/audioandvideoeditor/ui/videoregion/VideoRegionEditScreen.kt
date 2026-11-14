@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -83,7 +85,7 @@ import java.util.Locale
 
 private const val TAG = "VideoRegionEditScreen"
 
-@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
+@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class, ExperimentalLayoutApi::class)
 @Composable
 fun VideoRegionEditScreen(
     file: File,
@@ -315,11 +317,14 @@ fun VideoRegionEditScreen(
                 }
 
                 // 3. 中部：一级功能切换 Tab (Segmented Chips)
-                Row(
+                FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    // 水平居中排布，且间距为 8.dp
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    // 垂直换行后的间距
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     VideoRegionEditViewModel.EditMode.values().forEach { mode ->
                         FilterChip(

@@ -1,11 +1,13 @@
 package com.example.audioandvideoeditor.components
 
-import android.util.Log
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -14,7 +16,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -23,8 +31,6 @@ import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.viewmodel.ContentItem
 import com.example.audioandvideoeditor.viewmodel.FileReadingViewModel
 import java.io.File
-
-
 
 
 private val TAG="FileReadingScreen"
@@ -51,46 +57,46 @@ fun FileReadingScreen2(file: File, readFromEnd: Boolean,viewModel: FileReadingVi
 //            visibleContentState.clear()
 //            visibleContentState.addAll(newList)
 //        }
-    visibleContentState.clear()
-    visibleContentState.addAll(viewModel.visibleContent)
+        visibleContentState.clear()
+        visibleContentState.addAll(viewModel.visibleContent)
 //    Log.d(TAG,"viewModel.visibleContent:${viewModel.visibleContent.size}")
     }
     Column(modifier = Modifier.fillMaxSize()) {
         if (viewModel.isLoading.value) {
-           // CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            // CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             Text("...")
         } else if (viewModel.errorMessage.value != null) {
             Text(text = viewModel.errorMessage.value!!, color = MaterialTheme.colorScheme .error)
         } else {
 //            if(visibleContentState.isNotEmpty()) {
 //                Log.d(TAG,"scrollState.value:${offset}")
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .scrollable(
-                            orientation = Orientation.Vertical,
-                            // Scrollable state: describes how to consume
-                            // scrolling delta and update offset
-                            state = rememberScrollableState { delta ->
-                                offset += delta
-                                delta
-                            }
-                        )
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .scrollable(
+                        orientation = Orientation.Vertical,
+                        // Scrollable state: describes how to consume
+                        // scrolling delta and update offset
+                        state = rememberScrollableState { delta ->
+                            offset += delta
+                            delta
+                        }
+                    )
 
-                ) {
-                    //visibleContentState
-                    items(visibleContentState, key = { it.id }) { item ->
-                        SelectionContainer {
-                            Text(text = item.text)
-                        }
-                        if (item.id == visibleContentState.last().id && offset<0) {
-                                offset=0f
-                                viewModel.loadMoreContent(true)
-                        } else if (item.id == visibleContentState.first().id&& offset>0) {
-                            offset=0f
-                            viewModel.loadMoreContent(false)
-                        }
+            ) {
+                //visibleContentState
+                items(visibleContentState, key = { it.id }) { item ->
+                    SelectionContainer {
+                        Text(text = item.text)
                     }
+                    if (item.id == visibleContentState.last().id && offset<0) {
+                        offset=0f
+                        viewModel.loadMoreContent(true)
+                    } else if (item.id == visibleContentState.first().id&& offset>0) {
+                        offset=0f
+                        viewModel.loadMoreContent(false)
+                    }
+                }
 //                }
             }
             Slider(
@@ -122,7 +128,6 @@ fun FileReadingScreen2(file: File, readFromEnd: Boolean,viewModel: FileReadingVi
         }
     }
 }
-
 
 
 

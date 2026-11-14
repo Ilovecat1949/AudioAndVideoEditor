@@ -28,6 +28,7 @@
     <string name="select_file">选择文件</string>
     <string name="video">视频</string>
     <string name="audio">音频</string>
+    <string name="image">图片</string>
     <string name="file">文件</string>
     <string name="function_center">功能中心</string>
     <string name="task_center">任务中心</string>

@@ -2,6 +2,7 @@ package com.example.audioandvideoeditor.components
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Environment
 import android.util.Log
@@ -76,6 +77,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.audioandvideoeditor.R
 import com.example.audioandvideoeditor.entity.AudioInfo
+import com.example.audioandvideoeditor.entity.ImageInfo
 import com.example.audioandvideoeditor.entity.VideoInfo
 import com.example.audioandvideoeditor.lifecycle.rememberLifecycle
 import com.example.audioandvideoeditor.navigation.Destination
@@ -86,8 +88,10 @@ import com.example.audioandvideoeditor.viewmodel.FilesViewModel2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
 
 
 private val TAG = "FilesListScreen2"
@@ -118,6 +122,7 @@ fun FilesListScreen2(
         listOf(
             context.getString(R.string.video),
             context.getString(R.string.audio),
+            context.getString(R.string.image),
             context.getString(R.string.file),
         )
     }
@@ -166,7 +171,8 @@ fun FilesListScreen2(
                 when (page) {
                     0 -> VideosList(padding, filesViewModel)
                     1 -> AudiosList(padding, filesViewModel)
-                    2 -> FilesList(padding, filesViewModel)
+                    2 -> ImagesList(padding, filesViewModel) // 🌟 新增图片列表
+                    3 -> FilesList(padding, filesViewModel)
                 }
             }
         }
@@ -286,7 +292,7 @@ private fun FilesList(
             }
         }
         Log.d(TAG, "BackHandler")
-        filesViewModel.backHandler_flag = (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
+        filesViewModel.backHandler_flag = (filesViewModel.show_flag.value == 3 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
     }
     if (showSortOptionsDialog) {
         var sortCriteria2 by remember {
@@ -398,7 +404,7 @@ private fun ShowFile(
                         filesViewModel.filesList.clear()
                         filesViewModel.parent = dir
                         filesViewModel.backHandler_flag =
-                            (filesViewModel.show_flag.value == 2 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
+                            (filesViewModel.show_flag.value == 3 && filesViewModel.parent != null && filesViewModel.parent!!.path != Environment.getExternalStorageDirectory().path)
                         dir
                             .listFiles()
                             ?.let { it1 ->
@@ -611,6 +617,61 @@ private fun AudiosList(
 }
 
 @Composable
+private fun ImagesList(
+    padding: PaddingValues,
+    filesViewModel: FilesViewModel2
+) {
+    val imagesPager = filesViewModel.imagesPager
+    val lazyPagingItems = imagesPager.flow.collectAsLazyPagingItems()
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 128.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = padding.calculateTopPadding())
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
+        }
+        if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Waiting for images to load...",
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        if (lazyPagingItems.loadState.refresh is LoadState.Error) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Load failed: ${(lazyPagingItems.loadState.refresh as LoadState.Error).error.localizedMessage ?: "unknown"}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        items(count = lazyPagingItems.itemCount) { index ->
+            val item = lazyPagingItems[index]
+            if (item != null) {
+                ShowImageFileInfo(item, filesViewModel)
+            }
+        }
+        if (lazyPagingItems.loadState.append == LoadState.Loading) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Spacer(modifier = Modifier.fillMaxWidth().height(50.dp))
+        }
+    }
+}
+
+@Composable
 private fun ShowVideoFileInfo(
     info: VideoInfo,
     filesViewModel: FilesViewModel2
@@ -744,7 +805,126 @@ private fun ShowAudioFileInfo(
     }
 }
 
+@Composable
+private fun ShowImageFileInfo(
+    info: ImageInfo,
+    filesViewModel: FilesViewModel2
+) {
+    val context = LocalContext.current
+    var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
+    // 使用 info.path 作为 Key，防止重用导致显示错误
+    LaunchedEffect(info.path) {
+        // 1. 优先查内存缓存
+        val cached = filesViewModel.getImageFromCache(info.path)
+        if (cached != null && !cached.isRecycled) {
+            thumbnailBitmap = cached
+            return@LaunchedEffect
+        }
+
+        // 2. 未命中缓存，进入受限的并发加载
+        withContext(Dispatchers.IO) {
+            try {
+                // 获取信号量许可，限制同时解码的并发数，防止 CPU 过载与瞬间 OOM
+                filesViewModel.imageLoadSemaphore.withPermit {
+                    // 再次检查缓存（防止在排队等许可时，别的协程已经加载好了）
+                    val doubleCheck = filesViewModel.getImageFromCache(info.path)
+                    if (doubleCheck != null && !doubleCheck.isRecycled) {
+                        withContext(Dispatchers.Main) { thumbnailBitmap = doubleCheck }
+                        return@withPermit
+                    }
+
+                    // 开始解码（目标尺寸 512px，适应 128dp 的网格）
+                    var targetSize = 512
+                    var sampleSize = 1
+
+                    // 先读取图片边界
+                    context.contentResolver.openInputStream(info.uri)?.use { inputStream ->
+                        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeStream(inputStream, null, options)
+
+                        // 计算 inSampleSize
+                        if (options.outHeight > targetSize || options.outWidth > targetSize) {
+                            val halfHeight = options.outHeight / 2
+                            val halfWidth = options.outWidth / 2
+                            while (halfHeight / sampleSize >= targetSize && halfWidth / sampleSize >= targetSize) {
+                                sampleSize *= 2
+                            }
+                        }
+                    }
+
+                    // 正式解码
+                    var bitmap: Bitmap? = null
+                    context.contentResolver.openInputStream(info.uri)?.use { input2 ->
+                        val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                        bitmap = BitmapFactory.decodeStream(input2, null, decodeOptions)
+                    }
+
+                    // 存入缓存并更新 UI
+                    if (bitmap != null) {
+                        filesViewModel.putImageToCache(info.path, bitmap!!)
+                        withContext(Dispatchers.Main) {
+                            thumbnailBitmap = bitmap
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                // 🌟 如果用户滑出屏幕，LaunchedEffect 被取消，抛出 CancellationException 是正常现象，必须重新抛出以正确释放协程
+                throw e
+            } catch (e: Exception) {
+                // 处理 OOM 或其他解码异常
+                e.printStackTrace()
+            }
+        }
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.background(
+            color = Color(0xFFFFDBD1),
+            shape = RoundedCornerShape(10.dp)
+        )
+    ) {
+        Spacer(modifier = Modifier.height(5.dp))
+        if (thumbnailBitmap != null) {
+            Image(
+                bitmap = thumbnailBitmap!!.asImageBitmap(),
+                modifier = Modifier
+                    .width(128.dp)
+                    .height(128.dp)
+                    .background(color = Color.Black, shape = RoundedCornerShape(10.dp))
+                    .clickable { /* TODO: 图片查看跳转 */ },
+                contentDescription = null
+            )
+        } else {
+            // 兜底占位图
+            Icon(
+                painter = painterResource(id = R.drawable.baseline_insert_drive_file_24),
+                tint = Color.Gray,
+                modifier = Modifier
+                    .width(128.dp)
+                    .height(128.dp)
+                    .background(color = Color.Black, shape = RoundedCornerShape(10.dp))
+                    .clickable { /* TODO: 图片查看跳转 */ },
+                contentDescription = null
+            )
+        }
+        Spacer(modifier = Modifier.height(5.dp))
+        Text(
+            text = info.name,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 5,
+            softWrap = true
+        )
+        TextButton(onClick = {
+            filesViewModel.imageInfo = info
+            filesViewModel.show_details_flag.value = 4
+        }) {
+            Text(text = LocalContext.current.getString(R.string.info))
+        }
+    }
+}
 
 @Composable
 private fun ShowFileDetails(
@@ -879,6 +1059,49 @@ private fun ShowFileDetails(
                                 color = Color.Red,
                                 modifier = Modifier.clickable {
                                     FilesUtils.copyStr(filesViewModel.file!!.path, ctx)
+                                    sendToast(ctx, ctx.getString(R.string.copy_to_clipboard))
+                                }
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        filesViewModel.show_details_flag.value = 0
+                    }) {
+                        Text(LocalContext.current.getString(R.string.ok))
+                    }
+                },
+                dismissButton = {},
+            )
+        }
+        4 -> {
+            AlertDialog(
+                onDismissRequest = {
+                    filesViewModel.show_details_flag.value = 0
+                },
+                title = {
+                    Text(LocalContext.current.getString(R.string.info))
+                },
+                text = {
+                    val ctx = LocalContext.current
+                    if (filesViewModel.imageInfo != null) {
+                        Column(
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text("${LocalContext.current.getString(R.string.type)}:${FilesUtils.getTypeFromPath(filesViewModel.imageInfo!!.path)}")
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("${LocalContext.current.getString(R.string.size)}:${TextsUtils.getSizeText(filesViewModel.imageInfo!!.size)}")
+                            Spacer(modifier = Modifier.height(10.dp))
+                            // 🌟 展示分辨率
+                            Text("${stringResource(R.string.label_resolution)}: ${filesViewModel.imageInfo!!.width} x ${filesViewModel.imageInfo!!.height}")
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("${LocalContext.current.getString(R.string.path)}:${filesViewModel.imageInfo!!.path}")
+                            Text(
+                                text = LocalContext.current.getString(R.string.copy) + LocalContext.current.getString(R.string.path),
+                                color = Color.Red,
+                                modifier = Modifier.clickable {
+                                    FilesUtils.copyStr(filesViewModel.imageInfo!!.path, ctx)
                                     sendToast(ctx, ctx.getString(R.string.copy_to_clipboard))
                                 }
                             )

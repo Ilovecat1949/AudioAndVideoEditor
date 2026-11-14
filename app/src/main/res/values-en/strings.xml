@@ -28,6 +28,7 @@
     <string name="select_file">Select file</string>
     <string name="video">Video</string>
     <string name="audio">Audio</string>
+    <string name="image">Image</string>
     <string name="file">File</string>
     <string name="function_center">Functional</string>
     <string name="task_center">Task\nCenter</string>

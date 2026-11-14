@@ -209,4 +209,3 @@ class FileReadingViewModel: ViewModel(){
         randomAccessFile?.close()
     }
 }
-
