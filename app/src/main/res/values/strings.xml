@@ -455,7 +455,7 @@
     <string name="mode_add_mosaic">添加马赛克</string>
 
     <string name="feature_region_edit_title">视频区域编辑</string>
-    <string name="feature_region_edit_desc">画面裁剪、去水印、添加马赛克</string>
+    <string name="feature_region_edit_desc">画面裁剪、去水印、添加水印或马赛克</string>
 
     <string name="mode_add_watermark">添加水印</string>
 

@@ -461,7 +461,7 @@ Email: running_in_storm@qq.com\n
     <string name="mode_add_mosaic">Add Mosaic</string>
 
     <string name="feature_region_edit_title">Video Region Edit</string>
-    <string name="feature_region_edit_desc">Crop, Remove Watermark, Add Mosaic</string>
+    <string name="feature_region_edit_desc">Crop, Remove Watermark, Add Watermark Or Mosaic </string>
 
     <string name="mode_add_watermark">Add Watermark</string>
 
