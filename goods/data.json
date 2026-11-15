@@ -1,5 +1,28 @@
 [
     {
+   "date": "2026-11-15",
+    "items": [
+      {
+        "title": "GenOffice",
+        "tags": ["办公软件","开源免费"],
+        "desc": "利用人工智能直接在您的文件中进行写作、计算、演示和创作。这是一款适用于 macOS、Windows 和 Linux 的免费开源办公套件。",
+        "link": "https://genoffice.ai/"
+      },
+      {
+        "title": "Oink",
+        "tags": ["协同工作","开源免费"],
+        "desc": "Oink 是 Oink Is Not only a KVM 的缩写，是一款在多台 Windows 和 Mac 设备间建立对等共享网络的现代软件。同时使用任何设备的键盘、鼠标、触摸板操控任意邻近设备，保持统一、原生的操作手感；将多台设备的音频通过连接至一台设备的扬声器或耳机播放；支持剪贴板共享和跨设备拖拽；支持局域网设备自动发现；默认加密传输。",
+        "link": "https://github.com/oinkvm/oink"
+      },
+      {
+        "title": "LibreCuts",
+        "tags": ["视频编辑器","开源免费"],
+        "desc": "LibreCuts 是一款适用于 Android 的免费开源视频编辑器，它以简洁性和高效性为优先考量。",
+        "link": "https://github.com/tharunbirla/LibreCuts"
+      }                       
+    ] 
+  },  
+    {
    "date": "2026-11-01",
     "items": [
       {
