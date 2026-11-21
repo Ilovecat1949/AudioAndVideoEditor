@@ -6,34 +6,39 @@
 
 
 
-## Introduction
-This is an Android audio and video editor based on FFmpeg, with the goal of providing most of the FFmpeg features on Android.   
-At present, it supports functions such as FFmpeg command line, video compression, 
-video format conversion, video duration clipping, video re encoding, and obtaining audio and video information.      
-The code for this project is written quite crudely. If there are any mistakes,  
-please feel free to let me know. If you have any questions or suggestions, please feel free to contact me via email.     
-This project supports both Simplified Chinese and English languages, which can be switched in the settings.
-## Development and operational environment
-This project is developed by Android Studio, using Kotlin and C++programming languages, and FFmpeg version 4.2.11.       
-This project should support Android systems from Android 10 to Android 16,   
-and run on my own x86_64 Android 16 virtual machine and arm64-v8a Android 14 real machine.    
-Adapted to 16KB Page Size.    
-The application of this project requires obtaining file read and write permissions as well as notification permissions.     
-File read and write permissions are necessary for reading local audio and video files and generating new ones.     
-Notification permission is mainly used to inform users of the progress of task execution and is not necessary.    
-Added prompts and buttons to remove power-saving restrictions to ensure smooth operation of tasks in the background, but it should be noted that this is a potentially dangerous permission.
-## Functions
-| Function Name                     | Function Details|
-|-----------------------------------|--------------------------------------------------------------------------------|  
-| ffmpeg command line               | Execute ffmpeg command line on mobile phone|
-| Video compression function        | Re encode and compress videos according to the compression ratio selected by the user|
-| Video format conversion function  | Used to reset video packaging type, video encoding type, audio encoding type, video resolution, video bitrate, video frame rate, audio bitrate, and audio sampling rate. Supports MP3 and H.265                         |
-| Video duration clipping           | Used to clip user specified video clips, with two modes: fast clipping and precise clipping. The execution speed of quick cutting is fast, and the timing of the cut may not be so accurate. The execution speed of precise cutting is slower, and the captured time points will be more accurate.  |
-| Video cropping                    | Used to crop user specified video frames.                                                                  |
-| Adjust Video Scale                | Used to reset the video scale and background color.                                                              |
-| Video speed change                | Used to set the video playback speed.                                                                     |
-| Extract Audio                     | Used to extract audio from videos.                                                                     |
-| Video Mute                        | Used to eliminate the audio part in a video.                                                                   |
+# Introduction
+This is an Android audio and video editor built on FFmpeg. It aims to deliver a comprehensive set of audio and video processing capabilities on the Android platform. Current features include FFmpeg command execution, video compression, video format conversion, video trimming, video re-encoding, and media metadata retrieval.
+
+Feel free to send me your feedback and suggestions via email.
+
+This project supports both Simplified Chinese and English, and the language can be switched in Settings.
+
+# Development & Runtime Environment
+The project is developed using Android Studio, with Kotlin and C++ as its programming languages. The FFmpeg version used is 4.2.11.
+
+It supports Android 10 through Android 16. It has been tested successfully on an x86_64 Android 16 virtual machine and an arm64-v8a Android 14 physical device.
+16KB Page Size is supported.
+
+The application requires file read/write permission and notification permission to run. File read/write permission is mandatory, used to access local media files and export new audio/video files.
+Notification permission is optional, mainly to notify users of task progress.
+
+Disabling battery optimization ensures stable background task execution.
+
+# Features
+| Feature Name            | Description                                                                                                                                                                        |
+|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| FFmpeg Command Line     | Run FFmpeg commands directly on mobile devices. Supports batch task submission, as well as creation and management of custom parameters.                                           |
+| Screen Recording        | Four audio modes available: no audio, microphone audio, internal audio, mixed microphone + internal audio.                                                                         |
+| Video Compression       | Re-encodes and compresses videos based on user-selected compression ratios, with hardware acceleration support.                                                                    |
+| Media Information       | Read audio and video metadata (resolution, bitrate, etc.) and modify media metadata.                                                                                               |
+| Video Format Conversion | Reconfigure video container format, video codec, audio codec, resolution, video bitrate, frame rate, audio bitrate, audio sample rate, and more. MP3 and H.265 are supported.      |
+| Video Trimming          | Extract user-specified video segments. Two modes are provided: fast trimming (high speed, less precise timestamps) and precise trimming (slower speed, accurate cut points).       |
+| Regional Video Editing  | Includes frame cropping, watermark removal, watermark overlay, and mosaic effects.                                                                                                 |
+| Aspect Ratio Adjustment | Reset video aspect ratio and customize background color.                                                                                                                           |
+| Video Speed Control     | Adjust playback speed of videos.                                                                                                                                                   |
+| Audio Extraction        | Extract audio tracks from video files.                                                                                                                                             |
+| Video Muting            | Remove all audio tracks from videos.                                                                                                                                               |
+
 
 ## Reference
 1.[Android 音视频开发打怪升级系列文章](https://juejin.cn/post/6844903949451919368)  
